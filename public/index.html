@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>open-x402-bazaar</title>
+<meta name="description" content="An open, permissionless discovery layer for x402-payable resources. No account, no KYC — submit a manifest URL and get listed.">
+<style>
+  :root { color-scheme: dark; }
+  body { background:#0b0f14; color:#e6edf3; font:16px/1.6 -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif; margin:0; padding:0 20px; }
+  main { max-width:760px; margin:0 auto; padding:48px 0; }
+  h1 { font-size:1.9rem; margin-bottom:.2em; }
+  code, pre { background:#161b22; border-radius:6px; }
+  code { padding:.15em .4em; font-size:.9em; }
+  pre { padding:16px; overflow-x:auto; }
+  table { border-collapse:collapse; width:100%; margin:1.2em 0; }
+  th, td { text-align:left; padding:8px 12px; border-bottom:1px solid #30363d; font-size:.92em; }
+  a { color:#58a6ff; }
+  .tag { display:inline-block; font-size:.75em; padding:.2em .6em; border:1px solid #30363d; border-radius:999px; color:#8b949e; }
+</style>
+</head>
+<body>
+<main>
+  <span class="tag">pre-alpha</span>
+  <h1>open-x402-bazaar</h1>
+  <p>An open, permissionless discovery layer for <a href="https://x402.org">x402</a>-payable resources — APIs, data feeds, and services AI agents can find and pay for per request. No account, no KYC. Submit your manifest URL and you're listed.</p>
+
+  <h2>List your service</h2>
+  <pre>curl -X POST /submit \
+  -H "content-type: application/json" \
+  -d '{"manifestUrl": "https://yoursite.com/.well-known/x402.json"}'</pre>
+
+  <h2>Find a service (agents)</h2>
+  <table>
+    <tr><th>Endpoint</th><th>Purpose</th></tr>
+    <tr><td><code>GET /discovery/search?query=</code></td><td>Keyword/filter search</td></tr>
+    <tr><td><code>GET /discovery/resources</code></td><td>Paginated full listing</td></tr>
+    <tr><td><code>GET /discovery/merchant?payTo=</code></td><td>All resources paying one address</td></tr>
+  </table>
+
+  <p>Source, docs, and roadmap: <a href="https://github.com/SaylorInnovations/open-x402-bazaar">github.com/SaylorInnovations/open-x402-bazaar</a></p>
+</main>
+</body>
+</html>
