@@ -1,6 +1,6 @@
-const assert = require('assert');
-const { isPrivateIp, assertPublicHttpsUrl, extractResources } = require('../src/validate');
-const { paginate, acceptsMatch, textMatch } = require('../src/query');
+import assert from 'assert';
+import { isPrivateIp, assertPublicHttpsUrl, extractResources } from '../src/validate.js';
+import { toFtsQuery } from '../src/db.js';
 
 async function main() {
   // --- SSRF guard: private/loopback/link-local ranges ---
@@ -22,6 +22,14 @@ async function main() {
     /private|internal/,
     'localhost must be rejected as private'
   );
+  await assert.rejects(
+    () => assertPublicHttpsUrl('https://169.254.169.254/x402.json'),
+    /private|internal/,
+    'cloud metadata IP literal must be rejected'
+  );
+
+  // Real DNS-over-HTTPS resolution path (network required) — a genuine public domain must pass.
+  await assertPublicHttpsUrl('https://example.com/x402.json');
 
   // --- manifest normalization ---
   const manifest = {
@@ -44,17 +52,10 @@ async function main() {
   assert.throws(() => extractResources({ x402Version: 2 }, 'https://example.com/x.json'), /no paid resources/);
   assert.throws(() => extractResources({ resources: [] }, 'https://example.com/x.json'), /x402Version/);
 
-  // --- query helpers ---
-  const items = Array.from({ length: 25 }, (_, i) => ({ id: i }));
-  assert.strictEqual(paginate(items, { limit: 10, offset: 20 }).length, 5);
-  assert.strictEqual(paginate(items, { limit: 500 }).length, 25, 'limit is capped, not unbounded, but must not drop valid items under the cap');
-  assert.strictEqual(paginate(items, { limit: 500 }).length <= 100, true);
-
-  const r = { resource: 'https://x.com/a', description: 'Solana token price', tags: ['solana'], accepts: [{ scheme: 'exact', network: 'solana:mainnet', payTo: 'abc' }] };
-  assert.strictEqual(textMatch(r, 'solana'), true);
-  assert.strictEqual(textMatch(r, 'nonexistent'), false);
-  assert.strictEqual(acceptsMatch(r, { payTo: 'abc' }), true);
-  assert.strictEqual(acceptsMatch(r, { payTo: 'someone-else' }), false);
+  // --- FTS5 query sanitization: arbitrary input must never be parsed as an FTS5 operator ---
+  assert.strictEqual(toFtsQuery('solana price'), '"solana" "price"');
+  assert.strictEqual(toFtsQuery('say "hi" -x'), '"say" """hi""" "-x"');
+  assert.strictEqual(toFtsQuery('NEAR(a b)'), '"NEAR(a" "b)"');
 
   console.log('ok — all smoke tests passed');
 }

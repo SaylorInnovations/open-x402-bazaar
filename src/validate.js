@@ -1,14 +1,19 @@
-const dns = require('dns').promises;
-const net = require('net');
-
 const FETCH_TIMEOUT_MS = 8000;
 const MAX_MANIFEST_BYTES = 2 * 1024 * 1024;
 
 // Arrays commonly used across real x402 manifests (Coinbase's own examples vary the key name).
 const RESOURCE_ARRAY_KEYS = ['resources', 'liveDataEndpoints', 'endpoints'];
 
+function isIPv4Literal(host) {
+  return /^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$/.test(host);
+}
+
+function isIPv6Literal(host) {
+  return host.includes(':');
+}
+
 function isPrivateIp(ip) {
-  if (net.isIPv4(ip)) {
+  if (isIPv4Literal(ip)) {
     const [a, b] = ip.split('.').map(Number);
     if (a === 127) return true; // loopback
     if (a === 10) return true; // RFC1918
@@ -18,21 +23,39 @@ function isPrivateIp(ip) {
     if (a === 0) return true;
     return false;
   }
-  if (net.isIPv6(ip)) {
+  if (isIPv6Literal(ip)) {
     const low = ip.toLowerCase();
-    if (low === '::1') return true; // loopback
+    if (low === '::1' || low === '::') return true; // loopback / unspecified
     if (low.startsWith('fe80:')) return true; // link-local
     if (low.startsWith('fc') || low.startsWith('fd')) return true; // unique local
     if (low.startsWith('::ffff:')) return isPrivateIp(low.slice(7)); // IPv4-mapped
     return false;
   }
-  return true; // unknown shape — treat as unsafe
+  return true; // unrecognized shape — treat as unsafe
+}
+
+// Cloudflare Workers have no native DNS resolution API, so hostnames are resolved via
+// Cloudflare's own DNS-over-HTTPS endpoint (just an ordinary fetch) instead of Node's `dns`.
+async function resolveHostIps(hostname) {
+  const queries = ['A', 'AAAA'].map((type) =>
+    fetch(`https://cloudflare-dns.com/dns-query?name=${encodeURIComponent(hostname)}&type=${type}`, {
+      headers: { accept: 'application/dns-json' },
+    })
+      .then((r) => (r.ok ? r.json() : { Answer: [] }))
+      .catch(() => ({ Answer: [] }))
+  );
+  const [a, aaaa] = await Promise.all(queries);
+  const answers = [...(a.Answer || []), ...(aaaa.Answer || [])];
+  return answers.filter((r) => r.type === 1 || r.type === 28).map((r) => r.data);
 }
 
 /**
- * Resolves the hostname and rejects anything pointing at loopback/private/link-local
- * space before a fetch is ever made, so a submitted manifest URL can't be used to probe
- * internal infrastructure or cloud metadata endpoints (classic SSRF via user-supplied URLs).
+ * Rejects anything pointing at loopback/private/link-local space before a fetch is ever
+ * made, so a submitted manifest URL can't be used to probe internal infrastructure or
+ * cloud metadata endpoints (classic SSRF via user-supplied URLs). IP-literal hostnames are
+ * checked directly; domain names are resolved via DNS-over-HTTPS first. This is a
+ * point-in-time check — it doesn't fully close a DNS-rebinding race against the later
+ * fetch — but it stops the overwhelmingly common case of a direct private-IP/localhost target.
  */
 async function assertPublicHttpsUrl(rawUrl) {
   let url;
@@ -44,11 +67,17 @@ async function assertPublicHttpsUrl(rawUrl) {
   if (url.protocol !== 'https:') throw new Error('manifestUrl must be https');
   if (url.username || url.password) throw new Error('manifestUrl must not contain credentials');
 
-  const records = await dns.lookup(url.hostname, { all: true }).catch(() => []);
-  if (records.length === 0) throw new Error('manifestUrl hostname does not resolve');
-  if (records.some((r) => isPrivateIp(r.address))) {
+  if (url.hostname === 'localhost' || url.hostname.endsWith('.localhost')) {
     throw new Error('manifestUrl resolves to a private/internal address');
   }
+  if (isIPv4Literal(url.hostname) || isIPv6Literal(url.hostname)) {
+    if (isPrivateIp(url.hostname)) throw new Error('manifestUrl resolves to a private/internal address');
+    return url;
+  }
+
+  const ips = await resolveHostIps(url.hostname);
+  if (ips.length === 0) throw new Error('manifestUrl hostname does not resolve');
+  if (ips.some(isPrivateIp)) throw new Error('manifestUrl resolves to a private/internal address');
   return url;
 }
 
@@ -76,7 +105,9 @@ async function fetchManifest(manifestUrl) {
     throw new Error('manifest too large');
   }
   const text = await res.text();
-  if (Buffer.byteLength(text, 'utf8') > MAX_MANIFEST_BYTES) throw new Error('manifest too large');
+  if (new TextEncoder().encode(text).length > MAX_MANIFEST_BYTES) {
+    throw new Error('manifest too large');
+  }
 
   let json;
   try {
@@ -132,4 +163,4 @@ function extractResources(manifest, sourceManifestUrl) {
   }));
 }
 
-module.exports = { assertPublicHttpsUrl, fetchManifest, extractResources, isPrivateIp };
+export { assertPublicHttpsUrl, fetchManifest, extractResources, isPrivateIp, resolveHostIps };

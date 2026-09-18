@@ -36,9 +36,18 @@ No API key required for any read endpoint — same as Coinbase's.
 
 ## Architecture
 
-- **Storage**: [Netlify Blobs](https://docs.netlify.com/blobs/overview/) — no external database or account needed since this deploys on Netlify already. One blob per source host, keyed by hostname.
-- **Ingestion**: pull-based. Sellers submit a manifest URL; nothing is pushed. A manifest is re-normalized into a flat resource list on every submission.
-- **Zero dependencies beyond `@netlify/blobs`.**
+- **Runtime**: [Cloudflare Pages Functions](https://developers.cloudflare.com/pages/functions/) (Workers runtime).
+- **Storage**: [D1](https://developers.cloudflare.com/d1/) (SQLite), normalized across `listings` / `resources` / `resource_accepts`, plus an FTS5 virtual table for real keyword search — not just JS-array filtering.
+- **Ingestion**: pull-based. Sellers submit a manifest URL; nothing is pushed. Re-submitting the same manifest URL deletes and re-inserts its resources (a full refresh, not a merge).
+- **Zero runtime dependencies** — `wrangler` is dev-only, for local D1/Pages tooling.
+
+### Local development
+
+```bash
+npm install
+npm run db:init   # applies schema.sql to a local D1 database
+npm run dev        # wrangler pages dev, with the D1 binding wired up
+```
 
 ## Security notes
 
