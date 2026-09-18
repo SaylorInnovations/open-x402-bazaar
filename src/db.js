@@ -47,6 +47,14 @@ async function attachAccepts(env, rows) {
     tags: JSON.parse(r.tags || '[]'),
     sourceHost: r.listing_host,
     lastUpdated: r.last_updated,
+    // Extra fields beyond CDP's wire shape — additive, so existing clients that only
+    // read the standard fields are unaffected. Trust/popularity signal for agents
+    // choosing between many permissionless (unverified) listings.
+    quality: {
+      calls30d: r.calls_30d ?? undefined,
+      uniquePayers30d: r.unique_payers_30d ?? undefined,
+      lastCalledAt: r.last_called_at ?? undefined,
+    },
   }));
 }
 
@@ -67,11 +75,11 @@ async function deleteListing(env, host) {
 // Every insert is batched (one D1 round-trip per batch, not per row) — a manifest with
 // dozens of resources/accepts previously meant dozens of sequential round-trips, which
 // took 20-30s against local D1 and would add real latency/cost against the network too.
-async function upsertListing(env, { host, sourceManifestUrl, manifestName, submittedAt, resources }) {
+async function upsertListing(env, { host, sourceManifestUrl, manifestName, submittedAt, resources, source = 'submitted' }) {
   await deleteListing(env, host);
   await env.DB
-    .prepare('INSERT INTO listings (host, source_manifest_url, manifest_name, submitted_at) VALUES (?, ?, ?, ?)')
-    .bind(host, sourceManifestUrl, manifestName || host, submittedAt)
+    .prepare('INSERT INTO listings (host, source_manifest_url, manifest_name, submitted_at, source) VALUES (?, ?, ?, ?, ?)')
+    .bind(host, sourceManifestUrl, manifestName || host, submittedAt, source)
     .run();
 
   if (resources.length === 0) return;
@@ -123,7 +131,7 @@ async function searchResources(env, { query, network, asset, scheme, payTo, maxU
     params.push(toFtsQuery(query));
   }
 
-  let sql = `SELECT DISTINCT r.id, r.resource_url, r.description, r.x402_version, r.output_schema, r.tags, r.last_updated, r.listing_host
+  let sql = `SELECT DISTINCT r.id, r.resource_url, r.description, r.x402_version, r.output_schema, r.tags, r.last_updated, r.listing_host, r.calls_30d, r.unique_payers_30d, r.last_called_at
              FROM ${from} JOIN resource_accepts a ON a.resource_id = r.id`;
 
   if (network) { conditions.push('a.network = ?'); params.push(network); }
@@ -137,6 +145,10 @@ async function searchResources(env, { query, network, asset, scheme, payTo, maxU
   }
 
   if (conditions.length) sql += ' WHERE ' + conditions.join(' AND ');
+  // Text queries rank by FTS5 match quality (bm25) first; filter-only queries rank
+  // by 30-day call volume, so the busiest (most likely still-live, least-likely-spam)
+  // resources surface first among otherwise-equal matches.
+  sql += query ? ' ORDER BY bm25(resources_fts)' : ' ORDER BY r.calls_30d DESC NULLS LAST, r.id';
   sql += ' LIMIT ?';
   params.push(lim);
 
@@ -149,7 +161,7 @@ async function listResources(env, { limit, offset }) {
   const off = Math.max(Number(offset) || 0, 0);
 
   const { results } = await env.DB
-    .prepare('SELECT id, resource_url, description, x402_version, output_schema, tags, last_updated, listing_host FROM resources ORDER BY id LIMIT ? OFFSET ?')
+    .prepare('SELECT id, resource_url, description, x402_version, output_schema, tags, last_updated, listing_host, calls_30d, unique_payers_30d, last_called_at FROM resources ORDER BY calls_30d DESC NULLS LAST, id LIMIT ? OFFSET ?')
     .bind(lim, off)
     .all();
   const { total } = await env.DB.prepare('SELECT COUNT(*) as total FROM resources').first();
@@ -160,12 +172,75 @@ async function listResources(env, { limit, offset }) {
 async function merchantResources(env, payTo) {
   const { results } = await env.DB
     .prepare(
-      `SELECT DISTINCT r.id, r.resource_url, r.description, r.x402_version, r.output_schema, r.tags, r.last_updated, r.listing_host
-       FROM resources r JOIN resource_accepts a ON a.resource_id = r.id WHERE a.pay_to = ?`
+      `SELECT DISTINCT r.id, r.resource_url, r.description, r.x402_version, r.output_schema, r.tags, r.last_updated, r.listing_host, r.calls_30d, r.unique_payers_30d, r.last_called_at
+       FROM resources r JOIN resource_accepts a ON a.resource_id = r.id WHERE a.pay_to = ?
+       ORDER BY r.calls_30d DESC NULLS LAST, r.id`
     )
     .bind(payTo)
     .all();
   return attachAccepts(env, results);
 }
 
-export { upsertListing, deleteListing, searchResources, listResources, merchantResources, toFtsQuery };
+async function getStats(env) {
+  const [totals, byNetwork, bySource] = await Promise.all([
+    env.DB
+      .prepare(
+        `SELECT
+           (SELECT COUNT(*) FROM listings) AS listings,
+           (SELECT COUNT(*) FROM resources) AS resources,
+           (SELECT COUNT(*) FROM resource_accepts) AS accepts,
+           (SELECT COUNT(DISTINCT pay_to) FROM resource_accepts) AS merchants,
+           (SELECT SUM(calls_30d) FROM resources) AS calls30d`
+      )
+      .first(),
+    env.DB.prepare('SELECT network, COUNT(*) AS count FROM resource_accepts GROUP BY network ORDER BY count DESC').all(),
+    env.DB.prepare('SELECT source, COUNT(*) AS count FROM listings GROUP BY source').all(),
+  ]);
+
+  return {
+    listings: totals.listings,
+    resources: totals.resources,
+    accepts: totals.accepts,
+    merchants: totals.merchants,
+    calls30d: totals.calls30d || 0,
+    byNetwork: Object.fromEntries(byNetwork.results.map((r) => [r.network, r.count])),
+    bySource: Object.fromEntries(bySource.results.map((r) => [r.source, r.count])),
+  };
+}
+
+async function isRateLimited(env, { clientIp, maxPerHour = 20, maxPerDay = 60 }) {
+  const now = Date.now();
+  const hourAgo = new Date(now - 60 * 60 * 1000).toISOString();
+  const dayAgo = new Date(now - 24 * 60 * 60 * 1000).toISOString();
+
+  const { count: hourCount } = await env.DB
+    .prepare('SELECT COUNT(*) AS count FROM submission_log WHERE client_ip = ? AND submitted_at >= ?')
+    .bind(clientIp, hourAgo)
+    .first();
+  if (hourCount >= maxPerHour) return true;
+
+  const { count: dayCount } = await env.DB
+    .prepare('SELECT COUNT(*) AS count FROM submission_log WHERE client_ip = ? AND submitted_at >= ?')
+    .bind(clientIp, dayAgo)
+    .first();
+  return dayCount >= maxPerDay;
+}
+
+async function logSubmission(env, { clientIp, host }) {
+  await env.DB
+    .prepare('INSERT INTO submission_log (client_ip, host, submitted_at) VALUES (?, ?, ?)')
+    .bind(clientIp, host, new Date().toISOString())
+    .run();
+}
+
+export {
+  upsertListing,
+  deleteListing,
+  searchResources,
+  listResources,
+  merchantResources,
+  getStats,
+  isRateLimited,
+  logSubmission,
+  toFtsQuery,
+};

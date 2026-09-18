@@ -1,0 +1,191 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "open-x402-bazaar",
+    "version": "0.2.0",
+    "description": "Open, permissionless discovery layer for x402-payable resources. No account or API key required for any read endpoint. Wire-compatible with Coinbase's CDP x402 Bazaar API."
+  },
+  "servers": [{ "url": "/" }],
+  "paths": {
+    "/submit": {
+      "post": {
+        "operationId": "submitListing",
+        "summary": "List (or refresh) a resource by its x402 manifest URL",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["manifestUrl"],
+                "properties": {
+                  "manifestUrl": {
+                    "type": "string",
+                    "format": "uri",
+                    "description": "HTTPS URL of a public x402 manifest (e.g. /.well-known/x402.json)."
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Listed successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "ok": { "type": "boolean" },
+                    "host": { "type": "string" },
+                    "resourceCount": { "type": "integer" }
+                  }
+                }
+              }
+            }
+          },
+          "422": { "description": "Manifest fetch or validation failed" },
+          "429": { "description": "Rate limit exceeded" }
+        }
+      }
+    },
+    "/discovery/search": {
+      "get": {
+        "operationId": "searchResources",
+        "summary": "Keyword and filter search across all listed resources",
+        "parameters": [
+          { "name": "query", "in": "query", "schema": { "type": "string" }, "description": "Free-text keyword search" },
+          { "name": "network", "in": "query", "schema": { "type": "string" }, "description": "e.g. eip155:8453, solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp" },
+          { "name": "asset", "in": "query", "schema": { "type": "string" } },
+          { "name": "scheme", "in": "query", "schema": { "type": "string" } },
+          { "name": "payTo", "in": "query", "schema": { "type": "string" } },
+          { "name": "urlSubstring", "in": "query", "schema": { "type": "string" } },
+          { "name": "maxUsdPrice", "in": "query", "schema": { "type": "number" } },
+          { "name": "limit", "in": "query", "schema": { "type": "integer", "default": 20, "maximum": 100 } }
+        ],
+        "responses": {
+          "200": {
+            "description": "Matching resources",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/SearchResponse" } } }
+          }
+        }
+      }
+    },
+    "/discovery/resources": {
+      "get": {
+        "operationId": "listResources",
+        "summary": "Paginated listing of every indexed resource, ranked by 30-day call volume",
+        "parameters": [
+          { "name": "limit", "in": "query", "schema": { "type": "integer", "default": 20, "maximum": 100 } },
+          { "name": "offset", "in": "query", "schema": { "type": "integer", "default": 0 } }
+        ],
+        "responses": {
+          "200": {
+            "description": "A page of resources",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ResourcesPage" } } }
+          }
+        }
+      }
+    },
+    "/discovery/merchant": {
+      "get": {
+        "operationId": "merchantResources",
+        "summary": "All resources that pay a specific address",
+        "parameters": [
+          { "name": "payTo", "in": "query", "required": true, "schema": { "type": "string" } }
+        ],
+        "responses": {
+          "200": {
+            "description": "Resources paying this address",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/SearchResponse" } } }
+          },
+          "400": { "description": "Missing payTo parameter" }
+        }
+      }
+    },
+    "/discovery/stats": {
+      "get": {
+        "operationId": "getStats",
+        "summary": "Catalog-wide totals: listings, resources, accepts, merchants, calls, network breakdown",
+        "responses": {
+          "200": {
+            "description": "Aggregate stats",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Stats" } } }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "Accepts": {
+        "type": "object",
+        "properties": {
+          "scheme": { "type": "string" },
+          "network": { "type": "string" },
+          "payTo": { "type": "string" },
+          "asset": { "type": "string" },
+          "amount": { "type": "string" },
+          "amountUsd": { "type": "number" },
+          "maxTimeoutSeconds": { "type": "integer" }
+        }
+      },
+      "Quality": {
+        "type": "object",
+        "description": "Additive trust/popularity signal, not part of the base x402 wire shape.",
+        "properties": {
+          "calls30d": { "type": "integer" },
+          "uniquePayers30d": { "type": "integer" },
+          "lastCalledAt": { "type": "string", "format": "date-time" }
+        }
+      },
+      "Resource": {
+        "type": "object",
+        "properties": {
+          "resource": { "type": "string", "format": "uri" },
+          "description": { "type": "string" },
+          "type": { "type": "string" },
+          "x402Version": { "type": "integer" },
+          "accepts": { "type": "array", "items": { "$ref": "#/components/schemas/Accepts" } },
+          "outputSchema": { "type": "object" },
+          "tags": { "type": "array", "items": { "type": "string" } },
+          "sourceHost": { "type": "string" },
+          "lastUpdated": { "type": "string", "format": "date-time" },
+          "quality": { "$ref": "#/components/schemas/Quality" }
+        }
+      },
+      "SearchResponse": {
+        "type": "object",
+        "properties": {
+          "x402Version": { "type": "integer" },
+          "resources": { "type": "array", "items": { "$ref": "#/components/schemas/Resource" } },
+          "partialResults": { "type": "boolean" },
+          "searchMethod": { "type": "string" }
+        }
+      },
+      "ResourcesPage": {
+        "type": "object",
+        "properties": {
+          "x402Version": { "type": "integer" },
+          "resources": { "type": "array", "items": { "$ref": "#/components/schemas/Resource" } },
+          "total": { "type": "integer" },
+          "limit": { "type": "integer" },
+          "offset": { "type": "integer" }
+        }
+      },
+      "Stats": {
+        "type": "object",
+        "properties": {
+          "listings": { "type": "integer" },
+          "resources": { "type": "integer" },
+          "accepts": { "type": "integer" },
+          "merchants": { "type": "integer" },
+          "calls30d": { "type": "integer" },
+          "byNetwork": { "type": "object", "additionalProperties": { "type": "integer" } },
+          "bySource": { "type": "object", "additionalProperties": { "type": "integer" } }
+        }
+      }
+    }
+  }
+}

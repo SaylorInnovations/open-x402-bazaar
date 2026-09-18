@@ -1,5 +1,5 @@
 import { fetchManifest, extractResources } from '../src/validate.js';
-import { upsertListing } from '../src/db.js';
+import { upsertListing, isRateLimited, logSubmission } from '../src/db.js';
 
 const CORS = {
   'access-control-allow-origin': '*',
@@ -19,6 +19,11 @@ export async function onRequestOptions() {
 }
 
 export async function onRequestPost({ request, env }) {
+  const clientIp = request.headers.get('cf-connecting-ip') || 'unknown';
+  if (await isRateLimited(env, { clientIp })) {
+    return json({ error: 'rate limit exceeded — try again later' }, 429);
+  }
+
   let body;
   try {
     body = await request.json();
@@ -31,6 +36,10 @@ export async function onRequestPost({ request, env }) {
     return json({ error: 'manifestUrl is required' }, 400);
   }
 
+  // Logged before the (expensive, outbound) fetch — every attempt counts against the
+  // limit, not just successful ones, so repeated failing probes can't dodge it.
+  await logSubmission(env, { clientIp, host: manifestUrl });
+
   try {
     const manifest = await fetchManifest(manifestUrl);
     const resources = extractResources(manifest, manifestUrl);
@@ -42,6 +51,7 @@ export async function onRequestPost({ request, env }) {
       manifestName: manifest.name || host,
       submittedAt: new Date().toISOString(),
       resources,
+      source: 'submitted',
     });
 
     return json({ ok: true, host, resourceCount: resources.length }, 200);

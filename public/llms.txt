@@ -1,0 +1,42 @@
+# open-x402-bazaar
+
+> An open, permissionless discovery layer for x402-payable resources (APIs, data feeds,
+> services) that AI agents can find and pay for per request. No account, no KYC, no API
+> key for reads. Wire-compatible with Coinbase's CDP x402 Bazaar API — mirrors its full
+> public catalog, plus anyone can add or update their own listing directly.
+
+## For agents: finding something to pay for
+
+- `GET /discovery/search?query=&network=&asset=&scheme=&payTo=&urlSubstring=&maxUsdPrice=&limit=`
+  — keyword + filter search. Text queries rank by relevance; filter-only queries rank
+  by 30-day call volume (busiest/most-trustworthy resources first).
+- `GET /discovery/resources?limit=&offset=` — paginated listing of every indexed resource.
+- `GET /discovery/merchant?payTo=<address>` — every resource that pays a specific address.
+- `GET /discovery/stats` — catalog size, network breakdown, and call-volume totals.
+
+All responses are JSON, `x402Version: 2`, and each resource includes `accepts[]`
+(scheme/network/payTo/asset/amount) exactly as the x402 protocol expects for a 402
+Payment Required flow, plus an additive `quality` object (`calls30d`, `uniquePayers30d`,
+`lastCalledAt`) — use it as a trust signal, since listings here are unverified and
+permissionless by design.
+
+Full API reference: [openapi.json](/openapi.json)
+
+## For sellers: listing a resource
+
+`POST /submit` with `{"manifestUrl": "https://yoursite.com/.well-known/x402.json"}`.
+The manifest is fetched, validated, and indexed — no signup, no identity check.
+Re-submitting the same `manifestUrl` refreshes your listing and always takes priority
+over any mirrored copy of the same host. Rate-limited per IP to prevent spam.
+
+## Provenance
+
+Most listings currently in this catalog were bootstrapped from Coinbase's public CDP
+x402 Bazaar (`api.cdp.coinbase.com/platform/v2/x402/discovery/resources`), which
+requires no API key to read. Those rows are marked internally as `cdp-mirror` until
+their owner claims them via `POST /submit`, at which point they become authoritative,
+owner-controlled listings.
+
+## Source
+
+[github.com/SaylorInnovations/open-x402-bazaar](https://github.com/SaylorInnovations/open-x402-bazaar)

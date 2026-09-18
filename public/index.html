@@ -21,24 +21,35 @@
 </head>
 <body>
 <main>
-  <span class="tag">pre-alpha</span>
+  <span class="tag">early</span>
   <h1>open-x402-bazaar</h1>
-  <p>An open, permissionless discovery layer for <a href="https://x402.org">x402</a>-payable resources — APIs, data feeds, and services AI agents can find and pay for per request. No account, no KYC. Submit your manifest URL and you're listed.</p>
+  <p>An open, permissionless discovery layer for <a href="https://x402.org">x402</a>-payable resources — APIs, data feeds, and services AI agents can find and pay for per request. No account, no KYC. Submit your manifest URL and you're listed. Seeded with a full mirror of Coinbase's public CDP Bazaar catalog, wire-compatible with its API.</p>
+  <p id="stats-line" class="tag" style="display:block;width:fit-content;margin:.6em 0;"></p>
 
   <h2>List your service</h2>
   <pre>curl -X POST /submit \
   -H "content-type: application/json" \
   -d '{"manifestUrl": "https://yoursite.com/.well-known/x402.json"}'</pre>
+  <p>If your host is already indexed from the Coinbase mirror, submitting your own manifest claims it — your listing always wins over the mirrored copy.</p>
 
   <h2>Find a service (agents)</h2>
   <table>
     <tr><th>Endpoint</th><th>Purpose</th></tr>
-    <tr><td><code>GET /discovery/search?query=</code></td><td>Keyword/filter search</td></tr>
-    <tr><td><code>GET /discovery/resources</code></td><td>Paginated full listing</td></tr>
+    <tr><td><code>GET /discovery/search?query=</code></td><td>Keyword/filter search, ranked by relevance then popularity</td></tr>
+    <tr><td><code>GET /discovery/resources</code></td><td>Paginated full listing, ranked by 30-day call volume</td></tr>
     <tr><td><code>GET /discovery/merchant?payTo=</code></td><td>All resources paying one address</td></tr>
+    <tr><td><code>GET /discovery/stats</code></td><td>Catalog totals and network breakdown</td></tr>
   </table>
+  <p>Machine-readable docs: <a href="/llms.txt">llms.txt</a> · <a href="/openapi.json">openapi.json</a></p>
 
   <p>Source, docs, and roadmap: <a href="https://github.com/SaylorInnovations/open-x402-bazaar">github.com/SaylorInnovations/open-x402-bazaar</a></p>
+
+  <script>
+    fetch('/discovery/stats').then((r) => r.json()).then((s) => {
+      const el = document.getElementById('stats-line');
+      if (el) el.textContent = `${s.resources.toLocaleString()} resources · ${s.merchants.toLocaleString()} merchants · ${s.calls30d.toLocaleString()} calls in the last 30 days`;
+    }).catch(() => {});
+  </script>
 </main>
 </body>
 </html>

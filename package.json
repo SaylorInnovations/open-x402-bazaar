@@ -10,7 +10,11 @@
   "scripts": {
     "test": "node test/smoke.test.js",
     "db:init": "wrangler d1 execute open-x402-bazaar --local --file=schema.sql",
-    "dev": "wrangler pages dev public --compatibility-date=2026-01-01"
+    "db:init:remote": "wrangler d1 execute open-x402-bazaar --remote --file=schema.sql",
+    "db:migrate:remote": "wrangler d1 execute open-x402-bazaar --remote --file=migrations/0002_source_and_quality.sql",
+    "dev": "wrangler pages dev public --compatibility-date=2026-01-01",
+    "seed:cdp-bazaar": "node scripts/import-cdp-bazaar.mjs --local",
+    "seed:cdp-bazaar:remote": "node scripts/import-cdp-bazaar.mjs --remote --apply"
   },
   "keywords": [
     "x402",

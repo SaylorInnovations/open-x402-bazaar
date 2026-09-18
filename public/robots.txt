@@ -1,0 +1,5 @@
+User-agent: *
+Allow: /
+
+# Machine-readable summary for AI agents/LLMs: /llms.txt
+# API reference: /openapi.json

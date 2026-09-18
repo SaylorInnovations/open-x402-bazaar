@@ -2,7 +2,11 @@ CREATE TABLE IF NOT EXISTS listings (
   host TEXT PRIMARY KEY,
   source_manifest_url TEXT NOT NULL,
   manifest_name TEXT,
-  submitted_at TEXT NOT NULL
+  submitted_at TEXT NOT NULL,
+  -- 'submitted' = owner proved control via POST /submit fetching their own manifest.
+  -- 'cdp-mirror' = bootstrapped from Coinbase's public Bazaar discovery API.
+  -- A 'submitted' listing always wins: the mirror importer never overwrites one.
+  source TEXT NOT NULL DEFAULT 'submitted'
 );
 
 CREATE TABLE IF NOT EXISTS resources (
@@ -14,6 +18,11 @@ CREATE TABLE IF NOT EXISTS resources (
   output_schema TEXT,
   tags TEXT NOT NULL DEFAULT '[]',
   last_updated TEXT NOT NULL,
+  -- Usage/trust signals. Populated from CDP's Bazaar for mirrored listings; null until
+  -- this deployment does its own call analytics for directly-submitted ones.
+  calls_30d INTEGER,
+  unique_payers_30d INTEGER,
+  last_called_at TEXT,
   FOREIGN KEY (listing_host) REFERENCES listings(host)
 );
 
@@ -35,6 +44,18 @@ CREATE INDEX IF NOT EXISTS idx_accepts_resource_id ON resource_accepts(resource_
 CREATE INDEX IF NOT EXISTS idx_accepts_pay_to ON resource_accepts(pay_to);
 CREATE INDEX IF NOT EXISTS idx_accepts_network ON resource_accepts(network);
 CREATE INDEX IF NOT EXISTS idx_accepts_asset ON resource_accepts(asset);
+CREATE INDEX IF NOT EXISTS idx_resources_calls_30d ON resources(calls_30d);
+
+-- Rate limiting for POST /submit: one row per accepted submission, keyed by the
+-- caller's IP. Old rows are pruned lazily (see submit.js) rather than by a cron.
+CREATE TABLE IF NOT EXISTS submission_log (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  client_ip TEXT NOT NULL,
+  host TEXT NOT NULL,
+  submitted_at TEXT NOT NULL
+);
+
+CREATE INDEX IF NOT EXISTS idx_submission_log_ip_time ON submission_log(client_ip, submitted_at);
 
 -- External-content FTS5 index: kept in sync with `resources` by the triggers below
 -- rather than duplicating the text, since resources are replaced (not updated) on resubmission.
