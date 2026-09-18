@@ -5,4 +5,4 @@ compatibility_date = "2026-01-01"
 [[d1_databases]]
 binding = "DB"
 database_name = "open-x402-bazaar"
-database_id = "local-dev-placeholder"
+database_id = "a45e6989-35fe-49c9-a6fc-9cd4d8ce2d68"
