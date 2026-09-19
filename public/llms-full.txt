@@ -101,6 +101,14 @@ Most of the catalog was bootstrapped from Coinbase's public CDP x402 Bazaar
 requires no API key to read. Saylor Innovations' own research, security and
 Solana-intelligence APIs are listed as verified, owner-operated resources.
 
+## Guides
+
+/guides lists 11 in-depth, code-backed guides — the full treatment of topics /docs
+only summarizes: what x402/MCP/A2A are and how they compare, how to pay for or
+build x402 endpoints, how to sell an API to agents, how agents discover APIs and
+other agents, and what agentic commerce actually requires. Each has a plain-text
+machine twin at /guides/{slug}.json; the full index is at /guides.json.
+
 ## Self-hosting
 
 Open source, MIT licensed, zero runtime dependencies beyond Cloudflare Pages

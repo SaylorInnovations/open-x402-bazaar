@@ -47,6 +47,12 @@ which describes Agent Bazaar's own discovery surface):
 `/categories`, `/networks` and `/protocols` are human-facing hub pages (with live
 data) for the same underlying catalog — useful starting points, not separate data.
 
+## Guides
+
+`/guides` — 11 in-depth, code-backed guides on x402, MCP, A2A and agentic commerce
+(what each protocol is, how to build/sell against it, protocol comparisons). Each
+has a plain-text machine twin at `/guides/{slug}.json`. Full list: [/guides.json](/guides.json).
+
 ## For sellers: listing a resource
 
 `POST /submit` with `{"manifestUrl": "https://yoursite.com/.well-known/x402.json"}`.

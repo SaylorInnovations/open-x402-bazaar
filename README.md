@@ -96,6 +96,7 @@ Every resource has a permanent, crawlable, server-rendered URL — not a client-
 | `/agents/{slug}` | A2A agent detail page — skills, provider, protocol version, card URL |
 | `/publish` | How to list a resource as a seller |
 | `/docs` | What x402/MCP/A2A are, how agent payments work, self-hosting |
+| `/guides`, `/guides/{slug}` | 11 in-depth, code-backed guides — full-length versions of the `/docs` FAQ answers, plus provider/agent-builder how-tos. `.json` twin per guide |
 | `/categories`, `/categories/{type}` | Browse by resource type (populated as providers set one — sparse for the mirrored bulk of the catalog, which doesn't) |
 | `/networks`, `/networks/{network}` | Browse by CAIP-2 network — populated for every resource, since it comes from `accepts[]` |
 | `/protocols`, `/protocols/{x402,mcp,a2a}` | What each protocol is and how Agent Bazaar uses it, with live stats |
@@ -137,7 +138,7 @@ If you already have a deployed D1 database predating later schema changes, apply
 - **Third-party MCP tool directory.** `/mcp` is now a real, working MCP server over *this* catalog (see above), but it doesn't yet proxy or list *other* MCP servers with their own detail pages the way `/resources/{slug}` does for x402 resources.
 - ~~A2A agent registry~~ — done. `/discovery/agents`, `POST /submit-agent`, and `/agents/{slug}` list a directory of *other* agents' cards (separate from `/.well-known/agent-card.json`, which is Agent Bazaar's own). Not yet built within it: liveness checks on registered agents (only resources get probed today), and no reputation/trust signal beyond "registered."
 - **Automated provider ingestion.** Publishing today is manifest-URL only; importing directly from an OpenAPI document, MCP schema, or Git repo is not yet built.
-- **Guides/content library.** `/docs` is one consolidated page today, not the full set of individually-indexed how-to guides a mature content strategy would want.
+- ~~Guides/content library~~ — done. `/guides` has 11 in-depth, code-backed guides (`src/guides.js`) covering x402, MCP, A2A, agentic commerce, and provider/agent-builder how-tos — the full-length treatment of what `/docs` only summarizes. Each has a machine-readable `.json` twin. More can be added anytime; nothing else needs to change beyond appending to `GUIDES`.
 - **Trust badges beyond "verified owner."** Endpoint/schema verification with live uptime checks isn't built; today "verified" means only "owner proved control via POST /submit."
 - **Federation with the x402 Foundation's discovery working group** (`x402-foundation/wg-domain-discovery`) — the goal is to align with an open standard rather than become a second walled garden.
 

@@ -2,11 +2,13 @@
 // "thousands of near-identical spam pages" this architecture is supposed to avoid.
 // Indexed: static pages, every provider, and resources from verified (owner-submitted)
 // providers. The full catalog remains crawlable by agents via /discovery/resources.
-const STATIC_PATHS = ['/', '/agents', '/publish', '/docs', '/mcp', '/categories', '/networks', '/protocols', '/protocols/x402', '/protocols/mcp', '/protocols/a2a'];
+import { guideSummaries } from '../src/guides.js';
+
+const STATIC_PATHS = ['/', '/agents', '/publish', '/docs', '/guides', '/mcp', '/categories', '/networks', '/protocols', '/protocols/x402', '/protocols/mcp', '/protocols/a2a'];
 
 export async function onRequestGet({ env }) {
   const base = 'https://bazaar.saylorinnovations.com';
-  const urls = [...STATIC_PATHS];
+  const urls = [...STATIC_PATHS, ...guideSummaries().map((g) => `/guides/${g.slug}`)];
 
   const { results: providers } = await env.DB.prepare("SELECT host FROM listings ORDER BY host").all();
   for (const p of providers) urls.push(`/providers/${p.host}`);

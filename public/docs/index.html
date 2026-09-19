@@ -31,6 +31,7 @@
       <a href="/#explore">Explore</a>
       <a href="/publish">Publish</a>
       <a href="/agents">Agents</a>
+      <a href="/guides">Guides</a>
       <a href="/docs">Docs</a>
       <a href="https://github.com/SaylorInnovations/open-x402-bazaar">GitHub</a>
     </nav>
@@ -44,6 +45,7 @@
   <section class="block" style="border-top:none;">
     <h2 id="what">What is an AI agent marketplace?</h2>
     <p style="color:var(--silver);">A catalog of <strong>APIs</strong>, <strong>MCP tools</strong>, datasets and agent services that autonomous software — not only human developers — can search, evaluate and pay for programmatically. Humans browse marketplaces by scrolling and reading; agents need every listing to carry structured fields (price, schema, payment method, protocol) they can parse without a human explaining it. Agent Bazaar is built to serve both at once: the same underlying catalog powers the website you're reading and the <code>/discovery</code> API an agent calls directly.</p>
+    <p style="color:var(--silver-soft);font-size:0.88rem;">Full guide: <a href="/guides/what-is-an-ai-agent-marketplace">What Is an AI Agent Marketplace?</a></p>
   </section>
 
   <section class="block">
@@ -51,21 +53,25 @@
     <p style="color:var(--silver);">x402 is an open protocol built on the long-dormant HTTP <code>402 Payment Required</code> status code. A server that wants payment for a resource responds <code>402</code> with an <code>accepts[]</code> array — which blockchain network, which asset (usually USDC), which address, and how much. The caller settles that payment and retries the request with proof, receiving the resource in the same exchange. No accounts, no API keys, no subscription billing — <strong>pay-per-request APIs</strong> priced in fractions of a cent, settled in <strong>USDC API payments</strong> or other supported assets.</p>
     <h3 style="font-size:1rem;margin-top:24px;">x402 vs API keys</h3>
     <p style="color:var(--silver);">An API key requires signup, a stored secret, and usually a monthly bill regardless of usage. x402 requires none of that: identity is the payment itself, pricing is exact per call, and there's no account to create, rotate, or leak.</p>
+    <p style="color:var(--silver-soft);font-size:0.88rem;">Full guides: <a href="/guides/what-is-x402">What Is x402?</a> &middot; <a href="/guides/how-do-ai-agents-pay-for-apis">How Do AI Agents Pay for APIs?</a> &middot; <a href="/guides/x402-vs-api-keys">x402 vs. API Keys</a></p>
   </section>
 
   <section class="block">
     <h2 id="mcp">What is MCP?</h2>
     <p style="color:var(--silver);">Model Context Protocol (MCP) standardizes how an AI model or agent discovers the tools a server exposes — their names, descriptions, and input/output schemas — at runtime, rather than being hard-coded ahead of time. Where x402 answers "how do I pay for this," MCP answers "what can this server do and how do I call it." The two compose: an MCP tool can itself be priced with x402. Agent Bazaar runs its own MCP server over this catalog at <a href="/mcp">/mcp</a> (search_resources, get_resource, get_pricing, and more), and Saylor Innovations separately runs a production MCP server over its own APIs at <a href="https://saylorinnovations.com/mcp">saylorinnovations.com/mcp</a>.</p>
+    <p style="color:var(--silver-soft);font-size:0.88rem;">Full guides: <a href="/guides/what-is-mcp-and-how-does-it-work">What Is MCP and How Does It Work?</a> &middot; <a href="/guides/mcp-vs-rest-api-vs-x402">MCP vs. REST vs. x402</a></p>
   </section>
 
   <section class="block">
     <h2 id="discovery">How do agents discover APIs and other agents?</h2>
     <p style="color:var(--silver);">Through structured, deterministic endpoints rather than scraping a web page: <code>GET /discovery/search</code>, <code>GET /discovery/resources</code>, and <code>GET /discovery/merchant</code> return JSON built for parsing, not reading. Each result includes the resource's accepts[], schema, and usage-based quality signal. See <a href="/agents">/agents</a> for a full quickstart with curl, JavaScript, Python and MCP examples.</p>
+    <p style="color:var(--silver-soft);font-size:0.88rem;">Full guides: <a href="/guides/how-do-agents-discover-apis">How Do Agents Discover APIs?</a> &middot; <a href="/guides/how-do-agents-discover-other-agents">How Do Agents Discover Other Agents?</a></p>
   </section>
 
   <section class="block">
     <h2 id="monetize">How to monetize an API with x402</h2>
     <p style="color:var(--silver);">Add an x402 manifest to your API (a JSON document listing your endpoints and how you accept payment), then <a href="/publish">publish it here</a>. Payment settles directly to your own wallet — Agent Bazaar never sits in the payment path, so there's no platform cut on the transaction itself. Discoverability is the value we add: more agents finding your endpoint means more calls, which means more revenue on infrastructure you already run.</p>
+    <p style="color:var(--silver-soft);font-size:0.88rem;">Full guides: <a href="/guides/how-to-sell-an-api-to-ai-agents">How to Sell an API to AI Agents</a> &middot; <a href="/guides/how-to-build-an-x402-endpoint">How to Build an x402 Endpoint</a></p>
   </section>
 
   <section class="block">

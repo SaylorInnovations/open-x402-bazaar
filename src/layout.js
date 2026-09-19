@@ -19,6 +19,7 @@ function header() {
       <a href="/#explore">Explore</a>
       <a href="/publish">Publish</a>
       <a href="/agents">Agents</a>
+      <a href="/guides">Guides</a>
       <a href="/docs">Docs</a>
       <a href="https://github.com/SaylorInnovations/open-x402-bazaar">GitHub</a>
     </nav>
@@ -57,6 +58,7 @@ function footer() {
       <div>
         <h4>Developers</h4>
         <a href="/docs">Documentation</a>
+        <a href="/guides">Guides</a>
         <a href="/llms.txt">llms.txt</a>
         <a href="https://github.com/SaylorInnovations/open-x402-bazaar">Source (GitHub)</a>
         <a href="https://github.com/SaylorInnovations/open-x402-bazaar/blob/master/README.md">Self-hosting</a>

@@ -2,7 +2,7 @@
   "openapi": "3.1.0",
   "info": {
     "title": "Agent Bazaar",
-    "version": "0.4.0",
+    "version": "0.5.0",
     "description": "Open, permissionless marketplace and discovery layer for AI agents — APIs, MCP tools, datasets and x402-payable services. No account or API key required for any read endpoint. Wire-compatible with Coinbase's CDP x402 Bazaar API. Built by Saylor Innovations."
   },
   "servers": [{ "url": "https://bazaar.saylorinnovations.com" }],
@@ -218,6 +218,31 @@
         "summary": "Resources accepting payment on a given CAIP-2 network (paginated)",
         "parameters": [{ "name": "network", "in": "path", "required": true, "schema": { "type": "string" } }, { "name": "offset", "in": "query", "schema": { "type": "integer" } }],
         "responses": { "200": { "description": "HTML page" }, "404": { "description": "No resources on this network" } }
+      }
+    },
+    "/guides": {
+      "get": { "operationId": "listGuides", "summary": "Browse the guides library", "responses": { "200": { "description": "HTML page" } } }
+    },
+    "/guides.json": {
+      "get": { "operationId": "listGuidesJson", "summary": "Machine-readable list of every guide (slug, title, description, category, readMins)", "responses": { "200": { "description": "Guide list", "content": { "application/json": { "schema": { "type": "object", "properties": { "guides": { "type": "array", "items": { "type": "object" } } } } } } } } }
+    },
+    "/guides/{slug}": {
+      "get": {
+        "operationId": "getGuidePage",
+        "summary": "One in-depth guide",
+        "parameters": [{ "name": "slug", "in": "path", "required": true, "schema": { "type": "string" } }],
+        "responses": { "200": { "description": "HTML page" }, "404": { "description": "Not found" } }
+      }
+    },
+    "/guides/{slug}.json": {
+      "get": {
+        "operationId": "getGuideRecord",
+        "summary": "Plain-text machine twin of a guide (HTML stripped)",
+        "parameters": [{ "name": "slug", "in": "path", "required": true, "schema": { "type": "string" } }],
+        "responses": {
+          "200": { "description": "Guide text", "content": { "application/json": { "schema": { "type": "object", "properties": { "slug": { "type": "string" }, "title": { "type": "string" }, "text": { "type": "string" }, "related": { "type": "array", "items": { "type": "string" } } } } } } },
+          "404": { "description": "Not found" }
+        }
       }
     }
   },
