@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Connect Your Agent — Agent Bazaar</title>
+<meta name="description" content="Give your AI agent access to an open marketplace of machine-readable, machine-payable services. Discover, inspect, pay, execute and verify — with curl, JavaScript, Python, MCP and x402 client examples.">
+<link rel="canonical" href="https://bazaar.saylorinnovations.com/agents">
+<link rel="stylesheet" href="/assets/bazaar.css">
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700;800&family=Manrope:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+</head>
+<body>
+<header class="site-nav">
+  <div class="wrap nav-inner">
+    <a href="/" class="brand"><img src="/assets/saylor-logo.jpg" alt="Saylor Innovations"><span>Agent Bazaar <span class="sub">by Saylor Innovations</span></span></a>
+    <nav class="nav-links">
+      <a href="/#explore">Explore</a>
+      <a href="/publish">Publish</a>
+      <a href="/agents">Agents</a>
+      <a href="/docs">Docs</a>
+      <a href="https://github.com/SaylorInnovations/open-x402-bazaar">GitHub</a>
+    </nav>
+  </div>
+</header>
+
+<main class="wrap" style="padding:40px 0 60px;">
+  <span class="eyebrow">FOR AGENTS &amp; AGENT BUILDERS</span>
+  <h1>Connect Your Agent</h1>
+  <p class="lede" style="margin:0 0 40px;max-width:640px;">Give your agent access to an open marketplace of machine-readable services. No account, no API key, no human in the loop.</p>
+
+  <div class="grid-cards" style="grid-template-columns:repeat(5,1fr);margin-bottom:50px;">
+    <div class="card"><h3>1. Discover</h3><p class="desc">Query <code>/discovery/search</code> or <code>/discovery/resources</code> for what you need.</p></div>
+    <div class="card"><h3>2. Inspect</h3><p class="desc">Fetch <code>/resources/{slug}.json</code> for the full schema, price and accepts[].</p></div>
+    <div class="card"><h3>3. Pay</h3><p class="desc">Call the resource; on HTTP 402, pay one of the offered accepts[] entries.</p></div>
+    <div class="card"><h3>4. Execute</h3><p class="desc">Retry the request with your payment proof to receive the resource.</p></div>
+    <div class="card"><h3>5. Verify</h3><p class="desc">Check the response and settlement confirmation before trusting the result.</p></div>
+  </div>
+
+  <section class="block" style="border-top:none;">
+    <h2>Try it free, before paying for anything</h2>
+    <p style="color:var(--silver);">This endpoint requires no payment — use it to confirm connectivity:</p>
+    <div class="codeblock"><button class="copy-btn" onclick="copyBlock(this)">Copy</button><pre>curl "https://bazaar.saylorinnovations.com/discovery/search?query=solana+security&limit=3"</pre></div>
+  </section>
+
+  <section class="block">
+    <h2>curl</h2>
+    <div class="codeblock"><button class="copy-btn" onclick="copyBlock(this)">Copy</button><pre>curl "https://bazaar.saylorinnovations.com/resources/solana-token-security-intelligence.json"
+# -> full resource record: description, accepts[], outputSchema, quality
+
+curl "https://saylorinnovations.com/api/security/&#123;mint&#125;?mint=&lt;address&gt;"
+# -> HTTP 402 with accepts[] describing how to pay
+# retry with a PAYMENT-SIGNATURE header once paid</pre></div>
+  </section>
+
+  <section class="block">
+    <h2>JavaScript / TypeScript</h2>
+    <div class="codeblock"><button class="copy-btn" onclick="copyBlock(this)">Copy</button><pre>const search = await fetch(
+  "https://bazaar.saylorinnovations.com/discovery/search?query=solana+security&limit=3"
+).then(r => r.json());
+
+const resource = search.resources[0];
+const res = await fetch(resource.resource);
+
+if (res.status === 402) {
+  const { accepts } = await res.json();
+  // pay one of accepts[] with your x402 client, then retry with the
+  // resulting payment header (e.g. PAYMENT-SIGNATURE)
+}</pre></div>
+  </section>
+
+  <section class="block">
+    <h2>Python</h2>
+    <div class="codeblock"><button class="copy-btn" onclick="copyBlock(this)">Copy</button><pre>import httpx
+
+search = httpx.get(
+    "https://bazaar.saylorinnovations.com/discovery/search",
+    params={"query": "solana security", "limit": 3},
+).json()
+
+resource = search["resources"][0]
+res = httpx.get(resource["resource"])
+
+if res.status_code == 402:
+    accepts = res.json()["accepts"]
+    # pay one of accepts[] via your x402 client, then retry</pre></div>
+  </section>
+
+  <section class="block">
+    <h2>MCP</h2>
+    <p style="color:var(--silver);max-width:680px;">A full MCP tool server for Agent Bazaar itself is on the roadmap (see <a href="/mcp">/mcp</a>). Saylor Innovations already runs one for its own catalog:</p>
+    <div class="codeblock"><button class="copy-btn" onclick="copyBlock(this)">Copy</button><pre>{
+  "mcpServers": {
+    "saylor-innovations": {
+      "url": "https://saylorinnovations.com/mcp"
+    }
+  }
+}</pre></div>
+  </section>
+
+  <section class="block">
+    <h2>x402 clients</h2>
+    <p style="color:var(--silver);max-width:680px;">Any standard x402 client library works unmodified — every resource here advertises <code>accepts[]</code> in the same shape as the protocol spec (scheme, network, payTo, asset, amount, maxTimeoutSeconds). See <a href="https://github.com/SaylorInnovations/solana-x402">solana-x402</a> for a zero-dependency reference settlement layer.</p>
+  </section>
+
+  <section class="block">
+    <h2>Full reference</h2>
+    <p style="color:var(--silver);">Machine-readable docs: <a href="/llms.txt">llms.txt</a> &middot; <a href="/openapi.json">openapi.json</a> &middot; <a href="/.well-known/agent-card.json">agent-card.json</a> &middot; <a href="/agents.json">agents.json</a></p>
+  </section>
+</main>
+
+<footer class="site-footer">
+  <div class="wrap footer-bottom">
+    <span><a href="/">&larr; Agent Bazaar</a></span>
+    <span class="powered"><img src="/assets/saylor-logo.jpg" alt="">A Saylor Innovations product</span>
+  </div>
+</footer>
+
+<script>
+function copyBlock(btn) {
+  var pre = btn.nextElementSibling;
+  navigator.clipboard.writeText(pre.textContent).then(function () {
+    var old = btn.textContent;
+    btn.textContent = 'Copied';
+    setTimeout(function () { btn.textContent = old; }, 1400);
+  });
+}
+</script>
+</body>
+</html>

@@ -1,5 +1,9 @@
 User-agent: *
 Allow: /
 
-# Machine-readable summary for AI agents/LLMs: /llms.txt
+Sitemap: https://bazaar.saylorinnovations.com/sitemap.xml
+
+# Machine-readable summary for AI agents/LLMs: /llms.txt (full: /llms-full.txt)
 # API reference: /openapi.json
+# Agent card (A2A): /.well-known/agent-card.json
+# Agent quickstart: /agents.json

@@ -1,0 +1,52 @@
+{
+  "name": "Agent Bazaar",
+  "description": "Open marketplace and discovery layer for x402-payable resources — APIs, MCP tools, datasets and agent services. Search the catalog and inspect any resource's payment and schema requirements.",
+  "url": "https://bazaar.saylorinnovations.com/",
+  "provider": {
+    "organization": "Saylor Innovations",
+    "url": "https://saylorinnovations.com"
+  },
+  "version": "0.2.0",
+  "protocolVersion": "0.1",
+  "documentationUrl": "https://bazaar.saylorinnovations.com/docs",
+  "capabilities": {
+    "streaming": false,
+    "pushNotifications": false
+  },
+  "defaultInputModes": ["text/plain", "application/json"],
+  "defaultOutputModes": ["application/json"],
+  "authentication": {
+    "schemes": []
+  },
+  "skills": [
+    {
+      "id": "search_resources",
+      "name": "Search Resources",
+      "description": "Keyword and filter search across every listed x402 resource. Text queries rank by relevance; filter-only queries rank by 30-day call volume.",
+      "endpoint": "https://bazaar.saylorinnovations.com/discovery/search",
+      "method": "GET",
+      "inputModes": ["application/json"],
+      "outputModes": ["application/json"],
+      "examples": ["search(\"solana token security\")", "search(query=\"\", network=\"eip155:8453\", maxUsdPrice=0.01)"]
+    },
+    {
+      "id": "get_resource",
+      "name": "Get Resource",
+      "description": "Fetch the full machine-readable record for one resource by slug or id, including accepts[], output schema and quality signal.",
+      "endpoint": "https://bazaar.saylorinnovations.com/resources/{slug}.json",
+      "method": "GET",
+      "inputModes": ["text/plain"],
+      "outputModes": ["application/json"]
+    },
+    {
+      "id": "get_provider",
+      "name": "Get Provider",
+      "description": "List every resource published by a given provider host.",
+      "endpoint": "https://bazaar.saylorinnovations.com/providers/{host}",
+      "method": "GET",
+      "inputModes": ["text/plain"],
+      "outputModes": ["text/html", "application/json"]
+    }
+  ],
+  "note": "This card describes Agent Bazaar's own discovery surface, not a task-executing agent. Individual listed resources may expose their own agent cards or MCP servers separately."
+}

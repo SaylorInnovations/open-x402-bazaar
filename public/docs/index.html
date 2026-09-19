@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Documentation — Agent Bazaar</title>
+<meta name="description" content="What Agent Bazaar is, how x402 machine payments work, how AI agents discover APIs, and how MCP fits in. Documentation for buyers, sellers and self-hosters.">
+<link rel="canonical" href="https://bazaar.saylorinnovations.com/docs">
+<link rel="stylesheet" href="/assets/bazaar.css">
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700;800&family=Manrope:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  "mainEntity": [
+    { "@type": "Question", "name": "What is an AI agent marketplace?", "acceptedAnswer": { "@type": "Answer", "text": "A catalog of APIs, tools, datasets and services that autonomous AI agents — not just human developers — can search, evaluate and pay for programmatically, without a human approving each transaction." } },
+    { "@type": "Question", "name": "What is x402?", "acceptedAnswer": { "@type": "Answer", "text": "x402 is an open protocol that uses the long-unused HTTP 402 Payment Required status code to let a server tell a client exactly how to pay for a resource — which network, which asset, which address, how much — so an API can charge per request without accounts, API keys or subscriptions." } },
+    { "@type": "Question", "name": "How do AI agents pay for APIs?", "acceptedAnswer": { "@type": "Answer", "text": "An agent calls an endpoint. If payment is required, the server responds HTTP 402 with an accepts[] array describing valid ways to pay (network, asset, address, amount). The agent's x402 client settles that payment on-chain and retries the request with proof of payment, receiving the resource in the same response cycle." } },
+    { "@type": "Question", "name": "What is an MCP server?", "acceptedAnswer": { "@type": "Answer", "text": "MCP (Model Context Protocol) is a standard way for an AI model or agent to discover and call a set of tools exposed by a server, with structured input/output schemas — similar in spirit to a plugin system built specifically for LLM agents." } },
+    { "@type": "Question", "name": "MCP vs REST API vs x402 — what is the difference?", "acceptedAnswer": { "@type": "Answer", "text": "A REST API is called directly if you already know its shape. MCP standardizes how an agent discovers a server's tools and their schemas at runtime. x402 standardizes how payment for a resource is requested and settled. They are complementary: a resource can be reachable over plain HTTP, described via MCP, and priced via x402, all at once." } }
+  ]
+}
+</script>
+</head>
+<body>
+<header class="site-nav">
+  <div class="wrap nav-inner">
+    <a href="/" class="brand"><img src="/assets/saylor-logo.jpg" alt="Saylor Innovations"><span>Agent Bazaar <span class="sub">by Saylor Innovations</span></span></a>
+    <nav class="nav-links">
+      <a href="/#explore">Explore</a>
+      <a href="/publish">Publish</a>
+      <a href="/agents">Agents</a>
+      <a href="/docs">Docs</a>
+      <a href="https://github.com/SaylorInnovations/open-x402-bazaar">GitHub</a>
+    </nav>
+  </div>
+</header>
+
+<main class="wrap" style="padding:40px 0 60px;max-width:820px;">
+  <h1>Documentation</h1>
+  <p class="lede" style="max-width:none;">What Agent Bazaar is, how the underlying protocols work, and how to use it as a buyer, seller, or self-hoster.</p>
+
+  <section class="block" style="border-top:none;">
+    <h2 id="what">What is an AI agent marketplace?</h2>
+    <p style="color:var(--silver);">A catalog of <strong>APIs</strong>, <strong>MCP tools</strong>, datasets and agent services that autonomous software — not only human developers — can search, evaluate and pay for programmatically. Humans browse marketplaces by scrolling and reading; agents need every listing to carry structured fields (price, schema, payment method, protocol) they can parse without a human explaining it. Agent Bazaar is built to serve both at once: the same underlying catalog powers the website you're reading and the <code>/discovery</code> API an agent calls directly.</p>
+  </section>
+
+  <section class="block">
+    <h2 id="x402">What is x402?</h2>
+    <p style="color:var(--silver);">x402 is an open protocol built on the long-dormant HTTP <code>402 Payment Required</code> status code. A server that wants payment for a resource responds <code>402</code> with an <code>accepts[]</code> array — which blockchain network, which asset (usually USDC), which address, and how much. The caller settles that payment and retries the request with proof, receiving the resource in the same exchange. No accounts, no API keys, no subscription billing — <strong>pay-per-request APIs</strong> priced in fractions of a cent, settled in <strong>USDC API payments</strong> or other supported assets.</p>
+    <h3 style="font-size:1rem;margin-top:24px;">x402 vs API keys</h3>
+    <p style="color:var(--silver);">An API key requires signup, a stored secret, and usually a monthly bill regardless of usage. x402 requires none of that: identity is the payment itself, pricing is exact per call, and there's no account to create, rotate, or leak.</p>
+  </section>
+
+  <section class="block">
+    <h2 id="mcp">What is MCP?</h2>
+    <p style="color:var(--silver);">Model Context Protocol (MCP) standardizes how an AI model or agent discovers the tools a server exposes — their names, descriptions, and input/output schemas — at runtime, rather than being hard-coded ahead of time. Where x402 answers "how do I pay for this," MCP answers "what can this server do and how do I call it." The two compose: an MCP tool can itself be priced with x402. Agent Bazaar's own MCP-tool directory is on the roadmap — see <a href="/mcp">/mcp</a> for current status, and Saylor Innovations already runs a production MCP server at <a href="https://saylorinnovations.com/mcp">saylorinnovations.com/mcp</a>.</p>
+  </section>
+
+  <section class="block">
+    <h2 id="discovery">How do agents discover APIs and other agents?</h2>
+    <p style="color:var(--silver);">Through structured, deterministic endpoints rather than scraping a web page: <code>GET /discovery/search</code>, <code>GET /discovery/resources</code>, and <code>GET /discovery/merchant</code> return JSON built for parsing, not reading. Each result includes the resource's accepts[], schema, and usage-based quality signal. See <a href="/agents">/agents</a> for a full quickstart with curl, JavaScript, Python and MCP examples.</p>
+  </section>
+
+  <section class="block">
+    <h2 id="monetize">How to monetize an API with x402</h2>
+    <p style="color:var(--silver);">Add an x402 manifest to your API (a JSON document listing your endpoints and how you accept payment), then <a href="/publish">publish it here</a>. Payment settles directly to your own wallet — Agent Bazaar never sits in the payment path, so there's no platform cut on the transaction itself. Discoverability is the value we add: more agents finding your endpoint means more calls, which means more revenue on infrastructure you already run.</p>
+  </section>
+
+  <section class="block">
+    <h2 id="self-host">Self-hosting</h2>
+    <p style="color:var(--silver);">Agent Bazaar is open source (MIT) and runs entirely on Cloudflare Pages + D1. Clone <a href="https://github.com/SaylorInnovations/open-x402-bazaar">the repository</a>, run <code>npm install && npm run db:init && npm run dev</code>, and see the README for deploying your own instance, including how to mirror the Coinbase Bazaar catalog into it.</p>
+  </section>
+
+  <section class="block">
+    <h2 id="architecture">Architecture</h2>
+    <p style="color:var(--silver);">Cloudflare Pages Functions (Workers runtime) in front of a D1 (SQLite) database, with an FTS5 index for keyword search. The catalog — not the website — is the marketplace: the same rows serve the HTML pages, the JSON discovery API, and each resource's machine-readable twin at <code>/resources/{slug}.json</code>.</p>
+  </section>
+</main>
+
+<footer class="site-footer">
+  <div class="wrap footer-bottom">
+    <span><a href="/">&larr; Agent Bazaar</a></span>
+    <span class="powered"><img src="/assets/saylor-logo.jpg" alt="">A Saylor Innovations product</span>
+  </div>
+</footer>
+</body>
+</html>

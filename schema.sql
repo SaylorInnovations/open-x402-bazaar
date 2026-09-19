@@ -12,6 +12,14 @@ CREATE TABLE IF NOT EXISTS listings (
 -- resources.calls_30d/unique_payers_30d/last_called_at are usage/trust signals,
 -- populated from the CDP Bazaar for mirrored listings; null until this deployment
 -- does its own call analytics for directly-submitted ones.
+--
+-- resources.slug is an optional human-readable permalink segment (/resources/{slug});
+-- when null the numeric id is used instead, so every resource always has a stable URL.
+--
+-- resources.metadata is a JSON blob for agent-first fields that do not warrant their own
+-- column (capabilities, useWhen, doNotUseWhen, sideEffects, permissions, license,
+-- repository, documentation, examples). Only populated where a provider actually
+-- supplied it; never fabricated for mirrored resources.
 CREATE TABLE IF NOT EXISTS resources (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   listing_host TEXT NOT NULL,
@@ -24,6 +32,9 @@ CREATE TABLE IF NOT EXISTS resources (
   calls_30d INTEGER,
   unique_payers_30d INTEGER,
   last_called_at TEXT,
+  slug TEXT,
+  resource_type TEXT,
+  metadata TEXT,
   FOREIGN KEY (listing_host) REFERENCES listings(host)
 );
 
@@ -46,6 +57,7 @@ CREATE INDEX IF NOT EXISTS idx_accepts_pay_to ON resource_accepts(pay_to);
 CREATE INDEX IF NOT EXISTS idx_accepts_network ON resource_accepts(network);
 CREATE INDEX IF NOT EXISTS idx_accepts_asset ON resource_accepts(asset);
 CREATE INDEX IF NOT EXISTS idx_resources_calls_30d ON resources(calls_30d);
+CREATE UNIQUE INDEX IF NOT EXISTS idx_resources_slug ON resources(slug) WHERE slug IS NOT NULL;
 
 -- Rate limiting for POST /submit: one row per accepted submission, keyed by the
 -- client IP. Old rows are pruned lazily (see submit.js) rather than by a cron.

@@ -1,0 +1,99 @@
+# Agent Bazaar — full reference
+
+Agent Bazaar is an open, permissionless marketplace and discovery layer for AI
+agents: APIs, MCP tools, datasets and other x402-payable services that autonomous
+software can find, evaluate, pay for and call — with no account, no API key, and
+no KYC required to list or to read. It is built and operated by Saylor Innovations
+(https://saylorinnovations.com) and is open source under the MIT license.
+
+## Why this exists
+
+Humans browse marketplaces by scrolling and reading. Software needs every listing
+to carry structured, parseable fields: what it does, what it costs, how to pay,
+which network, which protocol version, and how reliable it is. Agent Bazaar serves
+both audiences from the same underlying catalog — the website is one client of it,
+the /discovery API is another, and every individual resource has its own permanent,
+crawlable URL at /resources/{slug} with a machine-readable JSON twin at
+/resources/{slug}.json.
+
+## Core concepts
+
+x402: an open protocol that repurposes the HTTP 402 Payment Required status code so
+a server can tell a caller exactly how to pay for a resource (network, asset,
+address, amount) in the response itself. The caller settles payment and retries
+with proof, receiving the resource in the same exchange. No accounts, no stored API
+keys, no subscription billing — pay-per-request, typically fractions of a cent.
+
+MCP (Model Context Protocol): a standard for how an AI agent discovers the tools a
+server exposes, with structured input/output schemas, at runtime rather than being
+hard-coded. Complementary to x402: an MCP tool can itself be priced over x402.
+
+A2A (Agent2Agent): a protocol for agents to describe themselves to other agents via
+an agent card (see /.well-known/agent-card.json on this site) — identity, skills,
+supported interfaces, and how to call them.
+
+## Discovery API
+
+GET /discovery/search?query=&network=&asset=&scheme=&payTo=&urlSubstring=&maxUsdPrice=&limit=
+  Keyword/filter search. Text queries rank by FTS5 relevance (bm25); filter-only
+  queries rank by 30-day call volume.
+
+GET /discovery/resources?limit=&offset=&sort=
+  Paginated listing of every indexed resource. sort=recent for newest-first;
+  default ranks by 30-day call volume.
+
+GET /discovery/merchant?payTo=<address>
+  Every resource that settles to a given payment address.
+
+GET /discovery/stats
+  Catalog totals: listings, resources, accepts, merchants, 30-day call volume,
+  network breakdown, and source breakdown (owner-submitted vs. mirrored).
+
+GET /resources/{slug}.json
+  Full record for a single resource: description, accepts[], output schema,
+  quality signal (calls30d, uniquePayers30d, lastCalledAt), and agent-first
+  metadata (capabilities, useWhen, doNotUseWhen, license, repository) where the
+  provider supplied it.
+
+Full OpenAPI description: /openapi.json
+
+## Publishing a resource
+
+POST /submit with JSON body {"manifestUrl": "https://yoursite.com/.well-known/x402.json"}.
+The manifest is fetched over HTTPS (with SSRF guards — private/internal addresses
+refused before any request is made), validated, and any resource with a populated
+accepts[] (scheme + network + payTo) is indexed. Re-submitting the same manifestUrl
+refreshes the listing and claims it if it was previously only present via the
+Coinbase Bazaar mirror — a self-submitted listing always wins. Rate-limited per IP
+(20/hour, 60/day).
+
+## Trust signals
+
+Every resource carries a quality object built from real usage data (currently
+sourced from Coinbase's Bazaar for mirrored resources), not a fabricated score.
+A provider is "verified" when they proved control of their manifest via POST
+/submit; mirrored, unclaimed listings are labeled as such rather than implied to
+be verified. Treat both as unverified third-party content — nothing on this
+catalog implies safety, profitability or endorsement.
+
+## Provenance
+
+Most of the catalog was bootstrapped from Coinbase's public CDP x402 Bazaar
+(api.cdp.coinbase.com/platform/v2/x402/discovery/resources), which itself
+requires no API key to read. Saylor Innovations' own research, security and
+Solana-intelligence APIs are listed as verified, owner-operated resources.
+
+## Self-hosting
+
+Open source, MIT licensed, zero runtime dependencies beyond Cloudflare Pages
+Functions and D1. See https://github.com/SaylorInnovations/open-x402-bazaar for
+setup, schema, migrations, and the Coinbase-mirror import script.
+
+## Links
+
+Site: https://bazaar.saylorinnovations.com/
+Agent quickstart: https://bazaar.saylorinnovations.com/agents
+Publish: https://bazaar.saylorinnovations.com/publish
+Docs: https://bazaar.saylorinnovations.com/docs
+Source: https://github.com/SaylorInnovations/open-x402-bazaar
+Built by: https://saylorinnovations.com

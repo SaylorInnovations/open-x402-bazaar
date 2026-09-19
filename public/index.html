@@ -3,53 +3,235 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>open-x402-bazaar</title>
-<meta name="description" content="An open, permissionless discovery layer for x402-payable resources. No account, no KYC — submit a manifest URL and get listed.">
-<style>
-  :root { color-scheme: dark; }
-  body { background:#0b0f14; color:#e6edf3; font:16px/1.6 -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif; margin:0; padding:0 20px; }
-  main { max-width:760px; margin:0 auto; padding:48px 0; }
-  h1 { font-size:1.9rem; margin-bottom:.2em; }
-  code, pre { background:#161b22; border-radius:6px; }
-  code { padding:.15em .4em; font-size:.9em; }
-  pre { padding:16px; overflow-x:auto; }
-  table { border-collapse:collapse; width:100%; margin:1.2em 0; }
-  th, td { text-align:left; padding:8px 12px; border-bottom:1px solid #30363d; font-size:.92em; }
-  a { color:#58a6ff; }
-  .tag { display:inline-block; font-size:.75em; padding:.2em .6em; border:1px solid #30363d; border-radius:999px; color:#8b949e; }
-</style>
+<title>Agent Bazaar — The Open Marketplace for AI Agents</title>
+<meta name="description" content="Agent Bazaar is an open, permissionless marketplace and discovery network for AI agents — APIs, MCP tools, datasets and x402-payable services agents can find, evaluate and pay for per request. No account, no KYC. Built by Saylor Innovations.">
+<link rel="canonical" href="https://bazaar.saylorinnovations.com/">
+<meta property="og:title" content="Agent Bazaar — The Open Marketplace for AI Agents">
+<meta property="og:description" content="Discover APIs, MCP tools, datasets and machine-payable resources built for autonomous software. Search. Discover. Pay. Execute.">
+<meta property="og:type" content="website">
+<meta name="twitter:card" content="summary">
+<link rel="stylesheet" href="/assets/bazaar.css">
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700;800&family=Manrope:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "WebSite",
+  "name": "Agent Bazaar",
+  "url": "https://bazaar.saylorinnovations.com/",
+  "description": "Open marketplace and discovery network for AI agents: APIs, MCP tools, datasets and x402-payable services.",
+  "publisher": { "@type": "Organization", "name": "Saylor Innovations", "url": "https://saylorinnovations.com" }
+}
+</script>
 </head>
 <body>
-<main>
-  <span class="tag">early</span>
-  <h1>open-x402-bazaar</h1>
-  <p>An open, permissionless discovery layer for <a href="https://x402.org">x402</a>-payable resources — APIs, data feeds, and services AI agents can find and pay for per request. No account, no KYC. Submit your manifest URL and you're listed. Seeded with a full mirror of Coinbase's public CDP Bazaar catalog, wire-compatible with its API.</p>
-  <p id="stats-line" class="tag" style="display:block;width:fit-content;margin:.6em 0;"></p>
 
-  <h2>List your service</h2>
-  <pre>curl -X POST /submit \
-  -H "content-type: application/json" \
-  -d '{"manifestUrl": "https://yoursite.com/.well-known/x402.json"}'</pre>
-  <p>If your host is already indexed from the Coinbase mirror, submitting your own manifest claims it — your listing always wins over the mirrored copy.</p>
+<header class="site-nav">
+  <div class="wrap nav-inner">
+    <a href="/" class="brand">
+      <img src="/assets/saylor-logo.jpg" alt="Saylor Innovations">
+      <span>Agent Bazaar <span class="sub">by Saylor Innovations</span></span>
+    </a>
+    <nav class="nav-links">
+      <a href="#explore">Explore</a>
+      <a href="/publish">Publish</a>
+      <a href="/agents">Agents</a>
+      <a href="/docs">Docs</a>
+      <a href="https://github.com/SaylorInnovations/open-x402-bazaar">GitHub</a>
+    </nav>
+    <div class="nav-cta">
+      <a href="/agents" class="btn btn-primary btn-sm">Connect an Agent</a>
+    </div>
+  </div>
+</header>
 
-  <h2>Find a service (agents)</h2>
-  <table>
-    <tr><th>Endpoint</th><th>Purpose</th></tr>
-    <tr><td><code>GET /discovery/search?query=</code></td><td>Keyword/filter search, ranked by relevance then popularity</td></tr>
-    <tr><td><code>GET /discovery/resources</code></td><td>Paginated full listing, ranked by 30-day call volume</td></tr>
-    <tr><td><code>GET /discovery/merchant?payTo=</code></td><td>All resources paying one address</td></tr>
-    <tr><td><code>GET /discovery/stats</code></td><td>Catalog totals and network breakdown</td></tr>
-  </table>
-  <p>Machine-readable docs: <a href="/llms.txt">llms.txt</a> · <a href="/openapi.json">openapi.json</a></p>
+<section class="hero grid-bg">
+  <div class="wrap">
+    <span class="eyebrow">OPEN &middot; PERMISSIONLESS &middot; MACHINE-READABLE</span>
+    <h1>The Open Marketplace for AI Agents</h1>
+    <p class="lede">Discover APIs, MCP tools, datasets, agent services and machine-payable resources built for autonomous software.</p>
+    <p class="tagline">Search. Discover. Pay. Execute.</p>
+    <div class="hero-ctas">
+      <a href="#explore" class="btn btn-primary">Explore Marketplace</a>
+      <a href="/agents" class="btn btn-ghost">Connect an Agent</a>
+    </div>
 
-  <p>Source, docs, and roadmap: <a href="https://github.com/SaylorInnovations/open-x402-bazaar">github.com/SaylorInnovations/open-x402-bazaar</a></p>
+    <div class="terminal">
+      <div class="terminal-bar"><span></span><span></span><span></span><span class="label">agent session</span></div>
+      <pre><span class="t-prompt">agent&gt;</span> search("solana token security")
+<span class="t-dim">3 resources found</span>
 
-  <script>
-    fetch('/discovery/stats').then((r) => r.json()).then((s) => {
-      const el = document.getElementById('stats-line');
-      if (el) el.textContent = `${s.resources.toLocaleString()} resources · ${s.merchants.toLocaleString()} merchants · ${s.calls30d.toLocaleString()} calls in the last 30 days`;
-    }).catch(() => {});
-  </script>
+<span class="t-gold">1. Solana Token Security Intelligence</span>
+   $0.01 / request &middot; x402 &middot; solana &middot; json
+   <span class="t-dim">confidence: 0.98</span>
+
+<span class="t-prompt">agent&gt;</span> purchase(resource)
+<span class="t-dim">HTTP 402 payment required</span>
+<span class="t-ok">payment authorized</span>
+<span class="t-ok">resource delivered</span><span class="t-cursor"></span></pre>
+    </div>
+  </div>
+</section>
+
+<div class="wrap">
+  <div id="stats" class="stats-strip">
+    <div class="stat"><div class="n" data-stat="resources">&mdash;</div><div class="l">Resources</div></div>
+    <div class="stat"><div class="n" data-stat="merchants">&mdash;</div><div class="l">Providers</div></div>
+    <div class="stat"><div class="n" data-stat="networks">&mdash;</div><div class="l">Networks</div></div>
+    <div class="stat"><div class="n">x402</div><div class="l">Protocol</div></div>
+    <div class="stat"><div class="n" data-stat="calls">&mdash;</div><div class="l">Calls / 30d</div></div>
+  </div>
+</div>
+
+<main id="explore" class="wrap" style="padding-top:44px;">
+  <form class="search-bar" id="searchForm" role="search">
+    <input type="search" id="searchInput" placeholder="Search tools, APIs, agents, data, skills or capabilities…" aria-label="Search the marketplace">
+    <button type="submit" class="btn btn-primary">Search</button>
+  </form>
+  <p id="searchStatus" style="text-align:center;color:var(--silver-soft);font-size:0.86rem;margin-top:-14px;"></p>
+
+  <div id="searchResults" class="grid-cards" style="display:none;margin-top:24px;"></div>
+
+  <div id="defaultSections">
+    <section class="block" style="border-top:none;">
+      <div class="block-head">
+        <h2>Official Saylor Innovations APIs</h2>
+        <span class="see-all">verified &middot; owner-operated</span>
+      </div>
+      <div class="grid-cards" data-section="official"></div>
+    </section>
+
+    <section class="block">
+      <div class="block-head">
+        <h2>Recently Added</h2>
+        <span class="see-all">newest listings first</span>
+      </div>
+      <div class="grid-cards" data-section="recent"></div>
+    </section>
+
+    <section class="block">
+      <div class="block-head">
+        <h2>Most Called (30d)</h2>
+        <span class="see-all">ranked by verified usage, not self-reported claims</span>
+      </div>
+      <div class="grid-cards" data-section="popular"></div>
+    </section>
+  </div>
+
+  <section class="block">
+    <h2>Humans browse. Agents need structured discovery.</h2>
+    <p style="color:var(--silver);max-width:760px;">A marketplace built for people to scroll is not enough for software that has to find, evaluate, pay for, and call a resource on its own. Agent Bazaar is both: a browsable <strong>AI agent marketplace</strong> for humans, and a machine-readable <strong>agent discovery</strong> and <strong>agent-to-agent commerce</strong> layer underneath it. Every resource here — <strong>x402 APIs</strong>, <strong>MCP servers</strong>, datasets, and other <strong>agent infrastructure</strong> — carries the structured fields an autonomous agent needs to decide what to call, what it costs, and how to pay for it, without a human in the loop.</p>
+  </section>
+
+  <section class="block">
+    <div class="block-head"><h2>An Open Marketplace for an Open Agent Economy</h2></div>
+    <p style="color:var(--silver);max-width:760px;">Agent Bazaar is open source and permissionless: no centralized company gatekeeps whether your <strong>API</strong>, <strong>MCP tool</strong>, or agent service is discoverable by autonomous software. It mirrors Coinbase's public x402 Bazaar catalog for broad coverage, and anyone can list their own <strong>machine-payable APIs</strong> directly — no signup, no KYC.</p>
+    <div class="hero-ctas" style="justify-content:flex-start;margin-top:18px;margin-bottom:0;">
+      <a href="https://github.com/SaylorInnovations/open-x402-bazaar" class="btn btn-ghost btn-sm">Source on GitHub</a>
+      <a href="/docs" class="btn btn-ghost btn-sm">Read the docs</a>
+      <a href="/publish" class="btn btn-ghost btn-sm">Publish a resource</a>
+    </div>
+  </section>
 </main>
+
+<footer class="site-footer">
+  <div class="wrap">
+    <div class="footer-grid">
+      <div class="footer-brand">
+        <div class="brand" style="margin-bottom:10px;"><img src="/assets/saylor-logo.jpg" alt=""><span>Agent Bazaar</span></div>
+        <p>Open infrastructure for the agent economy. A permissionless discovery and payment layer for AI agents, built in the open.</p>
+      </div>
+      <div>
+        <h4>Marketplace</h4>
+        <a href="#explore">Explore</a>
+        <a href="/publish">Publish a resource</a>
+        <a href="/agents">Connect an agent</a>
+        <a href="/discovery/stats">Network stats</a>
+      </div>
+      <div>
+        <h4>Protocols</h4>
+        <a href="/docs#x402">x402</a>
+        <a href="/mcp">MCP</a>
+        <a href="/.well-known/agent-card.json">A2A agent card</a>
+        <a href="/openapi.json">OpenAPI</a>
+      </div>
+      <div>
+        <h4>Developers</h4>
+        <a href="/docs">Documentation</a>
+        <a href="/llms.txt">llms.txt</a>
+        <a href="https://github.com/SaylorInnovations/open-x402-bazaar">Source (GitHub)</a>
+        <a href="https://github.com/SaylorInnovations/open-x402-bazaar/blob/master/README.md">Self-hosting</a>
+      </div>
+      <div>
+        <h4>Saylor Innovations</h4>
+        <a href="https://saylorinnovations.com">saylorinnovations.com</a>
+        <a href="https://x402.saylorinnovations.com">Saylor x402 APIs</a>
+        <a href="https://github.com/SaylorInnovations/solana-x402">solana-x402 (OSS)</a>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <span>Open source, MIT licensed. No account or KYC required to list or discover.</span>
+      <span class="powered"><img src="/assets/saylor-logo.jpg" alt="">A Saylor Innovations product</span>
+    </div>
+  </div>
+</footer>
+
+<script>
+(function () {
+  function esc(s) { return String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+  function priceOf(r) {
+    var a = (r.accepts || [])[0];
+    if (!a) return 'see accepts[]';
+    if (a.amountUsd) return '$' + a.amountUsd;
+    return a.amount ? (a.amount + ' units') : 'free';
+  }
+  function card(r) {
+    var title = (r.description || r.resource).split('.')[0].slice(0, 72);
+    var verified = r.sourceHost === 'saylorinnovations.com';
+    return '<div class="card">' +
+      '<div class="meta-row">' + (verified ? '<span class="badge badge-verified">verified</span>' : '') + (r.resourceType ? '<span class="badge">' + esc(r.resourceType) + '</span>' : '') + '<span class="badge badge-protocol">x402</span></div>' +
+      '<h3><a href="/resources/' + esc(r.slug) + '">' + esc(title) + '</a></h3>' +
+      '<p class="desc">' + esc(r.description || r.resource) + '</p>' +
+      '<div class="price">' + esc(priceOf(r)) + (r.accepts && r.accepts[0] && r.accepts[0].amountUsd ? ' / request' : '') + '</div>' +
+      '<div class="actions"><a class="btn btn-ghost btn-sm" href="/resources/' + esc(r.slug) + '">View</a><a class="btn btn-ghost btn-sm" href="/resources/' + esc(r.slug) + '.json">Agent Schema</a></div>' +
+      '</div>';
+  }
+
+  fetch('/discovery/stats').then(r => r.json()).then(s => {
+    document.querySelector('[data-stat="resources"]').textContent = s.resources.toLocaleString();
+    document.querySelector('[data-stat="merchants"]').textContent = s.merchants.toLocaleString();
+    document.querySelector('[data-stat="networks"]').textContent = Object.keys(s.byNetwork || {}).length;
+    document.querySelector('[data-stat="calls"]').textContent = s.calls30d.toLocaleString();
+  }).catch(function () {});
+
+  fetch('/discovery/resources?limit=6&sort=recent').then(r => r.json()).then(d => {
+    document.querySelector('[data-section="recent"]').innerHTML = d.resources.map(card).join('');
+  }).catch(function () {});
+
+  fetch('/discovery/resources?limit=6').then(r => r.json()).then(d => {
+    document.querySelector('[data-section="popular"]').innerHTML = d.resources.map(card).join('');
+  }).catch(function () {});
+
+  fetch('/discovery/merchant?payTo=7LSjfrJf8fNsB8VA9u7N3WEn25smQLpob3SvyUvXacy7').then(r => r.json()).then(d => {
+    document.querySelector('[data-section="official"]').innerHTML = (d.resources || []).slice(0, 6).map(card).join('');
+  }).catch(function () {});
+
+  var form = document.getElementById('searchForm');
+  var results = document.getElementById('searchResults');
+  var defaultSections = document.getElementById('defaultSections');
+  var status = document.getElementById('searchStatus');
+  form.addEventListener('submit', function (e) {
+    e.preventDefault();
+    var q = document.getElementById('searchInput').value.trim();
+    if (!q) { results.style.display = 'none'; defaultSections.style.display = ''; status.textContent = ''; return; }
+    status.textContent = 'Searching…';
+    fetch('/discovery/search?query=' + encodeURIComponent(q) + '&limit=12').then(r => r.json()).then(d => {
+      defaultSections.style.display = 'none';
+      results.style.display = 'grid';
+      status.textContent = d.resources.length + ' result' + (d.resources.length === 1 ? '' : 's') + ' for "' + q + '"';
+      results.innerHTML = d.resources.length ? d.resources.map(card).join('') : '<p style="color:var(--silver-soft);">No matches. Try a broader term, or <a href="/publish">list this resource</a> if it should exist.</p>';
+    }).catch(function () { status.textContent = 'Search failed — try again.'; });
+  });
+})();
+</script>
 </body>
 </html>

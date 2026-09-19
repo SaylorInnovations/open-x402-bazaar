@@ -1,0 +1,26 @@
+{
+  "name": "Agent Bazaar",
+  "provider": "Saylor Innovations",
+  "description": "Machine-readable quickstart for connecting an AI agent to Agent Bazaar.",
+  "flow": ["discover", "inspect", "pay", "execute", "verify"],
+  "freeVerificationEndpoint": "https://bazaar.saylorinnovations.com/discovery/search?query=test&limit=1",
+  "discovery": {
+    "search": "https://bazaar.saylorinnovations.com/discovery/search",
+    "list": "https://bazaar.saylorinnovations.com/discovery/resources",
+    "byMerchant": "https://bazaar.saylorinnovations.com/discovery/merchant",
+    "stats": "https://bazaar.saylorinnovations.com/discovery/stats"
+  },
+  "resourceRecord": "https://bazaar.saylorinnovations.com/resources/{slug}.json",
+  "submit": {
+    "url": "https://bazaar.saylorinnovations.com/submit",
+    "method": "POST",
+    "body": { "manifestUrl": "https://yoursite.com/.well-known/x402.json" }
+  },
+  "protocols": {
+    "x402": "https://bazaar.saylorinnovations.com/openapi.json",
+    "mcp": "https://bazaar.saylorinnovations.com/mcp",
+    "a2a": "https://bazaar.saylorinnovations.com/.well-known/agent-card.json"
+  },
+  "documentation": "https://bazaar.saylorinnovations.com/docs",
+  "llms": "https://bazaar.saylorinnovations.com/llms.txt"
+}

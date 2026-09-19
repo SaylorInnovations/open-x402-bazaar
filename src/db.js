@@ -38,9 +38,12 @@ async function attachAccepts(env, rows) {
   }
 
   return rows.map((r) => ({
+    id: r.id,
+    slug: r.slug || String(r.id),
     resource: r.resource_url,
     description: r.description,
     type: 'http',
+    resourceType: r.resource_type || undefined,
     x402Version: r.x402_version,
     accepts: byResource[r.id] || [],
     outputSchema: r.output_schema ? JSON.parse(r.output_schema) : undefined,
@@ -55,6 +58,10 @@ async function attachAccepts(env, rows) {
       uniquePayers30d: r.unique_payers_30d ?? undefined,
       lastCalledAt: r.last_called_at ?? undefined,
     },
+    // Agent-first fields (capabilities/useWhen/doNotUseWhen/sideEffects/permissions/
+    // license/repository/documentation/examples), only present when a provider
+    // actually supplied them — never fabricated for mirrored resources.
+    metadata: r.metadata ? JSON.parse(r.metadata) : undefined,
   }));
 }
 
@@ -87,8 +94,8 @@ async function upsertListing(env, { host, sourceManifestUrl, manifestName, submi
   const resourceStmts = resources.map((r) =>
     env.DB
       .prepare(
-        `INSERT INTO resources (listing_host, resource_url, description, x402_version, output_schema, tags, last_updated)
-         VALUES (?, ?, ?, ?, ?, ?, ?)`
+        `INSERT INTO resources (listing_host, resource_url, description, x402_version, output_schema, tags, last_updated, slug, resource_type, metadata)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
       )
       .bind(
         host,
@@ -97,7 +104,10 @@ async function upsertListing(env, { host, sourceManifestUrl, manifestName, submi
         r.x402Version ?? null,
         r.outputSchema ? JSON.stringify(r.outputSchema) : null,
         JSON.stringify(r.tags || []),
-        r.lastUpdated
+        r.lastUpdated,
+        r.slug || null,
+        r.resourceType || null,
+        r.metadata ? JSON.stringify(r.metadata) : null
       )
   );
   const resourceResults = await env.DB.batch(resourceStmts);
@@ -131,7 +141,7 @@ async function searchResources(env, { query, network, asset, scheme, payTo, maxU
     params.push(toFtsQuery(query));
   }
 
-  let sql = `SELECT DISTINCT r.id, r.resource_url, r.description, r.x402_version, r.output_schema, r.tags, r.last_updated, r.listing_host, r.calls_30d, r.unique_payers_30d, r.last_called_at
+  let sql = `SELECT DISTINCT r.id, r.resource_url, r.description, r.x402_version, r.output_schema, r.tags, r.last_updated, r.listing_host, r.calls_30d, r.unique_payers_30d, r.last_called_at, r.slug, r.resource_type, r.metadata
              FROM ${from} JOIN resource_accepts a ON a.resource_id = r.id`;
 
   if (network) { conditions.push('a.network = ?'); params.push(network); }
@@ -156,12 +166,16 @@ async function searchResources(env, { query, network, asset, scheme, payTo, maxU
   return attachAccepts(env, results);
 }
 
-async function listResources(env, { limit, offset }) {
+async function listResources(env, { limit, offset, sort }) {
   const lim = clampLimit(limit);
   const off = Math.max(Number(offset) || 0, 0);
+  // 'recent' is genuinely recency (insertion order), not a fabricated trending score —
+  // used for the homepage's "Recently Added" section when there isn't enough usage
+  // data yet to justify a "Trending" claim.
+  const orderBy = sort === 'recent' ? 'r.id DESC' : 'r.calls_30d DESC NULLS LAST, r.id';
 
   const { results } = await env.DB
-    .prepare('SELECT id, resource_url, description, x402_version, output_schema, tags, last_updated, listing_host, calls_30d, unique_payers_30d, last_called_at FROM resources ORDER BY calls_30d DESC NULLS LAST, id LIMIT ? OFFSET ?')
+    .prepare(`SELECT id, resource_url, description, x402_version, output_schema, tags, last_updated, listing_host, calls_30d, unique_payers_30d, last_called_at, slug, resource_type, metadata FROM resources r ORDER BY ${orderBy} LIMIT ? OFFSET ?`)
     .bind(lim, off)
     .all();
   const { total } = await env.DB.prepare('SELECT COUNT(*) as total FROM resources').first();
@@ -172,13 +186,41 @@ async function listResources(env, { limit, offset }) {
 async function merchantResources(env, payTo) {
   const { results } = await env.DB
     .prepare(
-      `SELECT DISTINCT r.id, r.resource_url, r.description, r.x402_version, r.output_schema, r.tags, r.last_updated, r.listing_host, r.calls_30d, r.unique_payers_30d, r.last_called_at
+      `SELECT DISTINCT r.id, r.resource_url, r.description, r.x402_version, r.output_schema, r.tags, r.last_updated, r.listing_host, r.calls_30d, r.unique_payers_30d, r.last_called_at, r.slug, r.resource_type, r.metadata
        FROM resources r JOIN resource_accepts a ON a.resource_id = r.id WHERE a.pay_to = ?
        ORDER BY r.calls_30d DESC NULLS LAST, r.id`
     )
     .bind(payTo)
     .all();
   return attachAccepts(env, results);
+}
+
+async function getResourceBySlugOrId(env, key) {
+  const isNumeric = /^\d+$/.test(key);
+  const row = await env.DB
+    .prepare(
+      `SELECT id, resource_url, description, x402_version, output_schema, tags, last_updated, listing_host, calls_30d, unique_payers_30d, last_called_at, slug, resource_type, metadata
+       FROM resources WHERE slug = ? ${isNumeric ? 'OR id = ?' : ''} LIMIT 1`
+    )
+    .bind(key, ...(isNumeric ? [Number(key)] : []))
+    .first();
+  if (!row) return null;
+  const [resource] = await attachAccepts(env, [row]);
+  const listing = await env.DB.prepare('SELECT host, manifest_name, source, source_manifest_url, submitted_at FROM listings WHERE host = ?').bind(row.listing_host).first();
+  return { ...resource, provider: listing };
+}
+
+async function getProvider(env, host) {
+  const listing = await env.DB.prepare('SELECT host, manifest_name, source, source_manifest_url, submitted_at FROM listings WHERE host = ?').bind(host).first();
+  if (!listing) return null;
+  const { results } = await env.DB
+    .prepare(
+      `SELECT id, resource_url, description, x402_version, output_schema, tags, last_updated, listing_host, calls_30d, unique_payers_30d, last_called_at, slug, resource_type, metadata
+       FROM resources WHERE listing_host = ? ORDER BY calls_30d DESC NULLS LAST, id`
+    )
+    .bind(host)
+    .all();
+  return { provider: listing, resources: await attachAccepts(env, results) };
 }
 
 async function getStats(env) {
@@ -239,6 +281,8 @@ export {
   searchResources,
   listResources,
   merchantResources,
+  getResourceBySlugOrId,
+  getProvider,
   getStats,
   isRateLimited,
   logSubmission,

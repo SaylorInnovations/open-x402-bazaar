@@ -1,14 +1,18 @@
-# open-x402-bazaar
+# Agent Bazaar
 
-An open, permissionless discovery layer for **x402**-payable resources — APIs, data feeds, and services that AI agents can find and pay for per-request.
+_by [Saylor Innovations](https://saylorinnovations.com)_
+
+An open, permissionless marketplace and discovery layer for **AI agents** — APIs, MCP tools, datasets, and **x402**-payable services that autonomous software can find, evaluate, and pay for per request. Repo/package name is still `open-x402-bazaar` for continuity; the product is Agent Bazaar.
 
 Coinbase's own [x402 Bazaar](https://docs.cdp.coinbase.com/x402/bazaar) is excellent, but getting listed on it requires a verified Coinbase Developer Platform account, which in turn can require business/KYC verification for some account paths. That's a real barrier for a protocol whose whole point is permissionless, agent-to-agent commerce. This project is an attempt at an alternative: **anyone with a valid x402 manifest can list here, with no account and no identity verification at all.**
 
 It's built to be **wire-compatible** with Coinbase's Bazaar discovery API, so any existing x402 client library that already knows how to query the CDP Bazaar can point at this instead with a config change, not a rewrite.
 
+Live at: **https://bazaar.saylorinnovations.com**
+
 ## Status
 
-Early. Submission, validation, storage, ranked discovery, and anti-spam basics are all working. Not yet running in production. The catalog is bootstrapped from a full mirror of Coinbase's public CDP Bazaar — see below.
+Live at [bazaar.saylorinnovations.com](https://bazaar.saylorinnovations.com), on Cloudflare Pages + D1. Submission, validation, storage, ranked discovery, resource/provider detail pages, and anti-spam basics are all working. The catalog is bootstrapped from a full mirror of Coinbase's public CDP Bazaar plus Saylor Innovations' own real endpoints — see below.
 
 ## Seeded from Coinbase's Bazaar
 
@@ -24,6 +28,19 @@ Re-run the mirror periodically to pick up new resources Coinbase has indexed (sa
 npm run seed:cdp-bazaar          # generates + applies against local D1
 npm run seed:cdp-bazaar:remote   # generates + applies against production D1
 ```
+
+## Saylor Innovations' own listings
+
+`scripts/import-saylor-official.mjs` lists Saylor Innovations' real, live x402 endpoints (research/security/data utilities plus Solana on-chain intelligence, all served from `saylorinnovations.com`) as verified (`source: 'submitted'`) resources — the same trust tier a self-submission gets, seeded directly since Saylor Innovations operates this bazaar. Nothing here is fabricated: pricing, descriptions and `accepts[]` come from the live `/api/services` endpoint and the public manifest at `saylorinnovations.com/.well-known/x402.json`.
+
+```bash
+npm run seed:saylor-official          # local
+npm run seed:saylor-official:remote   # production
+```
+
+### How providers actually get paid
+
+x402 payments settle **peer-to-peer** — agent to `payTo` wallet — never through this bazaar. So listing here doesn't change *how* you get paid, it changes *how many agents find the endpoint to pay*. There's no platform fee on the transaction itself today; the plan is to keep discovery free and, if/when it makes sense, monetize optional things like featured placement or verified-provider tooling rather than taxing the payment path.
 
 ## How listing works
 
@@ -44,13 +61,27 @@ Mirrors the field names and shape of Coinbase's CDP Bazaar API, plus an additive
 | Endpoint | Purpose |
 |---|---|
 | `GET /discovery/search?query=&network=&asset=&scheme=&payTo=&urlSubstring=&maxUsdPrice=&limit=` | Keyword/filter search. Text queries rank by relevance (FTS5 bm25); filter-only queries rank by 30-day call volume |
-| `GET /discovery/resources?limit=&offset=` | Paginated listing of every indexed resource, ranked by 30-day call volume |
+| `GET /discovery/resources?limit=&offset=&sort=` | Paginated listing of every indexed resource. `sort=recent` for newest-first, default ranks by 30-day call volume |
 | `GET /discovery/merchant?payTo=<address>` | All resources that pay a specific address |
 | `GET /discovery/stats` | Catalog totals: listings, resources, accepts, merchants, calls, network/source breakdown |
+| `GET /resources/{slug}.json` | Full machine-readable record for a single resource |
 
 No API key required for any read endpoint — same as Coinbase's.
 
-Agent-facing docs: [`/llms.txt`](public/llms.txt) (plain-language summary for LLMs) and [`/openapi.json`](public/openapi.json) (full machine-readable API spec, importable into most agent/tool frameworks).
+Agent-facing docs: [`/llms.txt`](public/llms.txt) &middot; [`/llms-full.txt`](public/llms-full.txt) &middot; [`/openapi.json`](public/openapi.json) &middot; [`/agents.json`](public/agents.json) &middot; [`/.well-known/agent-card.json`](public/.well-known/agent-card.json) (A2A).
+
+## Human-facing pages
+
+Every resource has a permanent, crawlable, server-rendered URL — not a client-side-only modal — with a machine-readable JSON twin alongside it:
+
+| Page | Purpose |
+|---|---|
+| `/resources/{slug}` | Resource detail: description, pricing, accepts[], schema, curl/JS/Python examples |
+| `/providers/{host}` | Every resource published by one provider |
+| `/agents` | Quickstart for connecting an agent (discover → inspect → pay → execute → verify) |
+| `/publish` | How to list a resource as a seller |
+| `/docs` | What x402/MCP/A2A are, how agent payments work, self-hosting |
+| `/mcp` | Current MCP support status (honest: not yet a full tool directory — see roadmap) |
 
 ## Architecture
 
@@ -63,12 +94,13 @@ Agent-facing docs: [`/llms.txt`](public/llms.txt) (plain-language summary for LL
 
 ```bash
 npm install
-npm run db:init          # applies schema.sql to a local D1 database
-npm run seed:cdp-bazaar   # optional: mirror Coinbase's public Bazaar catalog into it
-npm run dev               # wrangler pages dev, with the D1 binding wired up
+npm run db:init                # applies schema.sql to a local D1 database
+npm run seed:saylor-official   # Saylor Innovations' own real, verified endpoints
+npm run seed:cdp-bazaar        # optional: mirror Coinbase's public Bazaar catalog into it
+npm run dev                     # wrangler pages dev, with the D1 binding wired up
 ```
 
-If you already have a deployed D1 database from before the mirror/rate-limiting/quality-signal changes, apply the additive migration instead of re-running `schema.sql`: `npm run db:migrate:remote`.
+If you already have a deployed D1 database predating the mirror/rate-limiting/quality-signal changes or the slug/resource-type/metadata columns, apply the additive migrations instead of re-running `schema.sql`: `npm run db:migrate:remote` then `npm run db:migrate:remote:0003`.
 
 ## Security notes
 
@@ -78,8 +110,12 @@ If you already have a deployed D1 database from before the mirror/rate-limiting/
 
 - **Periodic re-crawl / liveness checks.** Directly-submitted listings are indexed once at submission time and never re-validated — a resource that goes offline or changes its payment address stays listed until someone re-submits. A scheduled function that re-fetches and prunes/updates listings is the next real piece of work. (Mirrored listings get fresher data for free each time `seed:cdp-bazaar` is re-run, since Coinbase does this crawling themselves.)
 - **Semantic search.** Current search is keyword/substring (FTS5) only, unlike Coinbase's hybrid text+semantic search.
-- **Scheduled auto-mirroring.** The importer is run manually today; a Cloudflare Cron Trigger re-running it daily would keep the mirror current without a person remembering to.
-- **MCP server.** An `/mcp` endpoint exposing search/list as MCP tools, so agents that speak MCP rather than raw HTTP can use this without a custom client.
+- **Scheduled auto-mirroring.** The importers are run manually today; a Cloudflare Cron Trigger re-running them daily would keep the catalog current without a person remembering to.
+- **MCP tool directory.** `/mcp` currently states honest status rather than a real tool directory. A real one needs an MCP server for Agent Bazaar itself (`search_resources`, `get_resource`, `get_pricing`, …) plus per-tool detail pages for third-party MCP servers.
+- **Full A2A registry.** `/.well-known/agent-card.json` describes Agent Bazaar's own discovery surface; a directory of *other* agents' cards is not yet built.
+- **Automated provider ingestion.** Publishing today is manifest-URL only; importing directly from an OpenAPI document, MCP schema, or Git repo is not yet built.
+- **Guides/content library.** `/docs` is one consolidated page today, not the full set of individually-indexed how-to guides a mature content strategy would want.
+- **Trust badges beyond "verified owner."** Endpoint/schema verification with live uptime checks isn't built; today "verified" means only "owner proved control via POST /submit."
 - **Federation with the x402 Foundation's discovery working group** (`x402-foundation/wg-domain-discovery`) — the goal is to align with an open standard rather than become a second walled garden.
 
 ## License

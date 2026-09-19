@@ -1,11 +1,11 @@
 {
   "openapi": "3.1.0",
   "info": {
-    "title": "open-x402-bazaar",
-    "version": "0.2.0",
-    "description": "Open, permissionless discovery layer for x402-payable resources. No account or API key required for any read endpoint. Wire-compatible with Coinbase's CDP x402 Bazaar API."
+    "title": "Agent Bazaar",
+    "version": "0.3.0",
+    "description": "Open, permissionless marketplace and discovery layer for AI agents — APIs, MCP tools, datasets and x402-payable services. No account or API key required for any read endpoint. Wire-compatible with Coinbase's CDP x402 Bazaar API. Built by Saylor Innovations."
   },
-  "servers": [{ "url": "/" }],
+  "servers": [{ "url": "https://bazaar.saylorinnovations.com" }],
   "paths": {
     "/submit": {
       "post": {
@@ -75,10 +75,11 @@
     "/discovery/resources": {
       "get": {
         "operationId": "listResources",
-        "summary": "Paginated listing of every indexed resource, ranked by 30-day call volume",
+        "summary": "Paginated listing of every indexed resource, ranked by 30-day call volume (or recency)",
         "parameters": [
           { "name": "limit", "in": "query", "schema": { "type": "integer", "default": 20, "maximum": 100 } },
-          { "name": "offset", "in": "query", "schema": { "type": "integer", "default": 0 } }
+          { "name": "offset", "in": "query", "schema": { "type": "integer", "default": 0 } },
+          { "name": "sort", "in": "query", "schema": { "type": "string", "enum": ["popular", "recent"], "default": "popular" }, "description": "'recent' orders by newest listing first; default ranks by 30-day call volume." }
         ],
         "responses": {
           "200": {
@@ -114,6 +115,33 @@
             "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Stats" } } }
           }
         }
+      }
+    },
+    "/resources/{slug}": {
+      "get": {
+        "operationId": "getResourcePage",
+        "summary": "Human-readable detail page for one resource",
+        "parameters": [{ "name": "slug", "in": "path", "required": true, "schema": { "type": "string" } }],
+        "responses": { "200": { "description": "HTML page", "content": { "text/html": {} } }, "404": { "description": "Not found" } }
+      }
+    },
+    "/resources/{slug}.json": {
+      "get": {
+        "operationId": "getResourceRecord",
+        "summary": "Machine-readable twin of the resource detail page",
+        "parameters": [{ "name": "slug", "in": "path", "required": true, "schema": { "type": "string" } }],
+        "responses": {
+          "200": { "description": "Full resource record", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Resource" } } } },
+          "404": { "description": "Not found" }
+        }
+      }
+    },
+    "/providers/{host}": {
+      "get": {
+        "operationId": "getProviderPage",
+        "summary": "All resources published by a given provider host",
+        "parameters": [{ "name": "host", "in": "path", "required": true, "schema": { "type": "string" } }],
+        "responses": { "200": { "description": "HTML page listing the provider's resources" }, "404": { "description": "Not found" } }
       }
     }
   },
