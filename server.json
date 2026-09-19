@@ -1,0 +1,18 @@
+{
+  "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
+  "name": "io.github.SaylorInnovations/agent-bazaar",
+  "title": "Agent Bazaar",
+  "description": "Open, permissionless discovery marketplace for x402-payable resources. No account or KYC required.",
+  "websiteUrl": "https://bazaar.saylorinnovations.com",
+  "version": "1.0.0",
+  "repository": {
+    "url": "https://github.com/SaylorInnovations/open-x402-bazaar",
+    "source": "github"
+  },
+  "remotes": [
+    {
+      "type": "streamable-http",
+      "url": "https://bazaar.saylorinnovations.com/mcp"
+    }
+  ]
+}

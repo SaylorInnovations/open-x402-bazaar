@@ -102,6 +102,17 @@ Every resource has a permanent, crawlable, server-rendered URL — not a client-
 | `/protocols`, `/protocols/{x402,mcp,a2a}` | What each protocol is and how Agent Bazaar uses it, with live stats |
 | `/mcp` | GET: info page. POST: a real MCP server (JSON-RPC/Streamable HTTP) over the same catalog — `search_resources`, `get_resource`, `get_pricing`, `discover_provider`, `list_resources`, `get_stats` |
 
+### Listed in
+
+Agent Bazaar's MCP server is published to the [official MCP Registry](https://registry.modelcontextprotocol.io) as `io.github.SaylorInnovations/agent-bazaar` — the canonical registry other aggregators (Glama, PulseMCP) pull from. `server.json` at the repo root is the source of truth; to re-publish after a change, bump its `version` and run:
+
+```bash
+mcp-publisher login github   # once per session
+mcp-publisher publish
+```
+
+Also listed (as a marketplace, not an MCP server specifically) in [awesome-x402](https://github.com/xpaysh/awesome-x402), [awesome-mcp-servers](https://github.com/punkpeye/awesome-mcp-servers) (Aggregators), and [gold-402](https://github.com/Haustorium12/gold-402) (Marketplaces & Discovery).
+
 ## Architecture
 
 - **Runtime**: [Cloudflare Pages Functions](https://developers.cloudflare.com/pages/functions/) (Workers runtime).
