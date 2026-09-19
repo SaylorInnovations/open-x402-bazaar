@@ -1,6 +1,9 @@
 name = "open-x402-bazaar"
 pages_build_output_dir = "public"
 compatibility_date = "2026-01-01"
+# Needed for solana-x402's use of Node's `crypto` module (HMAC quote-session
+# signing, timing-safe compare) — see functions/feature.js.
+compatibility_flags = ["nodejs_compat"]
 
 [[d1_databases]]
 binding = "DB"

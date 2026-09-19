@@ -71,6 +71,8 @@ async function attachAccepts(env, rows) {
     // true only when the provider proved control via POST /submit — never inferred
     // from hostname or any other heuristic.
     verified: r.listing_source === 'submitted',
+    // Paid placement, not a quality signal — see functions/feature.js.
+    featured: Boolean(r.featured_until && r.featured_until > new Date().toISOString()),
   }));
 }
 
@@ -208,7 +210,7 @@ async function getResourceBySlugOrId(env, key) {
   const isNumeric = /^\d+$/.test(key);
   const row = await env.DB
     .prepare(
-      `SELECT r.id, r.resource_url, r.description, r.x402_version, r.output_schema, r.tags, r.last_updated, r.listing_host, r.calls_30d, r.unique_payers_30d, r.last_called_at, r.slug, r.resource_type, r.metadata, r.is_live, r.last_checked_at, l.source AS listing_source
+      `SELECT r.id, r.resource_url, r.description, r.x402_version, r.output_schema, r.tags, r.last_updated, r.listing_host, r.calls_30d, r.unique_payers_30d, r.last_called_at, r.slug, r.resource_type, r.metadata, r.is_live, r.last_checked_at, r.featured_until, l.source AS listing_source
        FROM resources r JOIN listings l ON l.host = r.listing_host WHERE r.slug = ? ${isNumeric ? 'OR r.id = ?' : ''} LIMIT 1`
     )
     .bind(key, ...(isNumeric ? [Number(key)] : []))
@@ -224,7 +226,7 @@ async function getProvider(env, host) {
   if (!listing) return null;
   const { results } = await env.DB
     .prepare(
-      `SELECT r.id, r.resource_url, r.description, r.x402_version, r.output_schema, r.tags, r.last_updated, r.listing_host, r.calls_30d, r.unique_payers_30d, r.last_called_at, r.slug, r.resource_type, r.metadata, r.is_live, r.last_checked_at, l.source AS listing_source
+      `SELECT r.id, r.resource_url, r.description, r.x402_version, r.output_schema, r.tags, r.last_updated, r.listing_host, r.calls_30d, r.unique_payers_30d, r.last_called_at, r.slug, r.resource_type, r.metadata, r.is_live, r.last_checked_at, r.featured_until, l.source AS listing_source
        FROM resources r JOIN listings l ON l.host = r.listing_host WHERE r.listing_host = ? ORDER BY r.calls_30d DESC NULLS LAST, r.id`
     )
     .bind(host)
@@ -351,6 +353,50 @@ async function logSubmission(env, { clientIp, host }) {
     .run();
 }
 
+// Paid placement (functions/feature.js) — a marketplace-side fee, never a cut of
+// the underlying resource's own x402 payment. See resources.featured_until.
+async function getFeaturedResources(env, { limit = 6 } = {}) {
+  const { results } = await env.DB
+    .prepare(
+      `SELECT r.id, r.resource_url, r.description, r.x402_version, r.output_schema, r.tags, r.last_updated, r.listing_host, r.calls_30d, r.unique_payers_30d, r.last_called_at, r.slug, r.resource_type, r.metadata, r.is_live, r.last_checked_at, r.featured_until, l.source AS listing_source
+       FROM resources r JOIN listings l ON l.host = r.listing_host
+       WHERE r.featured_until IS NOT NULL AND r.featured_until > ?
+       ORDER BY r.featured_until DESC LIMIT ?`
+    )
+    .bind(new Date().toISOString(), clampLimit(limit))
+    .all();
+  return attachAccepts(env, results);
+}
+
+// Records a verified purchase and extends featured_until in one batch. Returns
+// false (no-op) if tx_signature was already used — the UNIQUE constraint on
+// feature_purchases.tx_signature is what actually enforces no-replay; this just
+// lets the caller respond honestly instead of surfacing a raw SQL error.
+async function recordFeaturePurchase(env, { resourceId, signature, amountUsd, days }) {
+  const now = Date.now();
+  const base = Math.max(now, await currentFeaturedUntilMs(env, resourceId));
+  const until = new Date(base + days * 24 * 60 * 60 * 1000).toISOString();
+
+  try {
+    await env.DB.batch([
+      env.DB
+        .prepare('INSERT INTO feature_purchases (resource_id, tx_signature, amount_usd, days, featured_until, created_at) VALUES (?, ?, ?, ?, ?, ?)')
+        .bind(resourceId, signature, amountUsd, days, until, new Date(now).toISOString()),
+      env.DB.prepare('UPDATE resources SET featured_until = ? WHERE id = ?').bind(until, resourceId),
+    ]);
+  } catch (e) {
+    if (String(e.message || e).includes('UNIQUE')) return { ok: false, reason: 'this payment has already been used to feature a resource' };
+    throw e;
+  }
+  return { ok: true, featuredUntil: until };
+}
+
+async function currentFeaturedUntilMs(env, resourceId) {
+  const row = await env.DB.prepare('SELECT featured_until FROM resources WHERE id = ?').bind(resourceId).first();
+  const ts = row?.featured_until ? Date.parse(row.featured_until) : NaN;
+  return Number.isFinite(ts) ? ts : 0;
+}
+
 export {
   upsertListing,
   deleteListing,
@@ -366,5 +412,7 @@ export {
   listNetworks,
   isRateLimited,
   logSubmission,
+  getFeaturedResources,
+  recordFeaturePurchase,
   toFtsQuery,
 };

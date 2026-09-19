@@ -67,6 +67,25 @@
     <p style="color:var(--silver);max-width:680px;">Right now, publishing goes through the manifest-URL flow above. Automated ingestion from an OpenAPI document, an MCP schema, or a Git repository is on the roadmap — see <a href="https://github.com/SaylorInnovations/open-x402-bazaar#not-yet-built-roadmap">the project roadmap</a> and open an issue if you want to help build it.</p>
   </section>
 
+  <section class="block" id="feature">
+    <h2>Featured placement</h2>
+    <p style="color:var(--silver);max-width:680px;">Listing is free and always will be. If you want your already-listed resource surfaced in the homepage's <strong>Featured Resources</strong> row and flagged with a <span class="badge badge-featured" style="vertical-align:middle;">featured</span> badge on its resource and provider pages, you can pay Agent Bazaar directly for placement. This is entirely separate from your resource's own <code>accepts[]</code> and payTo — we never touch or take a cut of payments made to your endpoint.</p>
+    <div style="display:flex;gap:16px;flex-wrap:wrap;margin:18px 0;">
+      <div class="stat" style="flex:1;min-width:140px;"><div class="n">$2</div><div class="l">7 days</div></div>
+      <div class="stat" style="flex:1;min-width:140px;"><div class="n">$6</div><div class="l">30 days</div></div>
+      <div class="stat" style="flex:1;min-width:140px;"><div class="n">$15</div><div class="l">90 days</div></div>
+    </div>
+    <p style="color:var(--silver);max-width:680px;">Paid the same way every other x402 resource here works: call the endpoint, get a <code>402</code>, pay one of the <code>accepts[]</code> options, retry with the payment header.</p>
+    <div class="codeblock">
+      <button class="copy-btn" onclick="copyBlock(this)">Copy</button>
+      <pre>curl "https://bazaar.saylorinnovations.com/feature?slug=YOUR-RESOURCE-SLUG&amp;days=30"
+# -&gt; 402 Payment Required, accepts[] lists how to pay (Solana or Base USDC)
+# retry with the payment header once paid
+# -&gt; { "ok": true, "slug": "...", "featuredUntil": "2026-..." }</pre>
+    </div>
+    <p style="color:var(--silver-soft);font-size:0.86rem;max-width:680px;">Find your resource's slug on its <code>/resources/&lt;slug&gt;</code> page. Paying again before the current period ends extends it rather than restarting it.</p>
+  </section>
+
   <section class="block">
     <h2>Rate limits</h2>
     <p style="color:var(--silver);max-width:680px;">20 submissions/hour and 60/day per IP, to keep the barrier at "no account" rather than "no limits." If you're publishing a large catalog in bulk, open an issue on GitHub and we'll help.</p>

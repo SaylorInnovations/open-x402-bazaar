@@ -79,6 +79,8 @@ Mirrors the field names and shape of Coinbase's CDP Bazaar API, plus an additive
 | `GET /resources/{slug}.json` | Full machine-readable record for a single resource |
 | `GET /discovery/agents?query=&limit=&offset=` | Search/list the A2A agent registry (other agents' cards, not Agent Bazaar's own) |
 | `GET /agents/{slug}.json` | Full A2A agent card as submitted |
+| `GET /discovery/featured?limit=` | Currently-featured resources (paid placement, see below) |
+| `GET /feature?slug=&days={7,30,90}` | x402-payable: pay Agent Bazaar directly to feature an already-listed resource. See "Featured placement" below |
 
 No API key required for any read endpoint — same as Coinbase's.
 
@@ -113,12 +115,16 @@ mcp-publisher publish
 
 Also listed (as a marketplace, not an MCP server specifically) in [awesome-x402](https://github.com/xpaysh/awesome-x402), [awesome-mcp-servers](https://github.com/punkpeye/awesome-mcp-servers) (Aggregators), and [gold-402](https://github.com/Haustorium12/gold-402) (Marketplaces & Discovery).
 
+## Featured placement
+
+Listing is, and always will be, free — Agent Bazaar never takes a cut of any resource's own `accepts[]` payment, including the ~15,600 mirrored resources it didn't author. The one thing it does sell directly is placement: a provider can pay Agent Bazaar itself (not the resource's payTo) to put an already-listed resource in the homepage's Featured Resources row and flag it with a `featured` badge on its resource and provider pages, for 7/30/90 days (`$2`/`$6`/`$15`). It's paid the same way every resource here works — `GET /feature?slug=&days=` returns a 402 with `accepts[]`; pay one, retry, get a `featuredUntil` timestamp back. See [`/publish#feature`](public/publish/index.html) for the full walkthrough. Implemented with Saylor Innovations' own [`solana-x402`](https://github.com/SaylorInnovations/solana-x402) library — see Architecture below.
+
 ## Architecture
 
 - **Runtime**: [Cloudflare Pages Functions](https://developers.cloudflare.com/pages/functions/) (Workers runtime).
 - **Storage**: [D1](https://developers.cloudflare.com/d1/) (SQLite), normalized across `listings` / `resources` / `resource_accepts`, plus an FTS5 virtual table for real keyword search — not just JS-array filtering. `submission_log` backs per-IP rate limiting.
 - **Ingestion**: pull-based. Sellers submit a manifest URL; nothing is pushed. Re-submitting the same manifest URL deletes and re-inserts its resources (a full refresh, not a merge). The Coinbase-mirror importer (`scripts/import-cdp-bazaar.mjs`) is the one exception — a standalone Node script that fetches Coinbase's public catalog and writes SQL directly, run out-of-band from the Workers request path.
-- **Zero runtime dependencies** — `wrangler` is dev-only, for local D1/Pages tooling and the mirror importer.
+- **One runtime dependency** — [`solana-x402`](https://github.com/SaylorInnovations/solana-x402) (Saylor Innovations' own x402 resource-server library, pinned to a commit SHA via a `github:` install), used only by `functions/feature.js` for payment issuance/verification on the paid-placement endpoint. Everything else has zero runtime dependencies; `wrangler` remains dev-only, for local D1/Pages tooling and the mirror importer.
 
 ### Local development
 
@@ -131,7 +137,9 @@ npm run check:liveness          # optional: probe owner-submitted resources, fla
 npm run dev                     # wrangler pages dev, with the D1 binding wired up
 ```
 
-If you already have a deployed D1 database predating later schema changes, apply the additive migrations in order instead of re-running `schema.sql`: `npm run db:migrate:remote`, then `:0003`, `:0004`, `:0005`.
+If you already have a deployed D1 database predating later schema changes, apply the additive migrations in order instead of re-running `schema.sql`: `npm run db:migrate:remote`, then `:0003`, `:0004`, `:0005`, `:0006`.
+
+`/feature` requires a `FEATURE_SECRET` Pages secret (HMAC-signs its payment quote sessions) — set it with `wrangler pages secret put FEATURE_SECRET`. Without one it falls back to an insecure dev-only value, which is fine for `wrangler pages dev` but must never reach production. An optional `FEATURE_RPC_URL` overrides the default public, rate-limited Solana RPC endpoint.
 
 ### Keeping it fresh (self-hosting)
 

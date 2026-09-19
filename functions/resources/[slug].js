@@ -38,6 +38,7 @@ function renderHtml(r) {
 <main class="wrap" style="padding:32px 0 60px;">
   <nav class="breadcrumbs"><a href="/">Agent Bazaar</a> / <a href="/#explore">Resources</a> / ${escapeHtml(r.resourceType || 'Resource')}</nav>
   <div class="meta-row" style="margin-bottom:14px;">
+    ${r.featured ? '<span class="badge badge-featured">featured</span>' : ''}
     ${verified ? '<span class="badge badge-verified">verified owner</span>' : '<span class="badge badge-mirror">mirrored listing</span>'}
     ${isDown ? '<span class="badge badge-down">not responding</span>' : ''}
     ${r.resourceType ? `<span class="badge">${escapeHtml(r.resourceType)}</span>` : ''}

@@ -15,6 +15,7 @@
     "db:migrate:remote:0003": "wrangler d1 execute open-x402-bazaar --remote --file=migrations/0003_slug_type_metadata.sql",
     "db:migrate:remote:0004": "wrangler d1 execute open-x402-bazaar --remote --file=migrations/0004_liveness.sql",
     "db:migrate:remote:0005": "wrangler d1 execute open-x402-bazaar --remote --file=migrations/0005_agent_registry.sql",
+    "db:migrate:remote:0006": "wrangler d1 execute open-x402-bazaar --remote --file=migrations/0006_featured_listings.sql",
     "dev": "wrangler pages dev public --compatibility-date=2026-01-01",
     "seed:cdp-bazaar": "node scripts/import-cdp-bazaar.mjs --local",
     "seed:cdp-bazaar:remote": "node scripts/import-cdp-bazaar.mjs --remote --apply",
@@ -47,5 +48,8 @@
   },
   "devDependencies": {
     "wrangler": "^4.134.0"
+  },
+  "dependencies": {
+    "solana-x402": "github:SaylorInnovations/solana-x402#33b8fa0763cefd1e3a98e9d1b8e5e097ad49ea87"
   }
 }

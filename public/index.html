@@ -94,7 +94,15 @@
   <div id="searchResults" class="grid-cards" style="display:none;margin-top:24px;"></div>
 
   <div id="defaultSections">
-    <section class="block" style="border-top:none;">
+    <section class="block" id="featuredSection" style="border-top:none;display:none;">
+      <div class="block-head">
+        <h2>Featured Resources</h2>
+        <span class="see-all">paid placement — <a href="/publish#feature">learn more</a></span>
+      </div>
+      <div class="grid-cards" data-section="featured"></div>
+    </section>
+
+    <section class="block" id="officialSection" style="border-top:none;">
       <div class="block-head">
         <h2>Official Saylor Innovations APIs</h2>
         <span class="see-all">verified &middot; owner-operated</span>
@@ -206,7 +214,7 @@
     var verified = r.verified === true;
     var down = r.liveness && r.liveness.isLive === false;
     return '<div class="card">' +
-      '<div class="meta-row">' + (verified ? '<span class="badge badge-verified">verified</span>' : '') + (down ? '<span class="badge badge-down">not responding</span>' : '') + (r.resourceType ? '<span class="badge">' + esc(r.resourceType) + '</span>' : '') + '<span class="badge badge-protocol">x402</span></div>' +
+      '<div class="meta-row">' + (r.featured ? '<span class="badge badge-featured">featured</span>' : '') + (verified ? '<span class="badge badge-verified">verified</span>' : '') + (down ? '<span class="badge badge-down">not responding</span>' : '') + (r.resourceType ? '<span class="badge">' + esc(r.resourceType) + '</span>' : '') + '<span class="badge badge-protocol">x402</span></div>' +
       '<h3><a href="/resources/' + esc(r.slug) + '">' + esc(title) + '</a></h3>' +
       '<p class="desc">' + esc(r.description || r.resource) + '</p>' +
       '<div class="price">' + esc(priceOf(r)) + (r.accepts && r.accepts[0] && r.accepts[0].amountUsd ? ' / request' : '') + '</div>' +
@@ -219,6 +227,14 @@
     document.querySelector('[data-stat="merchants"]').textContent = s.merchants.toLocaleString();
     document.querySelector('[data-stat="networks"]').textContent = s.networks;
     document.querySelector('[data-stat="calls"]').textContent = s.calls30d.toLocaleString();
+  }).catch(function () {});
+
+  fetch('/discovery/featured?limit=6').then(r => r.json()).then(d => {
+    if (d.resources && d.resources.length) {
+      document.querySelector('[data-section="featured"]').innerHTML = d.resources.map(card).join('');
+      document.getElementById('featuredSection').style.display = '';
+      document.getElementById('officialSection').style.borderTop = '';
+    }
   }).catch(function () {});
 
   fetch('/discovery/resources?limit=6&sort=recent').then(r => r.json()).then(d => {

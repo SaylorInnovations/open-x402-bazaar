@@ -40,6 +40,10 @@ CREATE TABLE IF NOT EXISTS resources (
   -- mirrored resources are Coinbase's to keep live, not ours to probe at scale.
   is_live INTEGER,
   last_checked_at TEXT,
+  -- Paid placement (functions/feature.js): resource is "featured" while
+  -- featured_until is in the future. Never touches the underlying resource's own
+  -- x402 payment — this is a separate x402 purchase paid to Agent Bazaar itself.
+  featured_until TEXT,
   FOREIGN KEY (listing_host) REFERENCES listings(host)
 );
 
@@ -134,3 +138,19 @@ CREATE TRIGGER IF NOT EXISTS agent_cards_ad AFTER DELETE ON agent_cards BEGIN
   INSERT INTO agent_cards_fts(agent_cards_fts, rowid, name, description, skills)
   VALUES ('delete', old.id, old.name, old.description, old.skills);
 END;
+
+CREATE INDEX IF NOT EXISTS idx_resources_featured_until ON resources(featured_until);
+
+-- One row per successful "feature this resource" x402 purchase. tx_signature is
+-- UNIQUE so the same on-chain payment can never be replayed to re-extend or
+-- feature a second resource.
+CREATE TABLE IF NOT EXISTS feature_purchases (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  resource_id INTEGER NOT NULL,
+  tx_signature TEXT UNIQUE NOT NULL,
+  amount_usd REAL NOT NULL,
+  days INTEGER NOT NULL,
+  featured_until TEXT NOT NULL,
+  created_at TEXT NOT NULL,
+  FOREIGN KEY (resource_id) REFERENCES resources(id)
+);
