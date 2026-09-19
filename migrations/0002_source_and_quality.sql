@@ -1,5 +1,5 @@
 -- Additive migration for databases that already had the original (pre-mirror) schema
--- applied. Safe to run once; `schema.sql` already includes these for fresh installs.
+-- applied. Safe to run once; schema.sql already includes these for fresh installs.
 ALTER TABLE listings ADD COLUMN source TEXT NOT NULL DEFAULT 'submitted';
 ALTER TABLE resources ADD COLUMN calls_30d INTEGER;
 ALTER TABLE resources ADD COLUMN unique_payers_30d INTEGER;
