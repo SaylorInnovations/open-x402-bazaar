@@ -96,6 +96,9 @@ Every resource has a permanent, crawlable, server-rendered URL — not a client-
 | `/agents/{slug}` | A2A agent detail page — skills, provider, protocol version, card URL |
 | `/publish` | How to list a resource as a seller |
 | `/docs` | What x402/MCP/A2A are, how agent payments work, self-hosting |
+| `/categories`, `/categories/{type}` | Browse by resource type (populated as providers set one — sparse for the mirrored bulk of the catalog, which doesn't) |
+| `/networks`, `/networks/{network}` | Browse by CAIP-2 network — populated for every resource, since it comes from `accepts[]` |
+| `/protocols`, `/protocols/{x402,mcp,a2a}` | What each protocol is and how Agent Bazaar uses it, with live stats |
 | `/mcp` | GET: info page. POST: a real MCP server (JSON-RPC/Streamable HTTP) over the same catalog — `search_resources`, `get_resource`, `get_pricing`, `discover_provider`, `list_resources`, `get_stats` |
 
 ## Architecture
@@ -118,6 +121,10 @@ npm run dev                     # wrangler pages dev, with the D1 binding wired 
 
 If you already have a deployed D1 database predating later schema changes, apply the additive migrations in order instead of re-running `schema.sql`: `npm run db:migrate:remote`, then `:0003`, `:0004`, `:0005`.
 
+### Keeping it fresh (self-hosting)
+
+`seed:cdp-bazaar:remote`, `seed:saylor-official:remote` and `check:liveness:remote` are just npm scripts — run them on whatever scheduler you already have (cron, GitHub Actions, a Cloudflare Worker with its own Cron Trigger calling out to a small script, etc). They're deliberately plain Node scripts with no dependency on any particular scheduling platform.
+
 ## Security notes
 
 `POST /submit` fetches a URL the caller supplies — a classic SSRF vector if unguarded. Before any request is made, the hostname is resolved and rejected if it points at loopback, RFC1918 private ranges, or link-local space (including the `169.254.169.254` cloud-metadata address). Redirects are not followed automatically. Manifest size and fetch time are capped.
@@ -126,7 +133,7 @@ If you already have a deployed D1 database predating later schema changes, apply
 
 - ~~Periodic liveness checks~~ — done. `scripts/check-liveness.mjs` probes every owner-submitted resource (not the mirrored ones — Coinbase already crawls those) and marks it `is_live: true/false`; a confirmed-down resource gets a visible "not responding" badge on its card, detail page and provider page. It doesn't yet auto-prune or re-fetch changed payment addresses — a down resource stays listed, just flagged.
 - **Semantic search.** Current search is keyword/substring (FTS5) only, unlike Coinbase's hybrid text+semantic search.
-- **Scheduled auto-mirroring.** The importers are run manually today; a Cloudflare Cron Trigger re-running them daily would keep the catalog current without a person remembering to.
+- ~~Scheduled auto-mirroring~~ — done, via a daily scheduled job that runs both importers and the liveness check against production. (Implemented as a scheduled Claude Code cloud routine rather than a Cloudflare Cron Trigger — Pages Functions don't support cron triggers the way standalone Workers do — so this is operational, not something a fork of this repo gets automatically; see the "Keeping it fresh" note below if self-hosting.)
 - **Third-party MCP tool directory.** `/mcp` is now a real, working MCP server over *this* catalog (see above), but it doesn't yet proxy or list *other* MCP servers with their own detail pages the way `/resources/{slug}` does for x402 resources.
 - ~~A2A agent registry~~ — done. `/discovery/agents`, `POST /submit-agent`, and `/agents/{slug}` list a directory of *other* agents' cards (separate from `/.well-known/agent-card.json`, which is Agent Bazaar's own). Not yet built within it: liveness checks on registered agents (only resources get probed today), and no reputation/trust signal beyond "registered."
 - **Automated provider ingestion.** Publishing today is manifest-URL only; importing directly from an OpenAPI document, MCP schema, or Git repo is not yet built.

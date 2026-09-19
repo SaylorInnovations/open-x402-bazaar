@@ -2,7 +2,7 @@
 // "thousands of near-identical spam pages" this architecture is supposed to avoid.
 // Indexed: static pages, every provider, and resources from verified (owner-submitted)
 // providers. The full catalog remains crawlable by agents via /discovery/resources.
-const STATIC_PATHS = ['/', '/agents', '/publish', '/docs', '/mcp'];
+const STATIC_PATHS = ['/', '/agents', '/publish', '/docs', '/mcp', '/categories', '/networks', '/protocols', '/protocols/x402', '/protocols/mcp', '/protocols/a2a'];
 
 export async function onRequestGet({ env }) {
   const base = 'https://bazaar.saylorinnovations.com';
@@ -10,6 +10,14 @@ export async function onRequestGet({ env }) {
 
   const { results: providers } = await env.DB.prepare("SELECT host FROM listings ORDER BY host").all();
   for (const p of providers) urls.push(`/providers/${p.host}`);
+
+  const { results: categories } = await env.DB
+    .prepare("SELECT DISTINCT resource_type FROM resources WHERE resource_type IS NOT NULL AND resource_type != ''")
+    .all();
+  for (const c of categories) urls.push(`/categories/${encodeURIComponent(c.resource_type)}`);
+
+  const { results: networks } = await env.DB.prepare('SELECT DISTINCT network FROM resource_accepts').all();
+  for (const n of networks) urls.push(`/networks/${encodeURIComponent(n.network)}`);
 
   const { results: verified } = await env.DB
     .prepare(

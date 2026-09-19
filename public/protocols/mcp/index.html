@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>MCP Protocol — Agent Bazaar</title>
+<meta name="description" content="How Model Context Protocol works, how it differs from a plain REST API, and how Agent Bazaar's own MCP server exposes marketplace search as tools.">
+<link rel="canonical" href="https://bazaar.saylorinnovations.com/protocols/mcp">
+<link rel="icon" type="image/jpeg" href="/assets/saylor-logo.jpg">
+<link rel="stylesheet" href="/assets/bazaar.css">
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700;800&family=Manrope:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<script type="application/ld+json">
+{ "@context": "https://schema.org", "@type": "TechArticle", "headline": "MCP Protocol", "about": "Model Context Protocol tool discovery" }
+</script>
+</head>
+<body>
+<header class="site-nav">
+  <div class="wrap nav-inner">
+    <a href="/" class="brand"><img src="/assets/saylor-logo.jpg" alt="Saylor Innovations"><span>Agent Bazaar <span class="sub">by Saylor Innovations</span></span></a>
+    <nav class="nav-links">
+      <a href="/#explore">Explore</a>
+      <a href="/publish">Publish</a>
+      <a href="/agents">Agents</a>
+      <a href="/docs">Docs</a>
+      <a href="https://github.com/SaylorInnovations/open-x402-bazaar">GitHub</a>
+    </nav>
+  </div>
+</header>
+<main class="wrap" style="padding:40px 0 60px;max-width:760px;">
+  <nav class="breadcrumbs"><a href="/">Agent Bazaar</a> / <a href="/protocols">Protocols</a> / MCP</nav>
+  <span class="eyebrow">PROTOCOL</span>
+  <h1>MCP</h1>
+  <p class="lede" style="max-width:none;">How an agent finds out what a server can do, without being told in advance.</p>
+
+  <section class="block" style="border-top:none;padding-top:0;">
+    <h2>The problem it solves</h2>
+    <p style="color:var(--silver);">A REST API is only useful to an agent that already knows its exact shape — which endpoints exist, what parameters they take, what they return. That knowledge has to come from somewhere: documentation a human read, or a hard-coded integration someone wrote. Model Context Protocol (MCP) puts that knowledge in the server itself. A client connects, calls <code>tools/list</code>, and gets back every tool's name, description and JSON Schema for its inputs and outputs — machine-readable, at runtime, no prior integration required.</p>
+  </section>
+
+  <section class="block">
+    <h2>MCP vs REST vs x402</h2>
+    <p style="color:var(--silver);">These solve different problems and compose rather than compete. A REST API is called directly once its shape is known. MCP standardizes <em>discovering</em> that shape at runtime. x402 standardizes <em>paying</em> for a call. A single resource can be reachable over plain HTTP, described via MCP's <code>tools/list</code>, and priced via an x402 <code>402</code> response — all three at once, which is exactly how Agent Bazaar's own MCP server works: its tools are just <a href="/discovery/search"><code>/discovery</code></a> under a different transport.</p>
+  </section>
+
+  <section class="block">
+    <h2>Transport: Streamable HTTP</h2>
+    <p style="color:var(--silver);">MCP's Streamable HTTP transport is one JSON-RPC 2.0 request in, one JSON-RPC 2.0 response out — a server that only offers read-only, stateless tools (like search) doesn't need a persistent connection or session handshake at all. Agent Bazaar's server works exactly this way.</p>
+    <div class="codeblock"><pre>curl -X POST https://bazaar.saylorinnovations.com/mcp \
+  -H "content-type: application/json" \
+  -d '{"jsonrpc":"2.0","id":1,"method":"tools/list"}'</pre></div>
+  </section>
+
+  <section class="block">
+    <h2>On Agent Bazaar</h2>
+    <p style="color:var(--silver);">Full tool list and connection details: <a href="/mcp">/mcp</a>. Every resource on this marketplace is reachable the same way an agent would reach any tool — search, inspect the schema, then call it.</p>
+  </section>
+</main>
+<footer class="site-footer">
+  <div class="wrap footer-bottom">
+    <span><a href="/">&larr; Agent Bazaar</a></span>
+    <span class="powered"><img src="/assets/saylor-logo.jpg" alt="">A Saylor Innovations product</span>
+  </div>
+</footer>
+</body>
+</html>

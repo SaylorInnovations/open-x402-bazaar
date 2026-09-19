@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>x402 Protocol — Agent Bazaar</title>
+<meta name="description" content="How x402 works: the HTTP 402 Payment Required flow that lets AI agents pay for APIs per request, with no accounts, no API keys and no subscriptions.">
+<link rel="canonical" href="https://bazaar.saylorinnovations.com/protocols/x402">
+<link rel="icon" type="image/jpeg" href="/assets/saylor-logo.jpg">
+<link rel="stylesheet" href="/assets/bazaar.css">
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700;800&family=Manrope:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<script type="application/ld+json">
+{ "@context": "https://schema.org", "@type": "TechArticle", "headline": "x402 Protocol", "about": "Machine payments over HTTP 402" }
+</script>
+</head>
+<body>
+<header class="site-nav">
+  <div class="wrap nav-inner">
+    <a href="/" class="brand"><img src="/assets/saylor-logo.jpg" alt="Saylor Innovations"><span>Agent Bazaar <span class="sub">by Saylor Innovations</span></span></a>
+    <nav class="nav-links">
+      <a href="/#explore">Explore</a>
+      <a href="/publish">Publish</a>
+      <a href="/agents">Agents</a>
+      <a href="/docs">Docs</a>
+      <a href="https://github.com/SaylorInnovations/open-x402-bazaar">GitHub</a>
+    </nav>
+  </div>
+</header>
+<main class="wrap" style="padding:40px 0 60px;max-width:760px;">
+  <nav class="breadcrumbs"><a href="/">Agent Bazaar</a> / <a href="/protocols">Protocols</a> / x402</nav>
+  <span class="eyebrow">PROTOCOL</span>
+  <h1>x402</h1>
+  <p class="lede" style="max-width:none;">The wire protocol behind every machine payment on this marketplace.</p>
+
+  <div class="stats-strip" style="margin:28px 0;">
+    <div class="stat"><div class="n" data-stat="resources">&mdash;</div><div class="l">x402 resources listed</div></div>
+    <div class="stat"><div class="n" data-stat="networks">&mdash;</div><div class="l">networks supported</div></div>
+  </div>
+
+  <section class="block" style="border-top:none;padding-top:0;">
+    <h2>The flow</h2>
+    <p style="color:var(--silver);">A client requests a resource with no payment attached. The server responds <code>HTTP 402 Payment Required</code> with an <code>accepts[]</code> array — one or more valid ways to pay, each specifying a <code>scheme</code> (how the payment is constructed), a <code>network</code> (which chain), a <code>payTo</code> address, an <code>asset</code>, and an <code>amount</code>. The client settles one of those options and retries the request carrying proof of payment. The server verifies it and returns the resource.</p>
+    <div class="codeblock"><pre>GET /api/security/abc123
+&lt;- 402 Payment Required
+   { "accepts": [{ "scheme": "exact", "network": "eip155:8453",
+                    "payTo": "0x...", "asset": "0x...USDC", "amount": "10000" }] }
+
+[pay 0.01 USDC to payTo on Base]
+
+GET /api/security/abc123
+   Header: PAYMENT-SIGNATURE: ...
+&lt;- 200 OK { ...the resource... }</pre></div>
+  </section>
+
+  <section class="block">
+    <h2>Why it matters for agents specifically</h2>
+    <p style="color:var(--silver);">Every other machine-payment pattern — API keys, OAuth client credentials, invoiced accounts — assumes a human signed up ahead of time. An autonomous agent discovering a new resource at runtime has no such history with it. x402 needs nothing but a wallet: the agent reads the price in the 402 response, decides whether to pay, and does it in the same request cycle. That is what makes truly autonomous <strong>agent-to-agent commerce</strong> possible instead of theoretical.</p>
+  </section>
+
+  <section class="block">
+    <h2>On Agent Bazaar</h2>
+    <p style="color:var(--silver);">Every resource in this marketplace publishes its <code>accepts[]</code> in this exact shape — see any <a href="/resources/solana-token-security-intelligence">resource page</a> or <code>/resources/{slug}.json</code>. Browse by chain at <a href="/networks">/networks</a>.</p>
+  </section>
+</main>
+<footer class="site-footer">
+  <div class="wrap footer-bottom">
+    <span><a href="/">&larr; Agent Bazaar</a></span>
+    <span class="powered"><img src="/assets/saylor-logo.jpg" alt="">A Saylor Innovations product</span>
+  </div>
+</footer>
+<script>
+fetch('/discovery/stats').then(r=>r.json()).then(s=>{
+  document.querySelector('[data-stat="resources"]').textContent = s.resources.toLocaleString();
+  document.querySelector('[data-stat="networks"]').textContent = Object.keys(s.byNetwork||{}).length;
+}).catch(function(){});
+</script>
+</body>
+</html>

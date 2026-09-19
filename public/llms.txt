@@ -42,6 +42,11 @@ which describes Agent Bazaar's own discovery surface):
 - `POST /submit-agent` with `{"agentCardUrl": "https://youragent.example.com/.well-known/agent-card.json"}`
   to register — no account required, same trust model as resource listings.
 
+## Browsing
+
+`/categories`, `/networks` and `/protocols` are human-facing hub pages (with live
+data) for the same underlying catalog — useful starting points, not separate data.
+
 ## For sellers: listing a resource
 
 `POST /submit` with `{"manifestUrl": "https://yoursite.com/.well-known/x402.json"}`.

@@ -41,15 +41,17 @@ function footer() {
       <div>
         <h4>Marketplace</h4>
         <a href="/#explore">Explore</a>
+        <a href="/categories">Categories</a>
+        <a href="/networks">Networks</a>
         <a href="/publish">Publish a resource</a>
         <a href="/agents">Connect an agent</a>
         <a href="/discovery/stats">Network stats</a>
       </div>
       <div>
         <h4>Protocols</h4>
-        <a href="/docs#x402">x402</a>
-        <a href="/mcp">MCP</a>
-        <a href="/.well-known/agent-card.json">A2A agent card</a>
+        <a href="/protocols/x402">x402</a>
+        <a href="/protocols/mcp">MCP</a>
+        <a href="/protocols/a2a">A2A</a>
         <a href="/openapi.json">OpenAPI</a>
       </div>
       <div>

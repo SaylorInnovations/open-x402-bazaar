@@ -197,6 +197,28 @@
           "404": { "description": "Not found" }
         }
       }
+    },
+    "/categories": {
+      "get": { "operationId": "listCategories", "summary": "Browse resource categories with counts", "responses": { "200": { "description": "HTML page" } } }
+    },
+    "/categories/{category}": {
+      "get": {
+        "operationId": "getCategoryPage",
+        "summary": "Resources of a given type (paginated)",
+        "parameters": [{ "name": "category", "in": "path", "required": true, "schema": { "type": "string" } }, { "name": "offset", "in": "query", "schema": { "type": "integer" } }],
+        "responses": { "200": { "description": "HTML page" }, "404": { "description": "No resources in this category" } }
+      }
+    },
+    "/networks": {
+      "get": { "operationId": "listNetworks", "summary": "Browse networks with counts", "responses": { "200": { "description": "HTML page" } } }
+    },
+    "/networks/{network}": {
+      "get": {
+        "operationId": "getNetworkPage",
+        "summary": "Resources accepting payment on a given CAIP-2 network (paginated)",
+        "parameters": [{ "name": "network", "in": "path", "required": true, "schema": { "type": "string" } }, { "name": "offset", "in": "query", "schema": { "type": "integer" } }],
+        "responses": { "200": { "description": "HTML page" }, "404": { "description": "No resources on this network" } }
+      }
     }
   },
   "components": {

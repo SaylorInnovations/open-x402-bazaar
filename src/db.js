@@ -232,6 +232,56 @@ async function getProvider(env, host) {
   return { provider: listing, resources: await attachAccepts(env, results) };
 }
 
+async function resourcesByNetwork(env, network, { limit, offset }) {
+  const lim = clampLimit(limit);
+  const off = Math.max(Number(offset) || 0, 0);
+  const { results } = await env.DB
+    .prepare(
+      `SELECT DISTINCT r.id, r.resource_url, r.description, r.x402_version, r.output_schema, r.tags, r.last_updated, r.listing_host, r.calls_30d, r.unique_payers_30d, r.last_called_at, r.slug, r.resource_type, r.metadata, r.is_live, r.last_checked_at, l.source AS listing_source
+       FROM resources r JOIN resource_accepts a ON a.resource_id = r.id JOIN listings l ON l.host = r.listing_host
+       WHERE a.network = ? ORDER BY r.calls_30d DESC NULLS LAST, r.id LIMIT ? OFFSET ?`
+    )
+    .bind(network, lim, off)
+    .all();
+  const { total } = await env.DB
+    .prepare('SELECT COUNT(DISTINCT r.id) AS total FROM resources r JOIN resource_accepts a ON a.resource_id = r.id WHERE a.network = ?')
+    .bind(network)
+    .first();
+  return { resources: await attachAccepts(env, results), total, limit: lim, offset: off };
+}
+
+async function resourcesByCategory(env, resourceType, { limit, offset }) {
+  const lim = clampLimit(limit);
+  const off = Math.max(Number(offset) || 0, 0);
+  const { results } = await env.DB
+    .prepare(
+      `SELECT r.id, r.resource_url, r.description, r.x402_version, r.output_schema, r.tags, r.last_updated, r.listing_host, r.calls_30d, r.unique_payers_30d, r.last_called_at, r.slug, r.resource_type, r.metadata, r.is_live, r.last_checked_at, l.source AS listing_source
+       FROM resources r JOIN listings l ON l.host = r.listing_host
+       WHERE r.resource_type = ? COLLATE NOCASE ORDER BY r.calls_30d DESC NULLS LAST, r.id LIMIT ? OFFSET ?`
+    )
+    .bind(resourceType, lim, off)
+    .all();
+  const { total } = await env.DB
+    .prepare('SELECT COUNT(*) AS total FROM resources WHERE resource_type = ? COLLATE NOCASE')
+    .bind(resourceType)
+    .first();
+  return { resources: await attachAccepts(env, results), total, limit: lim, offset: off };
+}
+
+async function listCategories(env) {
+  const { results } = await env.DB
+    .prepare("SELECT resource_type, COUNT(*) AS count FROM resources WHERE resource_type IS NOT NULL AND resource_type != '' GROUP BY resource_type ORDER BY count DESC")
+    .all();
+  return results;
+}
+
+async function listNetworks(env) {
+  const { results } = await env.DB
+    .prepare('SELECT network, COUNT(DISTINCT resource_id) AS count FROM resource_accepts GROUP BY network ORDER BY count DESC')
+    .all();
+  return results;
+}
+
 async function getStats(env) {
   const [totals, byNetwork, bySource] = await Promise.all([
     env.DB
@@ -293,6 +343,10 @@ export {
   getResourceBySlugOrId,
   getProvider,
   getStats,
+  resourcesByNetwork,
+  resourcesByCategory,
+  listCategories,
+  listNetworks,
   isRateLimited,
   logSubmission,
   toFtsQuery,

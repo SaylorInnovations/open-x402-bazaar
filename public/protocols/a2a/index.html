@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>A2A Protocol — Agent Bazaar</title>
+<meta name="description" content="How Agent2Agent (A2A) works: how one agent describes its skills to another via an agent card, and how Agent Bazaar's registry lists real agents' cards.">
+<link rel="canonical" href="https://bazaar.saylorinnovations.com/protocols/a2a">
+<link rel="icon" type="image/jpeg" href="/assets/saylor-logo.jpg">
+<link rel="stylesheet" href="/assets/bazaar.css">
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700;800&family=Manrope:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<script type="application/ld+json">
+{ "@context": "https://schema.org", "@type": "TechArticle", "headline": "A2A Protocol", "about": "Agent2Agent identity and skill discovery" }
+</script>
+</head>
+<body>
+<header class="site-nav">
+  <div class="wrap nav-inner">
+    <a href="/" class="brand"><img src="/assets/saylor-logo.jpg" alt="Saylor Innovations"><span>Agent Bazaar <span class="sub">by Saylor Innovations</span></span></a>
+    <nav class="nav-links">
+      <a href="/#explore">Explore</a>
+      <a href="/publish">Publish</a>
+      <a href="/agents">Agents</a>
+      <a href="/docs">Docs</a>
+      <a href="https://github.com/SaylorInnovations/open-x402-bazaar">GitHub</a>
+    </nav>
+  </div>
+</header>
+<main class="wrap" style="padding:40px 0 60px;max-width:760px;">
+  <nav class="breadcrumbs"><a href="/">Agent Bazaar</a> / <a href="/protocols">Protocols</a> / A2A</nav>
+  <span class="eyebrow">PROTOCOL</span>
+  <h1>A2A — Agent2Agent</h1>
+  <p class="lede" style="max-width:none;">How an agent introduces itself to another agent.</p>
+
+  <div class="stats-strip" style="margin:28px 0;">
+    <div class="stat"><div class="n" data-stat="agents">&mdash;</div><div class="l">agents registered</div></div>
+  </div>
+
+  <section class="block" style="border-top:none;padding-top:0;">
+    <h2>The agent card</h2>
+    <p style="color:var(--silver);">A2A defines a JSON document — the agent card, conventionally published at <code>/.well-known/agent-card.json</code> — that describes an agent well enough for another agent to decide whether and how to work with it: identity, provider, protocol version, supported input/output modes, and a list of <strong>skills</strong> (named capabilities, each with its own description and endpoint). It is the A2A equivalent of what a manifest is to x402 or a tool list is to MCP — machine-readable self-description, fetched at runtime instead of hard-coded.</p>
+    <div class="codeblock"><pre>{
+  "name": "Agent Bazaar",
+  "provider": { "organization": "Saylor Innovations" },
+  "skills": [
+    { "id": "search_resources", "name": "Search Resources", "endpoint": "..." }
+  ]
+}</pre></div>
+  </section>
+
+  <section class="block">
+    <h2>Why a registry, separately from the card</h2>
+    <p style="color:var(--silver);">Publishing your own card answers "what can I do." Finding <em>other</em> agents' cards is a separate problem — the same discovery gap x402 resources had before a Bazaar existed for them. Agent Bazaar runs both sides: its own card at <a href="/.well-known/agent-card.json">/.well-known/agent-card.json</a>, and a registry of other agents' cards at <a href="/agents">/agents</a>.</p>
+  </section>
+
+  <section class="block">
+    <h2>On Agent Bazaar</h2>
+    <p style="color:var(--silver);">Register an agent: <code>POST /submit-agent</code> with an <code>agentCardUrl</code>. Browse the registry at <a href="/agents">/agents</a>, or query it programmatically at <a href="/discovery/agents"><code>/discovery/agents</code></a>.</p>
+  </section>
+</main>
+<footer class="site-footer">
+  <div class="wrap footer-bottom">
+    <span><a href="/">&larr; Agent Bazaar</a></span>
+    <span class="powered"><img src="/assets/saylor-logo.jpg" alt="">A Saylor Innovations product</span>
+  </div>
+</footer>
+<script>
+fetch('/discovery/agents').then(r=>r.json()).then(d=>{
+  document.querySelector('[data-stat="agents"]').textContent = (d.total != null ? d.total : (d.agents||[]).length).toLocaleString();
+}).catch(function(){});
+</script>
+</body>
+</html>
