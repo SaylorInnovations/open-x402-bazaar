@@ -48,6 +48,14 @@ function renderHtml(r) {
   <h1>${escapeHtml(r.description ? r.description.split('.')[0].slice(0, 90) : r.resource)}</h1>
   <p style="color:var(--silver);max-width:680px;">${escapeHtml(r.description || 'No description provided.')}</p>
 
+  ${!verified ? `
+  <div class="claim-banner">
+    <p>Do you run <strong>${escapeHtml(r.sourceHost)}</strong>? This listing was mirrored from Coinbase's public Bazaar.
+      <span>Claim it in 30 seconds — no account required — and it becomes verified, permanently overriding the mirrored copy.</span>
+    </p>
+    <a href="/publish" class="btn btn-primary btn-sm">Claim this listing</a>
+  </div>` : ''}
+
   <div class="stats-strip" style="margin:28px 0;">
     <div class="stat"><div class="n">${escapeHtml(price)}</div><div class="l">price</div></div>
     <div class="stat"><div class="n">${r.quality?.calls30d ?? '—'}</div><div class="l">calls / 30d</div></div>

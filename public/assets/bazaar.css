@@ -138,6 +138,12 @@ section.block { padding: 44px 0; border-top: 1px solid var(--border); }
 .badge-verified { color: var(--green); border-color: rgba(63, 185, 80, 0.4); background: rgba(63, 185, 80, 0.08); }
 .badge-mirror { color: var(--silver-soft); }
 .badge-down { color: var(--red); border-color: rgba(229, 83, 75, 0.4); background: rgba(229, 83, 75, 0.08); }
+
+/* claim-listing callout */
+.claim-banner { display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap; background: linear-gradient(135deg, rgba(201, 161, 74, 0.1), rgba(201, 161, 74, 0.03)); border: 1px solid rgba(201, 161, 74, 0.35); border-radius: var(--radius); padding: 16px 20px; margin: 20px 0; }
+.claim-banner p { margin: 0; color: var(--paper); font-size: 0.9rem; max-width: 560px; }
+.claim-banner p span { color: var(--silver-soft); font-size: 0.84rem; display: block; margin-top: 3px; }
+.claim-banner .btn { flex: none; }
 .badge-network { color: var(--violet); }
 .badge-protocol { color: var(--cyan); }
 

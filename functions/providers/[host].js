@@ -38,6 +38,14 @@ export async function onRequestGet({ params, env }) {
   <p style="color:var(--silver);">${resources.length} resource${resources.length === 1 ? '' : 's'} listed under <code>${escapeHtml(host)}</code>.</p>
   <p style="color:var(--silver-soft);font-size:0.88rem;">Source: <a href="${escapeHtml(provider.source_manifest_url)}">${escapeHtml(provider.source_manifest_url)}</a> &middot; last updated ${escapeHtml((provider.submitted_at || '').slice(0, 10))}</p>
 
+  ${!verified ? `
+  <div class="claim-banner">
+    <p>Do you run <strong>${escapeHtml(host)}</strong>? These ${resources.length} resource${resources.length === 1 ? '' : 's'} were mirrored from Coinbase's public Bazaar.
+      <span>Claim them all at once by submitting your own manifest — no account required, and it always overrides the mirrored copy.</span>
+    </p>
+    <a href="/publish" class="btn btn-primary btn-sm">Claim this provider</a>
+  </div>` : ''}
+
   <section class="block">
     <h2>Resources</h2>
     <div class="grid-cards">
