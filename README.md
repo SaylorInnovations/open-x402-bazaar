@@ -75,7 +75,7 @@ Mirrors the field names and shape of Coinbase's CDP Bazaar API, plus an additive
 | `GET /discovery/search?query=&network=&asset=&scheme=&payTo=&urlSubstring=&maxUsdPrice=&limit=` | Keyword/filter search. Text queries rank by relevance (FTS5 bm25); filter-only queries rank by 30-day call volume |
 | `GET /discovery/resources?limit=&offset=&sort=` | Paginated listing of every indexed resource. `sort=recent` for newest-first, default ranks by 30-day call volume |
 | `GET /discovery/merchant?payTo=<address>` | All resources that pay a specific address |
-| `GET /discovery/stats` | Catalog totals: listings, resources, accepts, merchants, calls, network/source breakdown |
+| `GET /discovery/stats?full=` | Catalog totals: listings, resources, accepts, merchants, network count, calls. `full=1` adds the per-network/per-source breakdown — a full table scan, so it's opt-in, not computed by default |
 | `GET /resources/{slug}.json` | Full machine-readable record for a single resource |
 | `GET /discovery/agents?query=&limit=&offset=` | Search/list the A2A agent registry (other agents' cards, not Agent Bazaar's own) |
 | `GET /agents/{slug}.json` | Full A2A agent card as submitted |
@@ -129,6 +129,10 @@ If you already have a deployed D1 database predating later schema changes, apply
 ## Security notes
 
 `POST /submit` fetches a URL the caller supplies — a classic SSRF vector if unguarded. Before any request is made, the hostname is resolved and rejected if it points at loopback, RFC1918 private ranges, or link-local space (including the `169.254.169.254` cloud-metadata address). Redirects are not followed automatically. Manifest size and fetch time are capped.
+
+## D1 cost notes
+
+D1's free tier caps daily row reads. `GET /discovery/stats` (and `listNetworks`/`listCategories`) do an unfiltered `GROUP BY` over `resource_accepts` — an aggregate with no `WHERE` clause reads every row in the table no matter how well-indexed it is, since there's nothing to prune. `getStats()` is cheap by default (totals only, including a `COUNT(DISTINCT network)` that rides along for free in the same query) and only pays for the full per-network/per-source breakdown when a caller explicitly asks via `?full=1` — the homepage and `/protocols/x402` used to fetch the full breakdown on every casual page view just to display a count, which alone was enough to exhaust the free tier's daily cap during heavy testing. If you add a new page that needs `byNetwork`/`bySource`, request it explicitly rather than defaulting to `full=true` everywhere.
 
 ## Not yet built (roadmap)
 

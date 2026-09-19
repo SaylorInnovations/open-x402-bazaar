@@ -102,7 +102,7 @@ async function callTool(env, name, args = {}) {
     case 'list_resources':
       return textResult(await listResources(env, args));
     case 'get_stats':
-      return textResult(await getStats(env));
+      return textResult(await getStats(env, { full: true }));
     case 'discover_agents':
       return textResult(args.query ? await searchAgents(env, args) : (await listAgents(env, args)).agents);
     case 'get_agent': {

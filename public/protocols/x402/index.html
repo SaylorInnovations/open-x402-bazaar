@@ -77,7 +77,7 @@ GET /api/security/abc123
 <script>
 fetch('/discovery/stats').then(r=>r.json()).then(s=>{
   document.querySelector('[data-stat="resources"]').textContent = s.resources.toLocaleString();
-  document.querySelector('[data-stat="networks"]').textContent = Object.keys(s.byNetwork||{}).length;
+  document.querySelector('[data-stat="networks"]').textContent = s.networks;
 }).catch(function(){});
 </script>
 </body>

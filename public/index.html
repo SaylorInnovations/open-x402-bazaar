@@ -206,7 +206,7 @@
   fetch('/discovery/stats').then(r => r.json()).then(s => {
     document.querySelector('[data-stat="resources"]').textContent = s.resources.toLocaleString();
     document.querySelector('[data-stat="merchants"]').textContent = s.merchants.toLocaleString();
-    document.querySelector('[data-stat="networks"]').textContent = Object.keys(s.byNetwork || {}).length;
+    document.querySelector('[data-stat="networks"]').textContent = s.networks;
     document.querySelector('[data-stat="calls"]').textContent = s.calls30d.toLocaleString();
   }).catch(function () {});
 

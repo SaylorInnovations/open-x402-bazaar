@@ -282,31 +282,48 @@ async function listNetworks(env) {
   return results;
 }
 
-async function getStats(env) {
-  const [totals, byNetwork, bySource] = await Promise.all([
-    env.DB
-      .prepare(
-        `SELECT
-           (SELECT COUNT(*) FROM listings) AS listings,
-           (SELECT COUNT(*) FROM resources) AS resources,
-           (SELECT COUNT(*) FROM resource_accepts) AS accepts,
-           (SELECT COUNT(DISTINCT pay_to) FROM resource_accepts) AS merchants,
-           (SELECT SUM(calls_30d) FROM resources) AS calls30d`
-      )
-      .first(),
-    env.DB.prepare('SELECT network, COUNT(*) AS count FROM resource_accepts GROUP BY network ORDER BY count DESC').all(),
-    env.DB.prepare('SELECT source, COUNT(*) AS count FROM listings GROUP BY source').all(),
-  ]);
+// `full: true` adds byNetwork/bySource, each a GROUP BY over the WHOLE
+// resource_accepts/listings table (no WHERE to prune) — that's an unavoidable full
+// scan every single call, no matter how well-indexed, because an unfiltered
+// aggregate has to visit every row. Cheap by default: totals only, including a
+// COUNT(DISTINCT network) that rides along in the same single-pass query instead of
+// a second GROUP BY. This is deliberately what the homepage/protocol pages call
+// (they only ever displayed a count, never the breakdown) — the full breakdown is
+// opt-in for callers that actually use it, like /discovery/stats?full=1 or the MCP
+// get_stats tool. Discovered the hard way: an un-gated full breakdown fired on every
+// casual page view was enough by itself to exhaust D1's free-tier daily row-read cap.
+async function getStats(env, { full = false } = {}) {
+  const totals = await env.DB
+    .prepare(
+      `SELECT
+         (SELECT COUNT(*) FROM listings) AS listings,
+         (SELECT COUNT(*) FROM resources) AS resources,
+         (SELECT COUNT(*) FROM resource_accepts) AS accepts,
+         (SELECT COUNT(DISTINCT pay_to) FROM resource_accepts) AS merchants,
+         (SELECT COUNT(DISTINCT network) FROM resource_accepts) AS networks,
+         (SELECT SUM(calls_30d) FROM resources) AS calls30d`
+    )
+    .first();
 
-  return {
+  const stats = {
     listings: totals.listings,
     resources: totals.resources,
     accepts: totals.accepts,
     merchants: totals.merchants,
+    networks: totals.networks,
     calls30d: totals.calls30d || 0,
-    byNetwork: Object.fromEntries(byNetwork.results.map((r) => [r.network, r.count])),
-    bySource: Object.fromEntries(bySource.results.map((r) => [r.source, r.count])),
   };
+
+  if (full) {
+    const [byNetwork, bySource] = await Promise.all([
+      env.DB.prepare('SELECT network, COUNT(*) AS count FROM resource_accepts GROUP BY network ORDER BY count DESC').all(),
+      env.DB.prepare('SELECT source, COUNT(*) AS count FROM listings GROUP BY source').all(),
+    ]);
+    stats.byNetwork = Object.fromEntries(byNetwork.results.map((r) => [r.network, r.count]));
+    stats.bySource = Object.fromEntries(bySource.results.map((r) => [r.source, r.count]));
+  }
+
+  return stats;
 }
 
 async function isRateLimited(env, { clientIp, maxPerHour = 20, maxPerDay = 60 }) {

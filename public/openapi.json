@@ -108,7 +108,10 @@
     "/discovery/stats": {
       "get": {
         "operationId": "getStats",
-        "summary": "Catalog-wide totals: listings, resources, accepts, merchants, calls, network breakdown",
+        "summary": "Catalog-wide totals: listings, resources, accepts, merchants, network count, calls. Pass full=1 for the per-network/per-source breakdown (a full table scan — opt-in on purpose).",
+        "parameters": [
+          { "name": "full", "in": "query", "schema": { "type": "string", "enum": ["1"] }, "description": "Include byNetwork/bySource breakdowns." }
+        ],
         "responses": {
           "200": {
             "description": "Aggregate stats",
@@ -338,14 +341,16 @@
       },
       "Stats": {
         "type": "object",
+        "description": "byNetwork/bySource are only included when the request includes full=1 — each is a full, unfiltered GROUP BY scan, so it is opt-in rather than computed on every call.",
         "properties": {
           "listings": { "type": "integer" },
           "resources": { "type": "integer" },
           "accepts": { "type": "integer" },
           "merchants": { "type": "integer" },
+          "networks": { "type": "integer", "description": "Distinct network count. Cheap — included even without full=1." },
           "calls30d": { "type": "integer" },
-          "byNetwork": { "type": "object", "additionalProperties": { "type": "integer" } },
-          "bySource": { "type": "object", "additionalProperties": { "type": "integer" } }
+          "byNetwork": { "type": "object", "additionalProperties": { "type": "integer" }, "description": "Only present with ?full=1." },
+          "bySource": { "type": "object", "additionalProperties": { "type": "integer" }, "description": "Only present with ?full=1." }
         }
       }
     }
