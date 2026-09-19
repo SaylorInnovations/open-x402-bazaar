@@ -97,10 +97,11 @@ npm install
 npm run db:init                # applies schema.sql to a local D1 database
 npm run seed:saylor-official   # Saylor Innovations' own real, verified endpoints
 npm run seed:cdp-bazaar        # optional: mirror Coinbase's public Bazaar catalog into it
+npm run check:liveness          # optional: probe owner-submitted resources, flag any that don't respond
 npm run dev                     # wrangler pages dev, with the D1 binding wired up
 ```
 
-If you already have a deployed D1 database predating the mirror/rate-limiting/quality-signal changes or the slug/resource-type/metadata columns, apply the additive migrations instead of re-running `schema.sql`: `npm run db:migrate:remote` then `npm run db:migrate:remote:0003`.
+If you already have a deployed D1 database predating later schema changes, apply the additive migrations in order instead of re-running `schema.sql`: `npm run db:migrate:remote`, then `npm run db:migrate:remote:0003`, then `npm run db:migrate:remote:0004`.
 
 ## Security notes
 
@@ -108,7 +109,7 @@ If you already have a deployed D1 database predating the mirror/rate-limiting/qu
 
 ## Not yet built (roadmap)
 
-- **Periodic re-crawl / liveness checks.** Directly-submitted listings are indexed once at submission time and never re-validated — a resource that goes offline or changes its payment address stays listed until someone re-submits. A scheduled function that re-fetches and prunes/updates listings is the next real piece of work. (Mirrored listings get fresher data for free each time `seed:cdp-bazaar` is re-run, since Coinbase does this crawling themselves.)
+- ~~Periodic liveness checks~~ — done. `scripts/check-liveness.mjs` probes every owner-submitted resource (not the mirrored ones — Coinbase already crawls those) and marks it `is_live: true/false`; a confirmed-down resource gets a visible "not responding" badge on its card, detail page and provider page. It doesn't yet auto-prune or re-fetch changed payment addresses — a down resource stays listed, just flagged.
 - **Semantic search.** Current search is keyword/substring (FTS5) only, unlike Coinbase's hybrid text+semantic search.
 - **Scheduled auto-mirroring.** The importers are run manually today; a Cloudflare Cron Trigger re-running them daily would keep the catalog current without a person remembering to.
 - **Third-party MCP tool directory.** `/mcp` is now a real, working MCP server over *this* catalog (see above), but it doesn't yet proxy or list *other* MCP servers with their own detail pages the way `/resources/{slug}` does for x402 resources.

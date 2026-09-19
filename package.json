@@ -13,11 +13,14 @@
     "db:init:remote": "wrangler d1 execute open-x402-bazaar --remote --file=schema.sql",
     "db:migrate:remote": "wrangler d1 execute open-x402-bazaar --remote --file=migrations/0002_source_and_quality.sql",
     "db:migrate:remote:0003": "wrangler d1 execute open-x402-bazaar --remote --file=migrations/0003_slug_type_metadata.sql",
+    "db:migrate:remote:0004": "wrangler d1 execute open-x402-bazaar --remote --file=migrations/0004_liveness.sql",
     "dev": "wrangler pages dev public --compatibility-date=2026-01-01",
     "seed:cdp-bazaar": "node scripts/import-cdp-bazaar.mjs --local",
     "seed:cdp-bazaar:remote": "node scripts/import-cdp-bazaar.mjs --remote --apply",
     "seed:saylor-official": "node scripts/import-saylor-official.mjs --local",
-    "seed:saylor-official:remote": "node scripts/import-saylor-official.mjs --remote --apply"
+    "seed:saylor-official:remote": "node scripts/import-saylor-official.mjs --remote --apply",
+    "check:liveness": "node scripts/check-liveness.mjs --local",
+    "check:liveness:remote": "node scripts/check-liveness.mjs --remote --apply"
   },
   "keywords": [
     "x402",

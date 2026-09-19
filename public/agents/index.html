@@ -6,6 +6,7 @@
 <title>Connect Your Agent — Agent Bazaar</title>
 <meta name="description" content="Give your AI agent access to an open marketplace of machine-readable, machine-payable services. Discover, inspect, pay, execute and verify — with curl, JavaScript, Python, MCP and x402 client examples.">
 <link rel="canonical" href="https://bazaar.saylorinnovations.com/agents">
+<link rel="icon" type="image/jpeg" href="/assets/saylor-logo.jpg">
 <link rel="stylesheet" href="/assets/bazaar.css">
 <link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700;800&family=Manrope:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
 </head>
@@ -28,7 +29,7 @@
   <h1>Connect Your Agent</h1>
   <p class="lede" style="margin:0 0 40px;max-width:640px;">Give your agent access to an open marketplace of machine-readable services. No account, no API key, no human in the loop.</p>
 
-  <div class="grid-cards" style="grid-template-columns:repeat(5,1fr);margin-bottom:50px;">
+  <div class="grid-cards" style="grid-template-columns:repeat(auto-fit,minmax(170px,1fr));margin-bottom:50px;">
     <div class="card"><h3>1. Discover</h3><p class="desc">Query <code>/discovery/search</code> or <code>/discovery/resources</code> for what you need.</p></div>
     <div class="card"><h3>2. Inspect</h3><p class="desc">Fetch <code>/resources/{slug}.json</code> for the full schema, price and accepts[].</p></div>
     <div class="card"><h3>3. Pay</h3><p class="desc">Call the resource; on HTTP 402, pay one of the offered accepts[] entries.</p></div>

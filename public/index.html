@@ -10,6 +10,7 @@
 <meta property="og:description" content="Discover APIs, MCP tools, datasets and machine-payable resources built for autonomous software. Search. Discover. Pay. Execute.">
 <meta property="og:type" content="website">
 <meta name="twitter:card" content="summary">
+<link rel="icon" type="image/jpeg" href="/assets/saylor-logo.jpg">
 <link rel="stylesheet" href="/assets/bazaar.css">
 <link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700;800&family=Manrope:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
 <script type="application/ld+json">
@@ -186,9 +187,10 @@
   }
   function card(r) {
     var title = (r.description || r.resource).split('.')[0].slice(0, 72);
-    var verified = r.sourceHost === 'saylorinnovations.com';
+    var verified = r.verified === true;
+    var down = r.liveness && r.liveness.isLive === false;
     return '<div class="card">' +
-      '<div class="meta-row">' + (verified ? '<span class="badge badge-verified">verified</span>' : '') + (r.resourceType ? '<span class="badge">' + esc(r.resourceType) + '</span>' : '') + '<span class="badge badge-protocol">x402</span></div>' +
+      '<div class="meta-row">' + (verified ? '<span class="badge badge-verified">verified</span>' : '') + (down ? '<span class="badge badge-down">not responding</span>' : '') + (r.resourceType ? '<span class="badge">' + esc(r.resourceType) + '</span>' : '') + '<span class="badge badge-protocol">x402</span></div>' +
       '<h3><a href="/resources/' + esc(r.slug) + '">' + esc(title) + '</a></h3>' +
       '<p class="desc">' + esc(r.description || r.resource) + '</p>' +
       '<div class="price">' + esc(priceOf(r)) + (r.accepts && r.accepts[0] && r.accepts[0].amountUsd ? ' / request' : '') + '</div>' +

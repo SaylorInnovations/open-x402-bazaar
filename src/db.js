@@ -62,6 +62,15 @@ async function attachAccepts(env, rows) {
     // license/repository/documentation/examples), only present when a provider
     // actually supplied them — never fabricated for mirrored resources.
     metadata: r.metadata ? JSON.parse(r.metadata) : undefined,
+    // Liveness: null/undefined = never checked (not the same as "down"). Only
+    // owner-submitted resources are probed — see scripts/check-liveness.mjs.
+    liveness: {
+      isLive: r.is_live === null || r.is_live === undefined ? undefined : Boolean(r.is_live),
+      lastCheckedAt: r.last_checked_at ?? undefined,
+    },
+    // true only when the provider proved control via POST /submit — never inferred
+    // from hostname or any other heuristic.
+    verified: r.listing_source === 'submitted',
   }));
 }
 
@@ -141,8 +150,8 @@ async function searchResources(env, { query, network, asset, scheme, payTo, maxU
     params.push(toFtsQuery(query));
   }
 
-  let sql = `SELECT DISTINCT r.id, r.resource_url, r.description, r.x402_version, r.output_schema, r.tags, r.last_updated, r.listing_host, r.calls_30d, r.unique_payers_30d, r.last_called_at, r.slug, r.resource_type, r.metadata
-             FROM ${from} JOIN resource_accepts a ON a.resource_id = r.id`;
+  let sql = `SELECT DISTINCT r.id, r.resource_url, r.description, r.x402_version, r.output_schema, r.tags, r.last_updated, r.listing_host, r.calls_30d, r.unique_payers_30d, r.last_called_at, r.slug, r.resource_type, r.metadata, r.is_live, r.last_checked_at, l.source AS listing_source
+             FROM ${from} JOIN resource_accepts a ON a.resource_id = r.id JOIN listings l ON l.host = r.listing_host`;
 
   if (network) { conditions.push('a.network = ?'); params.push(network); }
   if (asset) { conditions.push('a.asset = ?'); params.push(asset); }
@@ -175,7 +184,7 @@ async function listResources(env, { limit, offset, sort }) {
   const orderBy = sort === 'recent' ? 'r.id DESC' : 'r.calls_30d DESC NULLS LAST, r.id';
 
   const { results } = await env.DB
-    .prepare(`SELECT id, resource_url, description, x402_version, output_schema, tags, last_updated, listing_host, calls_30d, unique_payers_30d, last_called_at, slug, resource_type, metadata FROM resources r ORDER BY ${orderBy} LIMIT ? OFFSET ?`)
+    .prepare(`SELECT r.id, r.resource_url, r.description, r.x402_version, r.output_schema, r.tags, r.last_updated, r.listing_host, r.calls_30d, r.unique_payers_30d, r.last_called_at, r.slug, r.resource_type, r.metadata, r.is_live, r.last_checked_at, l.source AS listing_source FROM resources r JOIN listings l ON l.host = r.listing_host ORDER BY ${orderBy} LIMIT ? OFFSET ?`)
     .bind(lim, off)
     .all();
   const { total } = await env.DB.prepare('SELECT COUNT(*) as total FROM resources').first();
@@ -186,8 +195,8 @@ async function listResources(env, { limit, offset, sort }) {
 async function merchantResources(env, payTo) {
   const { results } = await env.DB
     .prepare(
-      `SELECT DISTINCT r.id, r.resource_url, r.description, r.x402_version, r.output_schema, r.tags, r.last_updated, r.listing_host, r.calls_30d, r.unique_payers_30d, r.last_called_at, r.slug, r.resource_type, r.metadata
-       FROM resources r JOIN resource_accepts a ON a.resource_id = r.id WHERE a.pay_to = ?
+      `SELECT DISTINCT r.id, r.resource_url, r.description, r.x402_version, r.output_schema, r.tags, r.last_updated, r.listing_host, r.calls_30d, r.unique_payers_30d, r.last_called_at, r.slug, r.resource_type, r.metadata, r.is_live, r.last_checked_at, l.source AS listing_source
+       FROM resources r JOIN resource_accepts a ON a.resource_id = r.id JOIN listings l ON l.host = r.listing_host WHERE a.pay_to = ?
        ORDER BY r.calls_30d DESC NULLS LAST, r.id`
     )
     .bind(payTo)
@@ -199,8 +208,8 @@ async function getResourceBySlugOrId(env, key) {
   const isNumeric = /^\d+$/.test(key);
   const row = await env.DB
     .prepare(
-      `SELECT id, resource_url, description, x402_version, output_schema, tags, last_updated, listing_host, calls_30d, unique_payers_30d, last_called_at, slug, resource_type, metadata
-       FROM resources WHERE slug = ? ${isNumeric ? 'OR id = ?' : ''} LIMIT 1`
+      `SELECT r.id, r.resource_url, r.description, r.x402_version, r.output_schema, r.tags, r.last_updated, r.listing_host, r.calls_30d, r.unique_payers_30d, r.last_called_at, r.slug, r.resource_type, r.metadata, r.is_live, r.last_checked_at, l.source AS listing_source
+       FROM resources r JOIN listings l ON l.host = r.listing_host WHERE r.slug = ? ${isNumeric ? 'OR r.id = ?' : ''} LIMIT 1`
     )
     .bind(key, ...(isNumeric ? [Number(key)] : []))
     .first();
@@ -215,8 +224,8 @@ async function getProvider(env, host) {
   if (!listing) return null;
   const { results } = await env.DB
     .prepare(
-      `SELECT id, resource_url, description, x402_version, output_schema, tags, last_updated, listing_host, calls_30d, unique_payers_30d, last_called_at, slug, resource_type, metadata
-       FROM resources WHERE listing_host = ? ORDER BY calls_30d DESC NULLS LAST, id`
+      `SELECT r.id, r.resource_url, r.description, r.x402_version, r.output_schema, r.tags, r.last_updated, r.listing_host, r.calls_30d, r.unique_payers_30d, r.last_called_at, r.slug, r.resource_type, r.metadata, r.is_live, r.last_checked_at, l.source AS listing_source
+       FROM resources r JOIN listings l ON l.host = r.listing_host WHERE r.listing_host = ? ORDER BY r.calls_30d DESC NULLS LAST, r.id`
     )
     .bind(host)
     .all();

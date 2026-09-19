@@ -171,16 +171,29 @@
       "Resource": {
         "type": "object",
         "properties": {
+          "id": { "type": "integer" },
+          "slug": { "type": "string" },
           "resource": { "type": "string", "format": "uri" },
           "description": { "type": "string" },
           "type": { "type": "string" },
+          "resourceType": { "type": "string" },
           "x402Version": { "type": "integer" },
           "accepts": { "type": "array", "items": { "$ref": "#/components/schemas/Accepts" } },
           "outputSchema": { "type": "object" },
           "tags": { "type": "array", "items": { "type": "string" } },
           "sourceHost": { "type": "string" },
           "lastUpdated": { "type": "string", "format": "date-time" },
-          "quality": { "$ref": "#/components/schemas/Quality" }
+          "quality": { "$ref": "#/components/schemas/Quality" },
+          "metadata": { "type": "object", "description": "Agent-first fields (capabilities, useWhen, doNotUseWhen, license, repository, …), only present when the provider supplied them." },
+          "liveness": {
+            "type": "object",
+            "description": "Only populated for owner-submitted resources — see scripts/check-liveness.mjs.",
+            "properties": {
+              "isLive": { "type": "boolean", "description": "Absent/undefined if never checked; false means the endpoint did not respond on its last check." },
+              "lastCheckedAt": { "type": "string", "format": "date-time" }
+            }
+          },
+          "verified": { "type": "boolean", "description": "True only when the provider proved control of this listing via POST /submit." }
         }
       },
       "SearchResponse": {

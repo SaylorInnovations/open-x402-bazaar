@@ -35,6 +35,11 @@ CREATE TABLE IF NOT EXISTS resources (
   slug TEXT,
   resource_type TEXT,
   metadata TEXT,
+  -- Liveness: is_live is NULL until first checked, then 1/0. Only owner-submitted
+  -- (source = 'submitted') resources are probed — see scripts/check-liveness.mjs;
+  -- mirrored resources are Coinbase's to keep live, not ours to probe at scale.
+  is_live INTEGER,
+  last_checked_at TEXT,
   FOREIGN KEY (listing_host) REFERENCES listings(host)
 );
 

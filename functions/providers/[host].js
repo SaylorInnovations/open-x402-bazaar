@@ -10,6 +10,7 @@ function card(r) {
   <h3><a href="/resources/${escapeHtml(r.slug)}">${escapeHtml((r.description || r.resource).split('.')[0].slice(0, 70))}</a></h3>
   <p class="desc">${escapeHtml(r.description || r.resource)}</p>
   <div class="meta-row">
+    ${r.liveness?.isLive === false ? '<span class="badge badge-down">not responding</span>' : ''}
     ${r.resourceType ? `<span class="badge">${escapeHtml(r.resourceType)}</span>` : ''}
     <span class="badge badge-protocol">x402</span>
   </div>

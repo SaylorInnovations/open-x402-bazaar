@@ -32,16 +32,19 @@ function renderHtml(r) {
   const networks = [...new Set((r.accepts || []).map((a) => a.network))];
   const verified = r.provider?.source === 'submitted';
   const meta = r.metadata || {};
+  const isDown = r.liveness?.isLive === false;
 
   const body = `
 <main class="wrap" style="padding:32px 0 60px;">
   <nav class="breadcrumbs"><a href="/">Agent Bazaar</a> / <a href="/#explore">Resources</a> / ${escapeHtml(r.resourceType || 'Resource')}</nav>
   <div class="meta-row" style="margin-bottom:14px;">
     ${verified ? '<span class="badge badge-verified">verified owner</span>' : '<span class="badge badge-mirror">mirrored listing</span>'}
+    ${isDown ? '<span class="badge badge-down">not responding</span>' : ''}
     ${r.resourceType ? `<span class="badge">${escapeHtml(r.resourceType)}</span>` : ''}
     <span class="badge badge-protocol">x402</span>
     ${networks.map((n) => `<span class="badge badge-network">${escapeHtml(n)}</span>`).join('')}
   </div>
+  ${isDown ? `<p style="color:var(--red);font-size:0.86rem;">This endpoint did not respond on its last liveness check (${escapeHtml((r.liveness.lastCheckedAt || '').slice(0, 10))}). It may be temporarily down.</p>` : ''}
   <h1>${escapeHtml(r.description ? r.description.split('.')[0].slice(0, 90) : r.resource)}</h1>
   <p style="color:var(--silver);max-width:680px;">${escapeHtml(r.description || 'No description provided.')}</p>
 

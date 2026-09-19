@@ -90,6 +90,7 @@ ${canonical ? `<link rel="canonical" href="${escapeHtml(canonical)}">` : ''}
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="${escapeHtml(title)}">
 <meta name="twitter:description" content="${escapeHtml(description)}">
+<link rel="icon" type="image/jpeg" href="/assets/saylor-logo.jpg">
 <link rel="stylesheet" href="/assets/bazaar.css">
 <link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700;800&family=Manrope:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
 ${jsonLdBlock}
