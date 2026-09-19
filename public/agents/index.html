@@ -87,12 +87,11 @@ if res.status_code == 402:
 
   <section class="block">
     <h2>MCP</h2>
-    <p style="color:var(--silver);max-width:680px;">A full MCP tool server for Agent Bazaar itself is on the roadmap (see <a href="/mcp">/mcp</a>). Saylor Innovations already runs one for its own catalog:</p>
+    <p style="color:var(--silver);max-width:680px;">Agent Bazaar runs its own MCP server over this catalog — <code>search_resources</code>, <code>get_resource</code>, <code>get_pricing</code>, <code>discover_provider</code>, <code>list_resources</code>, <code>get_stats</code>. See <a href="/mcp">/mcp</a> for the full tool list.</p>
     <div class="codeblock"><button class="copy-btn" onclick="copyBlock(this)">Copy</button><pre>{
   "mcpServers": {
-    "saylor-innovations": {
-      "url": "https://saylorinnovations.com/mcp"
-    }
+    "agent-bazaar": { "url": "https://bazaar.saylorinnovations.com/mcp" },
+    "saylor-innovations": { "url": "https://saylorinnovations.com/mcp" }
   }
 }</pre></div>
   </section>

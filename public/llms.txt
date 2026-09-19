@@ -30,6 +30,7 @@ Full API reference: [openapi.json](/openapi.json). Full site summary: [llms-full
 
 Quickstart with curl/JavaScript/Python/MCP/x402 examples: [/agents](/agents).
 Machine quickstart: [/agents.json](/agents.json). A2A agent card: [/.well-known/agent-card.json](/.well-known/agent-card.json).
+MCP server (JSON-RPC over POST /mcp): `search_resources`, `get_resource`, `get_pricing`, `discover_provider`, `list_resources`, `get_stats` — see [/mcp](/mcp).
 
 ## For sellers: listing a resource
 

@@ -81,7 +81,7 @@ Every resource has a permanent, crawlable, server-rendered URL — not a client-
 | `/agents` | Quickstart for connecting an agent (discover → inspect → pay → execute → verify) |
 | `/publish` | How to list a resource as a seller |
 | `/docs` | What x402/MCP/A2A are, how agent payments work, self-hosting |
-| `/mcp` | Current MCP support status (honest: not yet a full tool directory — see roadmap) |
+| `/mcp` | GET: info page. POST: a real MCP server (JSON-RPC/Streamable HTTP) over the same catalog — `search_resources`, `get_resource`, `get_pricing`, `discover_provider`, `list_resources`, `get_stats` |
 
 ## Architecture
 
@@ -111,7 +111,7 @@ If you already have a deployed D1 database predating the mirror/rate-limiting/qu
 - **Periodic re-crawl / liveness checks.** Directly-submitted listings are indexed once at submission time and never re-validated — a resource that goes offline or changes its payment address stays listed until someone re-submits. A scheduled function that re-fetches and prunes/updates listings is the next real piece of work. (Mirrored listings get fresher data for free each time `seed:cdp-bazaar` is re-run, since Coinbase does this crawling themselves.)
 - **Semantic search.** Current search is keyword/substring (FTS5) only, unlike Coinbase's hybrid text+semantic search.
 - **Scheduled auto-mirroring.** The importers are run manually today; a Cloudflare Cron Trigger re-running them daily would keep the catalog current without a person remembering to.
-- **MCP tool directory.** `/mcp` currently states honest status rather than a real tool directory. A real one needs an MCP server for Agent Bazaar itself (`search_resources`, `get_resource`, `get_pricing`, …) plus per-tool detail pages for third-party MCP servers.
+- **Third-party MCP tool directory.** `/mcp` is now a real, working MCP server over *this* catalog (see above), but it doesn't yet proxy or list *other* MCP servers with their own detail pages the way `/resources/{slug}` does for x402 resources.
 - **Full A2A registry.** `/.well-known/agent-card.json` describes Agent Bazaar's own discovery surface; a directory of *other* agents' cards is not yet built.
 - **Automated provider ingestion.** Publishing today is manifest-URL only; importing directly from an OpenAPI document, MCP schema, or Git repo is not yet built.
 - **Guides/content library.** `/docs` is one consolidated page today, not the full set of individually-indexed how-to guides a mature content strategy would want.
