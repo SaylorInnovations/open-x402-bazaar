@@ -18,6 +18,9 @@ export async function onRequestGet({ env }) {
     .all();
   for (const r of verified) urls.push(`/resources/${r.slug || r.id}`);
 
+  const { results: agents } = await env.DB.prepare('SELECT slug, id FROM agent_cards ORDER BY id').all();
+  for (const a of agents) urls.push(`/agents/${a.slug || a.id}`);
+
   const body = `<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
 ${urls.map((u) => `  <url><loc>${base}${u}</loc></url>`).join('\n')}

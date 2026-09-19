@@ -54,6 +54,18 @@ curl -X POST https://<this-site>/submit \
 
 The manifest is fetched (over HTTPS, with SSRF guards — private/internal addresses are refused before any request is made), validated, and any resource with a populated `accepts[]` (scheme + network + payTo) is indexed. Re-submitting the same manifest URL refreshes your listing and claims the host if it was previously only in the Coinbase mirror. Submissions are rate-limited per IP (20/hour, 60/day) — every attempt counts, not just successful ones, so failing probes can't dodge the limit.
 
+### Registering an A2A agent
+
+Same model, different shape — an A2A agent card has `skills[]` instead of `accepts[]` and no inherent payment model, so it lives in its own `agent_cards` table rather than being forced into the resources shape:
+
+```bash
+curl -X POST https://<this-site>/submit-agent \
+  -H "content-type: application/json" \
+  -d '{"agentCardUrl": "https://youragent.example.com/.well-known/agent-card.json"}'
+```
+
+Requires at minimum a `name`; `skills[]`, `provider`, `protocolVersion` and `documentationUrl` are stored when present. Same SSRF guards, same rate limiting, same no-account model.
+
 ## Discovery API (agent-facing)
 
 Mirrors the field names and shape of Coinbase's CDP Bazaar API, plus an additive `quality` field and a stats endpoint:
@@ -65,6 +77,8 @@ Mirrors the field names and shape of Coinbase's CDP Bazaar API, plus an additive
 | `GET /discovery/merchant?payTo=<address>` | All resources that pay a specific address |
 | `GET /discovery/stats` | Catalog totals: listings, resources, accepts, merchants, calls, network/source breakdown |
 | `GET /resources/{slug}.json` | Full machine-readable record for a single resource |
+| `GET /discovery/agents?query=&limit=&offset=` | Search/list the A2A agent registry (other agents' cards, not Agent Bazaar's own) |
+| `GET /agents/{slug}.json` | Full A2A agent card as submitted |
 
 No API key required for any read endpoint — same as Coinbase's.
 
@@ -78,7 +92,8 @@ Every resource has a permanent, crawlable, server-rendered URL — not a client-
 |---|---|
 | `/resources/{slug}` | Resource detail: description, pricing, accepts[], schema, curl/JS/Python examples |
 | `/providers/{host}` | Every resource published by one provider |
-| `/agents` | Quickstart for connecting an agent (discover → inspect → pay → execute → verify) |
+| `/agents` | Quickstart for connecting an agent (discover → inspect → pay → execute → verify), plus the registered-agents directory |
+| `/agents/{slug}` | A2A agent detail page — skills, provider, protocol version, card URL |
 | `/publish` | How to list a resource as a seller |
 | `/docs` | What x402/MCP/A2A are, how agent payments work, self-hosting |
 | `/mcp` | GET: info page. POST: a real MCP server (JSON-RPC/Streamable HTTP) over the same catalog — `search_resources`, `get_resource`, `get_pricing`, `discover_provider`, `list_resources`, `get_stats` |
@@ -101,7 +116,7 @@ npm run check:liveness          # optional: probe owner-submitted resources, fla
 npm run dev                     # wrangler pages dev, with the D1 binding wired up
 ```
 
-If you already have a deployed D1 database predating later schema changes, apply the additive migrations in order instead of re-running `schema.sql`: `npm run db:migrate:remote`, then `npm run db:migrate:remote:0003`, then `npm run db:migrate:remote:0004`.
+If you already have a deployed D1 database predating later schema changes, apply the additive migrations in order instead of re-running `schema.sql`: `npm run db:migrate:remote`, then `:0003`, `:0004`, `:0005`.
 
 ## Security notes
 
@@ -113,7 +128,7 @@ If you already have a deployed D1 database predating later schema changes, apply
 - **Semantic search.** Current search is keyword/substring (FTS5) only, unlike Coinbase's hybrid text+semantic search.
 - **Scheduled auto-mirroring.** The importers are run manually today; a Cloudflare Cron Trigger re-running them daily would keep the catalog current without a person remembering to.
 - **Third-party MCP tool directory.** `/mcp` is now a real, working MCP server over *this* catalog (see above), but it doesn't yet proxy or list *other* MCP servers with their own detail pages the way `/resources/{slug}` does for x402 resources.
-- **Full A2A registry.** `/.well-known/agent-card.json` describes Agent Bazaar's own discovery surface; a directory of *other* agents' cards is not yet built.
+- ~~A2A agent registry~~ — done. `/discovery/agents`, `POST /submit-agent`, and `/agents/{slug}` list a directory of *other* agents' cards (separate from `/.well-known/agent-card.json`, which is Agent Bazaar's own). Not yet built within it: liveness checks on registered agents (only resources get probed today), and no reputation/trust signal beyond "registered."
 - **Automated provider ingestion.** Publishing today is manifest-URL only; importing directly from an OpenAPI document, MCP schema, or Git repo is not yet built.
 - **Guides/content library.** `/docs` is one consolidated page today, not the full set of individually-indexed how-to guides a mature content strategy would want.
 - **Trust badges beyond "verified owner."** Endpoint/schema verification with live uptime checks isn't built; today "verified" means only "owner proved control via POST /submit."

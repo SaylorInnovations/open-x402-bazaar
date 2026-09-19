@@ -2,7 +2,7 @@
   "openapi": "3.1.0",
   "info": {
     "title": "Agent Bazaar",
-    "version": "0.3.0",
+    "version": "0.4.0",
     "description": "Open, permissionless marketplace and discovery layer for AI agents — APIs, MCP tools, datasets and x402-payable services. No account or API key required for any read endpoint. Wire-compatible with Coinbase's CDP x402 Bazaar API. Built by Saylor Innovations."
   },
   "servers": [{ "url": "https://bazaar.saylorinnovations.com" }],
@@ -143,6 +143,60 @@
         "parameters": [{ "name": "host", "in": "path", "required": true, "schema": { "type": "string" } }],
         "responses": { "200": { "description": "HTML page listing the provider's resources" }, "404": { "description": "Not found" } }
       }
+    },
+    "/submit-agent": {
+      "post": {
+        "operationId": "submitAgent",
+        "summary": "Register (or refresh) an A2A agent by its agent card URL",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["agentCardUrl"],
+                "properties": { "agentCardUrl": { "type": "string", "format": "uri", "description": "HTTPS URL of a public A2A agent card, e.g. /.well-known/agent-card.json" } }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "Registered successfully", "content": { "application/json": { "schema": { "type": "object", "properties": { "ok": { "type": "boolean" }, "slug": { "type": "string" }, "host": { "type": "string" }, "name": { "type": "string" } } } } } },
+          "422": { "description": "Card fetch or validation failed" },
+          "429": { "description": "Rate limit exceeded" }
+        }
+      }
+    },
+    "/discovery/agents": {
+      "get": {
+        "operationId": "discoverAgents",
+        "summary": "Search or list the A2A agent registry",
+        "parameters": [
+          { "name": "query", "in": "query", "schema": { "type": "string" } },
+          { "name": "limit", "in": "query", "schema": { "type": "integer", "default": 20, "maximum": 100 } },
+          { "name": "offset", "in": "query", "schema": { "type": "integer", "default": 0 } }
+        ],
+        "responses": { "200": { "description": "Agent list", "content": { "application/json": { "schema": { "type": "object", "properties": { "agents": { "type": "array", "items": { "$ref": "#/components/schemas/Agent" } } } } } } } }
+      }
+    },
+    "/agents/{slug}": {
+      "get": {
+        "operationId": "getAgentPage",
+        "summary": "Human-readable detail page for one registered agent",
+        "parameters": [{ "name": "slug", "in": "path", "required": true, "schema": { "type": "string" } }],
+        "responses": { "200": { "description": "HTML page" }, "404": { "description": "Not found" } }
+      }
+    },
+    "/agents/{slug}.json": {
+      "get": {
+        "operationId": "getAgentRecord",
+        "summary": "Machine-readable twin of the agent detail page (the full agent card as submitted)",
+        "parameters": [{ "name": "slug", "in": "path", "required": true, "schema": { "type": "string" } }],
+        "responses": {
+          "200": { "description": "Full agent record", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Agent" } } } },
+          "404": { "description": "Not found" }
+        }
+      }
     }
   },
   "components": {
@@ -213,6 +267,26 @@
           "total": { "type": "integer" },
           "limit": { "type": "integer" },
           "offset": { "type": "integer" }
+        }
+      },
+      "Agent": {
+        "type": "object",
+        "description": "An A2A agent registered in the directory (a different entity than an x402 resource — no inherent payment model).",
+        "properties": {
+          "slug": { "type": "string" },
+          "name": { "type": "string" },
+          "description": { "type": "string" },
+          "host": { "type": "string" },
+          "cardUrl": { "type": "string", "format": "uri" },
+          "provider": { "type": "object", "properties": { "organization": { "type": "string" }, "url": { "type": "string" } } },
+          "version": { "type": "string" },
+          "protocolVersion": { "type": "string" },
+          "documentationUrl": { "type": "string" },
+          "skills": { "type": "array", "items": { "type": "object" } },
+          "capabilities": { "type": "object" },
+          "inputModes": { "type": "array", "items": { "type": "string" } },
+          "outputModes": { "type": "array", "items": { "type": "string" } },
+          "liveness": { "type": "object", "properties": { "isLive": { "type": "boolean" }, "lastCheckedAt": { "type": "string", "format": "date-time" } } }
         }
       },
       "Stats": {

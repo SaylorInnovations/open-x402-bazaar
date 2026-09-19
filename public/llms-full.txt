@@ -30,7 +30,8 @@ hard-coded. Complementary to x402: an MCP tool can itself be priced over x402.
 
 A2A (Agent2Agent): a protocol for agents to describe themselves to other agents via
 an agent card (see /.well-known/agent-card.json on this site) — identity, skills,
-supported interfaces, and how to call them.
+supported interfaces, and how to call them. Agent Bazaar also runs a registry of
+*other* agents' cards — see "A2A agent registry" below.
 
 ## Discovery API
 
@@ -56,6 +57,23 @@ GET /resources/{slug}.json
   provider supplied it.
 
 Full OpenAPI description: /openapi.json
+
+## A2A agent registry
+
+A directory of other agents' A2A cards, separate from Agent Bazaar's own card at
+/.well-known/agent-card.json:
+
+GET /discovery/agents?query=&limit=&offset=
+  Search (by name/description/skill) or list registered agents.
+
+GET /agents/{slug} and /agents/{slug}.json
+  Human and machine views of one agent: skills, provider, protocol version,
+  documentation URL, and the original card URL.
+
+POST /submit-agent with JSON body {"agentCardUrl": "https://youragent.example.com/.well-known/agent-card.json"}
+  Registers or refreshes an agent. Requires at minimum a "name" field in the
+  card; skills[], provider, protocolVersion and documentationUrl are stored
+  when present. Same no-account, rate-limited model as POST /submit.
 
 ## Publishing a resource
 

@@ -4,9 +4,10 @@
 // request in, one JSON-RPC response out, no session/SSE needed for what these
 // tools do (Cloudflare Pages Functions are stateless per-request anyway).
 import { searchResources, listResources, merchantResources, getResourceBySlugOrId, getProvider, getStats } from './db.js';
+import { searchAgents, listAgents, getAgentBySlugOrId } from './agentRegistry.js';
 
 const PROTOCOL_VERSION_FALLBACK = '2024-11-05';
-const SERVER_INFO = { name: 'agent-bazaar', version: '0.3.0' };
+const SERVER_INFO = { name: 'agent-bazaar', version: '0.4.0' };
 
 const TOOLS = [
   {
@@ -57,6 +58,19 @@ const TOOLS = [
     description: 'Catalog-wide totals: listings, resources, accepts, merchants, 30-day call volume, network/source breakdown.',
     inputSchema: { type: 'object', properties: {} },
   },
+  {
+    name: 'discover_agents',
+    description: 'Search or list the A2A agent registry — other agents’ cards (name, skills, provider, protocol version), not Agent Bazaar’s own.',
+    inputSchema: {
+      type: 'object',
+      properties: { query: { type: 'string' }, limit: { type: 'integer', default: 20, maximum: 100 } },
+    },
+  },
+  {
+    name: 'get_agent',
+    description: "Fetch one registered agent's full card by slug or numeric id.",
+    inputSchema: { type: 'object', properties: { slug: { type: 'string' } }, required: ['slug'] },
+  },
 ];
 
 function textResult(data) {
@@ -89,6 +103,13 @@ async function callTool(env, name, args = {}) {
       return textResult(await listResources(env, args));
     case 'get_stats':
       return textResult(await getStats(env));
+    case 'discover_agents':
+      return textResult(args.query ? await searchAgents(env, args) : (await listAgents(env, args)).agents);
+    case 'get_agent': {
+      if (!args.slug) return errorResult('slug is required');
+      const a = await getAgentBySlugOrId(env, String(args.slug));
+      return a ? textResult(a) : errorResult(`no agent found for slug "${args.slug}"`);
+    }
     default:
       return errorResult(`unknown tool "${name}"`);
   }

@@ -163,4 +163,34 @@ function extractResources(manifest, sourceManifestUrl) {
   }));
 }
 
-export { assertPublicHttpsUrl, fetchManifest, extractResources, isPrivateIp, resolveHostIps };
+/**
+ * Normalizes an A2A agent card into the flat shape agent_cards stores. Per the A2A
+ * spec an agent card needs at minimum a name and a url; skills[] is expected but not
+ * strictly required (some cards describe a general-purpose agent with no fixed skill
+ * list), so it is validated as an array-if-present rather than mandatory.
+ */
+function extractAgentCard(card, cardUrl) {
+  if (!card || typeof card !== 'object') throw new Error('agent card is not an object');
+  if (typeof card.name !== 'string' || !card.name.trim()) throw new Error('agent card is missing "name"');
+  if (card.skills !== undefined && !Array.isArray(card.skills)) throw new Error('agent card "skills" must be an array if present');
+
+  const host = new URL(cardUrl).host;
+  return {
+    host,
+    cardUrl,
+    name: card.name.trim(),
+    description: card.description || '',
+    providerOrg: card.provider?.organization || undefined,
+    providerUrl: card.provider?.url || undefined,
+    version: card.version || undefined,
+    protocolVersion: card.protocolVersion || undefined,
+    documentationUrl: card.documentationUrl || undefined,
+    skills: card.skills || [],
+    capabilities: card.capabilities || undefined,
+    inputModes: card.defaultInputModes || undefined,
+    outputModes: card.defaultOutputModes || undefined,
+    rawCard: card,
+  };
+}
+
+export { assertPublicHttpsUrl, fetchManifest, extractResources, extractAgentCard, isPrivateIp, resolveHostIps };

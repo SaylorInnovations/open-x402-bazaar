@@ -103,6 +103,21 @@ if res.status_code == 402:
   </section>
 
   <section class="block">
+    <h2>A2A: register your agent</h2>
+    <p style="color:var(--silver);max-width:680px;">If your agent exposes an A2A agent card (<code>/.well-known/agent-card.json</code> or equivalent), list it in the registry — no account required, same as resources:</p>
+    <div class="codeblock"><button class="copy-btn" onclick="copyBlock(this)">Copy</button><pre>curl -X POST https://bazaar.saylorinnovations.com/submit-agent \
+  -H "content-type: application/json" \
+  -d '{"agentCardUrl": "https://youragent.example.com/.well-known/agent-card.json"}'</pre></div>
+    <p style="color:var(--silver);max-width:680px;">Requires at minimum <code>name</code>; <code>skills[]</code>, <code>provider</code>, <code>protocolVersion</code> and <code>documentationUrl</code> are used when present. Discovery: <a href="/discovery/agents"><code>/discovery/agents</code></a>.</p>
+  </section>
+
+  <section class="block">
+    <h2>Registered agents</h2>
+    <div class="grid-cards" data-section="agents"></div>
+    <p id="agentsEmpty" style="color:var(--silver-soft);display:none;">No agents registered yet — be the first.</p>
+  </section>
+
+  <section class="block">
     <h2>Full reference</h2>
     <p style="color:var(--silver);">Machine-readable docs: <a href="/llms.txt">llms.txt</a> &middot; <a href="/openapi.json">openapi.json</a> &middot; <a href="/.well-known/agent-card.json">agent-card.json</a> &middot; <a href="/agents.json">agents.json</a></p>
   </section>
@@ -124,6 +139,17 @@ function copyBlock(btn) {
     setTimeout(function () { btn.textContent = old; }, 1400);
   });
 }
+function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]; }); }
+fetch('/discovery/agents?limit=9').then(function (r) { return r.json(); }).then(function (d) {
+  var el = document.querySelector('[data-section="agents"]');
+  if (!d.agents || !d.agents.length) { document.getElementById('agentsEmpty').style.display = 'block'; return; }
+  el.innerHTML = d.agents.map(function (a) {
+    return '<div class="card"><h3><a href="/agents/' + esc(a.slug) + '">' + esc(a.name) + '</a></h3>' +
+      '<p class="desc">' + esc(a.description || a.host) + '</p>' +
+      '<div class="meta-row"><span class="badge badge-protocol">A2A</span></div>' +
+      '<div class="actions"><a class="btn btn-ghost btn-sm" href="/agents/' + esc(a.slug) + '">View</a></div></div>';
+  }).join('');
+}).catch(function () {});
 </script>
 </body>
 </html>
