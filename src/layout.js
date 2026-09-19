@@ -67,6 +67,7 @@ function footer() {
         <h4>Saylor Innovations</h4>
         <a href="https://saylorinnovations.com">saylorinnovations.com</a>
         <a href="https://x402.saylorinnovations.com">Saylor x402 APIs</a>
+        <a href="https://propz.saylorinnovations.com">Propz — agent-payable tip jars</a>
         <a href="https://github.com/SaylorInnovations/solana-x402">solana-x402 (OSS)</a>
       </div>
     </div>
