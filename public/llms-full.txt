@@ -101,6 +101,18 @@ Most of the catalog was bootstrapped from Coinbase's public CDP x402 Bazaar
 requires no API key to read. Saylor Innovations' own research, security and
 Solana-intelligence APIs are listed as verified, owner-operated resources.
 
+## Why not just use Coinbase's Bazaar directly
+
+Because this isn't a rival catalog to reconcile — it's wire-compatible, field for
+field, with Coinbase's own discovery API. An agent already configured to query
+Coinbase's Bazaar can point at Agent Bazaar's /discovery endpoints instead with
+zero migration: same resource shape, same accepts[] format, same fields. What's
+different is additive, not competing: permissionless listings (no KYC gate, so
+providers who can't or won't go through Coinbase's onboarding still show up here),
+a full A2A agent registry alongside the x402 resource catalog, a real MCP server
+over the same data at /mcp, and the entire stack (catalog, source, discovery layer)
+is MIT-licensed and self-hostable rather than a closed platform.
+
 ## Guides
 
 /guides lists 11 in-depth, code-backed guides — the full treatment of topics /docs

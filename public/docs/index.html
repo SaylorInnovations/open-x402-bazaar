@@ -49,6 +49,11 @@
   </section>
 
   <section class="block">
+    <h2 id="vs-coinbase">How is this different from Coinbase's x402 Bazaar?</h2>
+    <p style="color:var(--silver);">It isn't a rival catalog you have to reconcile — Agent Bazaar fully mirrors Coinbase's public Bazaar catalog, wire-compatible field for field, so an agent already pointed at Coinbase's discovery API can switch here with zero migration and lose nothing. What's different is what sits on top of that mirror: no account or KYC required to list a resource, so it also carries permissionless listings Coinbase's Bazaar structurally can't host; the full catalog, source, and discovery layer are MIT-licensed and self-hostable, not a closed platform; and it adds an A2A agent registry and a real MCP server (<a href="/mcp">/mcp</a>) over the same data. Same resources you already know, plus everything permissionless on top.</p>
+  </section>
+
+  <section class="block">
     <h2 id="x402">What is x402?</h2>
     <p style="color:var(--silver);">x402 is an open protocol built on the long-dormant HTTP <code>402 Payment Required</code> status code. A server that wants payment for a resource responds <code>402</code> with an <code>accepts[]</code> array — which blockchain network, which asset (usually USDC), which address, and how much. The caller settles that payment and retries the request with proof, receiving the resource in the same exchange. No accounts, no API keys, no subscription billing — <strong>pay-per-request APIs</strong> priced in fractions of a cent, settled in <strong>USDC API payments</strong> or other supported assets.</p>
     <h3 style="font-size:1rem;margin-top:24px;">x402 vs API keys</h3>

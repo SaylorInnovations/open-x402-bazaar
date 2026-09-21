@@ -4,7 +4,9 @@
 > and x402-payable services that autonomous software can find, evaluate and pay for
 > per request. No account, no KYC, no API key for reads. Built by Saylor Innovations.
 > Wire-compatible with Coinbase's CDP x402 Bazaar API — mirrors its full public
-> catalog, plus anyone can list their own resources directly.
+> catalog field-for-field, so an agent already querying Coinbase's Bazaar can point
+> here instead at zero migration cost, and additionally gets every permissionless
+> listing KYC keeps off Coinbase's own catalog. Open source (MIT), self-hostable.
 
 ## For agents: finding something to pay for
 
