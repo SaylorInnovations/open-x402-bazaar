@@ -82,7 +82,10 @@ CREATE INDEX IF NOT EXISTS idx_accepts_network ON resource_accepts(network);
 CREATE INDEX IF NOT EXISTS idx_accepts_asset ON resource_accepts(asset);
 CREATE INDEX IF NOT EXISTS idx_resources_calls_30d ON resources(calls_30d);
 CREATE UNIQUE INDEX IF NOT EXISTS idx_resources_slug ON resources(slug) WHERE slug IS NOT NULL;
-CREATE INDEX IF NOT EXISTS idx_resources_resource_type ON resources(resource_type);
+-- COLLATE NOCASE matches the `WHERE resource_type = ? COLLATE NOCASE` queries in
+-- resourcesByCategory() — without it on the index too, SQLite can't use the index
+-- for a case-insensitive comparison and silently falls back to a full table scan.
+CREATE INDEX IF NOT EXISTS idx_resources_resource_type ON resources(resource_type COLLATE NOCASE);
 CREATE INDEX IF NOT EXISTS idx_liveness_checks_resource_id ON liveness_checks(resource_id, checked_at);
 
 -- Rate limiting for POST /submit: one row per accepted submission, keyed by the
@@ -170,4 +173,31 @@ CREATE TABLE IF NOT EXISTS feature_purchases (
   featured_until TEXT NOT NULL,
   created_at TEXT NOT NULL,
   FOREIGN KEY (resource_id) REFERENCES resources(id)
+);
+
+-- Precomputed catalog totals (single row). getStats()/listResources() read this
+-- instead of running live COUNT(*)/SUM() over resources & resource_accepts on every
+-- request — those aggregates cost tens of thousands of D1 "rows read" each time (a
+-- 15k+ row table, scanned fresh per call) and were firing on every homepage view.
+-- Recomputed on writes (submit/delete/import), which are rare compared to page
+-- views, not on reads. Staleness window: at most until the next write.
+CREATE TABLE IF NOT EXISTS catalog_stats (
+  id INTEGER PRIMARY KEY CHECK (id = 1),
+  listings INTEGER NOT NULL DEFAULT 0,
+  resources INTEGER NOT NULL DEFAULT 0,
+  accepts INTEGER NOT NULL DEFAULT 0,
+  merchants INTEGER NOT NULL DEFAULT 0,
+  networks INTEGER NOT NULL DEFAULT 0,
+  calls_30d INTEGER NOT NULL DEFAULT 0,
+  updated_at TEXT NOT NULL
+);
+INSERT OR IGNORE INTO catalog_stats (id, listings, resources, accepts, merchants, networks, calls_30d, updated_at)
+VALUES (1, 0, 0, 0, 0, 0, 0, '1970-01-01T00:00:00.000Z');
+
+-- Precomputed per-network resource counts — listNetworks() used to be an unfiltered
+-- `GROUP BY network` over resource_accepts (~44k rows scanned every time /networks
+-- was visited). Same fix as catalog_stats: recomputed on writes, read on requests.
+CREATE TABLE IF NOT EXISTS network_stats (
+  network TEXT PRIMARY KEY,
+  count INTEGER NOT NULL
 );

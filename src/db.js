@@ -79,6 +79,32 @@ async function attachAccepts(env, rows) {
   }));
 }
 
+// Recomputes the catalog_stats cache row from a real (expensive) full scan. Only
+// ever called from write paths (submit/delete/import) — never from a read path —
+// since writes are rare relative to page views. See the catalog_stats comment in
+// schema.sql for why this exists.
+async function recomputeCatalogStats(env) {
+  await env.DB.batch([
+    env.DB
+      .prepare(
+        `UPDATE catalog_stats SET
+           listings = (SELECT COUNT(*) FROM listings),
+           resources = (SELECT COUNT(*) FROM resources),
+           accepts = (SELECT COUNT(*) FROM resource_accepts),
+           merchants = (SELECT COUNT(DISTINCT pay_to) FROM resource_accepts),
+           networks = (SELECT COUNT(DISTINCT network) FROM resource_accepts),
+           calls_30d = (SELECT COALESCE(SUM(calls_30d), 0) FROM resources),
+           updated_at = ?
+         WHERE id = 1`
+      )
+      .bind(new Date().toISOString()),
+    env.DB.prepare('DELETE FROM network_stats'),
+    env.DB.prepare(
+      'INSERT INTO network_stats (network, count) SELECT network, COUNT(DISTINCT resource_id) FROM resource_accepts GROUP BY network'
+    ),
+  ]);
+}
+
 async function deleteListing(env, host) {
   const { results } = await env.DB.prepare('SELECT id FROM resources WHERE listing_host = ?').bind(host).all();
   const ids = results.map((r) => r.id);
@@ -91,6 +117,7 @@ async function deleteListing(env, host) {
   stmts.push(env.DB.prepare('DELETE FROM resources WHERE listing_host = ?').bind(host));
   stmts.push(env.DB.prepare('DELETE FROM listings WHERE host = ?').bind(host));
   await env.DB.batch(stmts);
+  await recomputeCatalogStats(env);
 }
 
 // Every insert is batched (one D1 round-trip per batch, not per row) — a manifest with
@@ -141,6 +168,7 @@ async function upsertListing(env, { host, sourceManifestUrl, manifestName, submi
     }
   });
   if (acceptStmts.length) await env.DB.batch(acceptStmts);
+  await recomputeCatalogStats(env);
 }
 
 async function searchResources(env, { query, network, asset, scheme, payTo, maxUsdPrice, urlSubstring, limit }) {
@@ -192,7 +220,10 @@ async function listResources(env, { limit, offset, sort }) {
     .prepare(`SELECT r.id, r.resource_url, r.description, r.x402_version, r.output_schema, r.tags, r.last_updated, r.listing_host, r.calls_30d, r.unique_payers_30d, r.last_called_at, r.slug, r.resource_type, r.metadata, r.is_live, r.last_checked_at, r.reliability_checks, r.reliability_live, l.source AS listing_source FROM resources r JOIN listings l ON l.host = r.listing_host ORDER BY ${orderBy} LIMIT ? OFFSET ?`)
     .bind(lim, off)
     .all();
-  const { total } = await env.DB.prepare('SELECT COUNT(*) as total FROM resources').first();
+  // Was a live `SELECT COUNT(*) FROM resources` — a full 15k+ row scan on every call,
+  // fired twice per homepage view (recent + popular sections). Reuses the same
+  // precomputed catalog_stats.resources count getStats() reads; see its comment.
+  const { resources: total } = await env.DB.prepare('SELECT resources FROM catalog_stats WHERE id = 1').first();
 
   return { resources: await attachAccepts(env, results), total, limit: lim, offset: off };
 }
@@ -280,35 +311,28 @@ async function listCategories(env) {
   return results;
 }
 
+// Was a live `GROUP BY network` over the whole resource_accepts table (~44k rows
+// read every /networks view). Reads the precomputed network_stats cache instead —
+// see recomputeCatalogStats() and its comment in schema.sql.
 async function listNetworks(env) {
-  const { results } = await env.DB
-    .prepare('SELECT network, COUNT(DISTINCT resource_id) AS count FROM resource_accepts GROUP BY network ORDER BY count DESC')
-    .all();
+  const { results } = await env.DB.prepare('SELECT network, count FROM network_stats ORDER BY count DESC').all();
   return results;
 }
 
 // `full: true` adds byNetwork/bySource, each a GROUP BY over the WHOLE
 // resource_accepts/listings table (no WHERE to prune) — that's an unavoidable full
 // scan every single call, no matter how well-indexed, because an unfiltered
-// aggregate has to visit every row. Cheap by default: totals only, including a
-// COUNT(DISTINCT network) that rides along in the same single-pass query instead of
-// a second GROUP BY. This is deliberately what the homepage/protocol pages call
-// (they only ever displayed a count, never the breakdown) — the full breakdown is
-// opt-in for callers that actually use it, like /discovery/stats?full=1 or the MCP
-// get_stats tool. Discovered the hard way: an un-gated full breakdown fired on every
-// casual page view was enough by itself to exhaust D1's free-tier daily row-read cap.
+// aggregate has to visit every row. Still opt-in for callers that actually use it,
+// like /discovery/stats?full=1 or the MCP get_stats tool.
+//
+// The totals themselves used to be "cheap by default" in name only — six scalar
+// subqueries over resources/resource_accepts, ~60k+ rows read on every single call,
+// firing on every homepage/protocol-page view. That's what actually exhausted D1's
+// free-tier daily row-read cap (twice). Now reads the precomputed catalog_stats
+// row instead — see its comment in schema.sql — so this call is a single-row read
+// no matter how large the catalog gets.
 async function getStats(env, { full = false } = {}) {
-  const totals = await env.DB
-    .prepare(
-      `SELECT
-         (SELECT COUNT(*) FROM listings) AS listings,
-         (SELECT COUNT(*) FROM resources) AS resources,
-         (SELECT COUNT(*) FROM resource_accepts) AS accepts,
-         (SELECT COUNT(DISTINCT pay_to) FROM resource_accepts) AS merchants,
-         (SELECT COUNT(DISTINCT network) FROM resource_accepts) AS networks,
-         (SELECT SUM(calls_30d) FROM resources) AS calls30d`
-    )
-    .first();
+  const totals = await env.DB.prepare('SELECT listings, resources, accepts, merchants, networks, calls_30d FROM catalog_stats WHERE id = 1').first();
 
   const stats = {
     listings: totals.listings,
@@ -316,7 +340,7 @@ async function getStats(env, { full = false } = {}) {
     accepts: totals.accepts,
     merchants: totals.merchants,
     networks: totals.networks,
-    calls30d: totals.calls30d || 0,
+    calls30d: totals.calls_30d || 0,
   };
 
   if (full) {
