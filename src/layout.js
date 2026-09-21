@@ -7,6 +7,19 @@ function escapeHtml(s) {
   return String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 }
 
+// Prefers the first accepts[] entry that actually has a USD price (not just
+// whichever happens to be first — most resources list several networks and only
+// some assets get a computed amountUsd, see computedAmountUsd() in src/db.js).
+// Falls back to a comma-formatted raw amount, never a bare unformatted integer.
+function priceOf(accepts) {
+  const list = accepts || [];
+  if (!list.length) return 'see accepts[]';
+  const priced = list.find((a) => a.amountUsd);
+  if (priced) return `$${priced.amountUsd}`;
+  const a = list[0];
+  return a.amount ? `${Number(a.amount).toLocaleString()} raw units` : 'free';
+}
+
 function header() {
   return `
 <header class="site-nav">
@@ -109,4 +122,4 @@ ${footer()}
 </html>`;
 }
 
-export { pageShell, header, footer, escapeHtml };
+export { pageShell, header, footer, escapeHtml, priceOf };

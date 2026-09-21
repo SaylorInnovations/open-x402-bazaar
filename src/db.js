@@ -3,6 +3,28 @@ function clampLimit(limit, fallback = 20) {
   return Math.min(Math.max(n, 1), 100);
 }
 
+// Coinbase's own Bazaar API doesn't include amountUsd on accepts[] entries at all
+// (only ours does), so every mirrored resource — the bulk of the catalog — had no
+// USD price and fell back to showing a raw atomic-unit integer ("100000000 units")
+// instead of a dollar amount. These are 6-decimal USD-pegged stablecoins on the
+// networks this catalog actually sees real volume on — verified directly (each is
+// also a payTo asset this project itself pays into or has confirmed on-chain).
+// Deliberately NOT a guess-for-every-asset heuristic: an unrecognized asset stays
+// unconverted rather than risk mislabeling some other token's price.
+const KNOWN_USD_STABLECOINS = new Set([
+  'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v', // Solana USDC
+  'Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB', // Solana USDT
+  '0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913', // Base USDC
+  '0x3c499c542cEF5E3811e1192ce70d8cC03d5c3359', // Polygon (native) USDC
+  '0xaf88d065e77c8cC2239327C5EDb3A432268e5831', // Arbitrum USDC
+]);
+
+function computedAmountUsd(asset, amount) {
+  if (!asset || !amount || !KNOWN_USD_STABLECOINS.has(asset)) return undefined;
+  const n = Number(amount);
+  return Number.isFinite(n) ? n / 1e6 : undefined;
+}
+
 // FTS5 gives special meaning to quotes, *, -, NEAR, AND/OR/NOT etc. Wrapping every
 // token in its own quoted phrase (space-joined, implicit AND) makes arbitrary user
 // input safe to MATCH against without it ever being parsed as an FTS5 operator.
@@ -32,7 +54,7 @@ async function attachAccepts(env, rows) {
       payTo: a.pay_to,
       asset: a.asset || undefined,
       amount: a.amount || undefined,
-      amountUsd: a.amount_usd ?? undefined,
+      amountUsd: a.amount_usd ?? computedAmountUsd(a.asset, a.amount),
       maxTimeoutSeconds: a.max_timeout_seconds ?? undefined,
     });
   }

@@ -1,10 +1,10 @@
 import { getProvider } from '../../src/db.js';
-import { pageShell, escapeHtml } from '../../src/layout.js';
+import { pageShell, escapeHtml, priceOf } from '../../src/layout.js';
 
 const CORS = { 'access-control-allow-origin': '*' };
 
 function card(r) {
-  const price = r.accepts?.[0]?.amountUsd ? `$${r.accepts[0].amountUsd}` : r.accepts?.[0]?.amount || '—';
+  const price = priceOf(r.accepts);
   return `
 <div class="card">
   <h3><a href="/resources/${escapeHtml(r.slug)}">${escapeHtml((r.description || r.resource).split('.')[0].slice(0, 70))}</a></h3>

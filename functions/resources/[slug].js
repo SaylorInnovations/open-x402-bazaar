@@ -1,5 +1,5 @@
 import { getResourceBySlugOrId } from '../../src/db.js';
-import { pageShell, escapeHtml } from '../../src/layout.js';
+import { pageShell, escapeHtml, priceOf } from '../../src/layout.js';
 import { exampleFromSchema } from '../../src/schemaExample.js';
 
 const CORS = { 'access-control-allow-origin': '*' };
@@ -25,11 +25,7 @@ if res.status_code == 402:
 }
 
 function renderHtml(r) {
-  const price = r.accepts?.[0]?.amountUsd
-    ? `$${r.accepts[0].amountUsd}`
-    : r.accepts?.[0]?.amount
-    ? `${r.accepts[0].amount} (raw units)`
-    : 'see accepts[]';
+  const price = priceOf(r.accepts);
   const networks = [...new Set((r.accepts || []).map((a) => a.network))];
   const verified = r.provider?.source === 'submitted';
   const meta = r.metadata || {};

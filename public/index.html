@@ -204,10 +204,12 @@
 (function () {
   function esc(s) { return String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
   function priceOf(r) {
-    var a = (r.accepts || [])[0];
-    if (!a) return 'see accepts[]';
-    if (a.amountUsd) return '$' + a.amountUsd;
-    return a.amount ? (a.amount + ' units') : 'free';
+    var accepts = r.accepts || [];
+    if (!accepts.length) return 'see accepts[]';
+    var priced = accepts.find(function (a) { return a.amountUsd; });
+    if (priced) return '$' + priced.amountUsd;
+    var a = accepts[0];
+    return a.amount ? (Number(a.amount).toLocaleString() + ' raw units') : 'free';
   }
   function card(r) {
     var title = (r.description || r.resource).split('.')[0].slice(0, 72);
