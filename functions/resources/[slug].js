@@ -64,6 +64,14 @@ function renderHtml(r) {
     <div class="stat"><div class="n">${escapeHtml((r.lastUpdated || '').slice(0, 10) || '—')}</div><div class="l">updated</div></div>
   </div>
 
+  ${!r.featured ? `
+  <div class="claim-banner">
+    <p>Want this in the homepage's <strong>Featured Resources</strong> row?
+      <span>Paid placement, from $2 / 7 days — paid directly to Agent Bazaar via x402, never a cut of this resource's own accepts[].</span>
+    </p>
+    <a href="/publish#feature" class="btn btn-ghost btn-sm">Feature this listing</a>
+  </div>` : ''}
+
   <section class="block" style="border-top:none;padding-top:0;">
     <h2>Provider</h2>
     <p><a href="/providers/${escapeHtml(r.sourceHost)}">${escapeHtml(r.provider?.manifest_name || r.sourceHost)}</a> ${verified ? '&middot; verified' : '&middot; discovered, not yet claimed by its owner'}</p>
