@@ -99,7 +99,7 @@ Every resource has a permanent, crawlable, server-rendered URL — not a client-
 | `/publish` | How to list a resource as a seller |
 | `/docs` | What x402/MCP/A2A are, how agent payments work, self-hosting |
 | `/guides`, `/guides/{slug}` | 11 in-depth, code-backed guides — full-length versions of the `/docs` FAQ answers, plus provider/agent-builder how-tos. `.json` twin per guide |
-| `/categories`, `/categories/{type}` | Browse by resource type (populated as providers set one — sparse for the mirrored bulk of the catalog, which doesn't) |
+| `/categories`, `/categories/{type}` | Browse by resource type (populated as providers set one — sparse for the mirrored bulk of the catalog, which doesn't). `.json` twin (`/categories/{type}.json?limit=`) returns the whole collection as one array — for an agent that wants "the entire guide library" in one call instead of walking cards one at a time |
 | `/networks`, `/networks/{network}` | Browse by CAIP-2 network — populated for every resource, since it comes from `accepts[]` |
 | `/protocols`, `/protocols/{x402,mcp,a2a}` | What each protocol is and how Agent Bazaar uses it, with live stats |
 | `/mcp` | GET: info page. POST: a real MCP server (JSON-RPC/Streamable HTTP) over the same catalog — `search_resources`, `get_resource`, `get_pricing`, `discover_provider`, `list_resources`, `get_stats` |
@@ -137,7 +137,7 @@ npm run check:liveness          # optional: probe owner-submitted resources, fla
 npm run dev                     # wrangler pages dev, with the D1 binding wired up
 ```
 
-If you already have a deployed D1 database predating later schema changes, apply the additive migrations in order instead of re-running `schema.sql`: `npm run db:migrate:remote`, then `:0003`, `:0004`, `:0005`, `:0006`.
+If you already have a deployed D1 database predating later schema changes, apply the additive migrations in order instead of re-running `schema.sql`: `npm run db:migrate:remote`, then `:0003`, `:0004`, `:0005`, `:0006`, `:0007`.
 
 `/feature` requires a `FEATURE_SECRET` Pages secret (HMAC-signs its payment quote sessions) — set it with `wrangler pages secret put FEATURE_SECRET`. Without one it falls back to an insecure dev-only value, which is fine for `wrangler pages dev` but must never reach production. An optional `FEATURE_RPC_URL` overrides the default public, rate-limited Solana RPC endpoint.
 
@@ -156,6 +156,8 @@ D1's free tier caps daily row reads. `GET /discovery/stats` (and `listNetworks`/
 ## Not yet built (roadmap)
 
 - ~~Periodic liveness checks~~ — done. `scripts/check-liveness.mjs` probes every owner-submitted resource (not the mirrored ones — Coinbase already crawls those) and marks it `is_live: true/false`; a confirmed-down resource gets a visible "not responding" badge on its card, detail page and provider page. It doesn't yet auto-prune or re-fetch changed payment addresses — a down resource stays listed, just flagged.
+- ~~Rolling reliability signal~~ — done. Each liveness check now also inserts into `liveness_checks`, and the resource row gets a precomputed rolling window (last 10 checks) — `liveness.reliability: {checks, live}` in the JSON, a "N/M uptime" badge in the UI. Only appears for owner-submitted resources (the only ones actually probed); `null` means never checked, distinct from a bad score.
+- ~~Example response shape~~ — done. Any resource with an `output_schema` now also gets an `exampleResponse` in its JSON (and an "Example shape" block on its page), synthesized from the schema itself — real `example`/`default`/`enum` values where the schema provides them, type-appropriate placeholders otherwise. Clearly not a captured live response; there for an agent to see the shape before paying.
 - **Semantic search.** Current search is keyword/substring (FTS5) only, unlike Coinbase's hybrid text+semantic search.
 - ~~Scheduled auto-mirroring~~ — done, via a daily scheduled job that runs both importers and the liveness check against production. (Implemented as a scheduled Claude Code cloud routine rather than a Cloudflare Cron Trigger — Pages Functions don't support cron triggers the way standalone Workers do — so this is operational, not something a fork of this repo gets automatically; see the "Keeping it fresh" note below if self-hosting.)
 - **Third-party MCP tool directory.** `/mcp` is now a real, working MCP server over *this* catalog (see above), but it doesn't yet proxy or list *other* MCP servers with their own detail pages the way `/resources/{slug}` does for x402 resources.

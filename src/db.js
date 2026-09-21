@@ -67,6 +67,9 @@ async function attachAccepts(env, rows) {
     liveness: {
       isLive: r.is_live === null || r.is_live === undefined ? undefined : Boolean(r.is_live),
       lastCheckedAt: r.last_checked_at ?? undefined,
+      // Rolling reliability over the last N liveness checks (N capped at 10 by
+      // scripts/check-liveness.mjs) — null when never checked, not the same as 0/10.
+      reliability: r.reliability_checks ? { checks: r.reliability_checks, live: r.reliability_live } : null,
     },
     // true only when the provider proved control via POST /submit — never inferred
     // from hostname or any other heuristic.
@@ -152,7 +155,7 @@ async function searchResources(env, { query, network, asset, scheme, payTo, maxU
     params.push(toFtsQuery(query));
   }
 
-  let sql = `SELECT DISTINCT r.id, r.resource_url, r.description, r.x402_version, r.output_schema, r.tags, r.last_updated, r.listing_host, r.calls_30d, r.unique_payers_30d, r.last_called_at, r.slug, r.resource_type, r.metadata, r.is_live, r.last_checked_at, l.source AS listing_source
+  let sql = `SELECT DISTINCT r.id, r.resource_url, r.description, r.x402_version, r.output_schema, r.tags, r.last_updated, r.listing_host, r.calls_30d, r.unique_payers_30d, r.last_called_at, r.slug, r.resource_type, r.metadata, r.is_live, r.last_checked_at, r.reliability_checks, r.reliability_live, l.source AS listing_source
              FROM ${from} JOIN resource_accepts a ON a.resource_id = r.id JOIN listings l ON l.host = r.listing_host`;
 
   if (network) { conditions.push('a.network = ?'); params.push(network); }
@@ -186,7 +189,7 @@ async function listResources(env, { limit, offset, sort }) {
   const orderBy = sort === 'recent' ? 'r.id DESC' : 'r.calls_30d DESC NULLS LAST, r.id';
 
   const { results } = await env.DB
-    .prepare(`SELECT r.id, r.resource_url, r.description, r.x402_version, r.output_schema, r.tags, r.last_updated, r.listing_host, r.calls_30d, r.unique_payers_30d, r.last_called_at, r.slug, r.resource_type, r.metadata, r.is_live, r.last_checked_at, l.source AS listing_source FROM resources r JOIN listings l ON l.host = r.listing_host ORDER BY ${orderBy} LIMIT ? OFFSET ?`)
+    .prepare(`SELECT r.id, r.resource_url, r.description, r.x402_version, r.output_schema, r.tags, r.last_updated, r.listing_host, r.calls_30d, r.unique_payers_30d, r.last_called_at, r.slug, r.resource_type, r.metadata, r.is_live, r.last_checked_at, r.reliability_checks, r.reliability_live, l.source AS listing_source FROM resources r JOIN listings l ON l.host = r.listing_host ORDER BY ${orderBy} LIMIT ? OFFSET ?`)
     .bind(lim, off)
     .all();
   const { total } = await env.DB.prepare('SELECT COUNT(*) as total FROM resources').first();
@@ -197,7 +200,7 @@ async function listResources(env, { limit, offset, sort }) {
 async function merchantResources(env, payTo) {
   const { results } = await env.DB
     .prepare(
-      `SELECT DISTINCT r.id, r.resource_url, r.description, r.x402_version, r.output_schema, r.tags, r.last_updated, r.listing_host, r.calls_30d, r.unique_payers_30d, r.last_called_at, r.slug, r.resource_type, r.metadata, r.is_live, r.last_checked_at, l.source AS listing_source
+      `SELECT DISTINCT r.id, r.resource_url, r.description, r.x402_version, r.output_schema, r.tags, r.last_updated, r.listing_host, r.calls_30d, r.unique_payers_30d, r.last_called_at, r.slug, r.resource_type, r.metadata, r.is_live, r.last_checked_at, r.reliability_checks, r.reliability_live, l.source AS listing_source
        FROM resources r JOIN resource_accepts a ON a.resource_id = r.id JOIN listings l ON l.host = r.listing_host WHERE a.pay_to = ?
        ORDER BY r.calls_30d DESC NULLS LAST, r.id`
     )
@@ -210,7 +213,7 @@ async function getResourceBySlugOrId(env, key) {
   const isNumeric = /^\d+$/.test(key);
   const row = await env.DB
     .prepare(
-      `SELECT r.id, r.resource_url, r.description, r.x402_version, r.output_schema, r.tags, r.last_updated, r.listing_host, r.calls_30d, r.unique_payers_30d, r.last_called_at, r.slug, r.resource_type, r.metadata, r.is_live, r.last_checked_at, r.featured_until, l.source AS listing_source
+      `SELECT r.id, r.resource_url, r.description, r.x402_version, r.output_schema, r.tags, r.last_updated, r.listing_host, r.calls_30d, r.unique_payers_30d, r.last_called_at, r.slug, r.resource_type, r.metadata, r.is_live, r.last_checked_at, r.reliability_checks, r.reliability_live, r.featured_until, l.source AS listing_source
        FROM resources r JOIN listings l ON l.host = r.listing_host WHERE r.slug = ? ${isNumeric ? 'OR r.id = ?' : ''} LIMIT 1`
     )
     .bind(key, ...(isNumeric ? [Number(key)] : []))
@@ -226,7 +229,7 @@ async function getProvider(env, host) {
   if (!listing) return null;
   const { results } = await env.DB
     .prepare(
-      `SELECT r.id, r.resource_url, r.description, r.x402_version, r.output_schema, r.tags, r.last_updated, r.listing_host, r.calls_30d, r.unique_payers_30d, r.last_called_at, r.slug, r.resource_type, r.metadata, r.is_live, r.last_checked_at, r.featured_until, l.source AS listing_source
+      `SELECT r.id, r.resource_url, r.description, r.x402_version, r.output_schema, r.tags, r.last_updated, r.listing_host, r.calls_30d, r.unique_payers_30d, r.last_called_at, r.slug, r.resource_type, r.metadata, r.is_live, r.last_checked_at, r.reliability_checks, r.reliability_live, r.featured_until, l.source AS listing_source
        FROM resources r JOIN listings l ON l.host = r.listing_host WHERE r.listing_host = ? ORDER BY r.calls_30d DESC NULLS LAST, r.id`
     )
     .bind(host)
@@ -239,7 +242,7 @@ async function resourcesByNetwork(env, network, { limit, offset }) {
   const off = Math.max(Number(offset) || 0, 0);
   const { results } = await env.DB
     .prepare(
-      `SELECT DISTINCT r.id, r.resource_url, r.description, r.x402_version, r.output_schema, r.tags, r.last_updated, r.listing_host, r.calls_30d, r.unique_payers_30d, r.last_called_at, r.slug, r.resource_type, r.metadata, r.is_live, r.last_checked_at, l.source AS listing_source
+      `SELECT DISTINCT r.id, r.resource_url, r.description, r.x402_version, r.output_schema, r.tags, r.last_updated, r.listing_host, r.calls_30d, r.unique_payers_30d, r.last_called_at, r.slug, r.resource_type, r.metadata, r.is_live, r.last_checked_at, r.reliability_checks, r.reliability_live, l.source AS listing_source
        FROM resources r JOIN resource_accepts a ON a.resource_id = r.id JOIN listings l ON l.host = r.listing_host
        WHERE a.network = ? ORDER BY r.calls_30d DESC NULLS LAST, r.id LIMIT ? OFFSET ?`
     )
@@ -257,7 +260,7 @@ async function resourcesByCategory(env, resourceType, { limit, offset }) {
   const off = Math.max(Number(offset) || 0, 0);
   const { results } = await env.DB
     .prepare(
-      `SELECT r.id, r.resource_url, r.description, r.x402_version, r.output_schema, r.tags, r.last_updated, r.listing_host, r.calls_30d, r.unique_payers_30d, r.last_called_at, r.slug, r.resource_type, r.metadata, r.is_live, r.last_checked_at, l.source AS listing_source
+      `SELECT r.id, r.resource_url, r.description, r.x402_version, r.output_schema, r.tags, r.last_updated, r.listing_host, r.calls_30d, r.unique_payers_30d, r.last_called_at, r.slug, r.resource_type, r.metadata, r.is_live, r.last_checked_at, r.reliability_checks, r.reliability_live, l.source AS listing_source
        FROM resources r JOIN listings l ON l.host = r.listing_host
        WHERE r.resource_type = ? COLLATE NOCASE ORDER BY r.calls_30d DESC NULLS LAST, r.id LIMIT ? OFFSET ?`
     )
@@ -358,7 +361,7 @@ async function logSubmission(env, { clientIp, host }) {
 async function getFeaturedResources(env, { limit = 6 } = {}) {
   const { results } = await env.DB
     .prepare(
-      `SELECT r.id, r.resource_url, r.description, r.x402_version, r.output_schema, r.tags, r.last_updated, r.listing_host, r.calls_30d, r.unique_payers_30d, r.last_called_at, r.slug, r.resource_type, r.metadata, r.is_live, r.last_checked_at, r.featured_until, l.source AS listing_source
+      `SELECT r.id, r.resource_url, r.description, r.x402_version, r.output_schema, r.tags, r.last_updated, r.listing_host, r.calls_30d, r.unique_payers_30d, r.last_called_at, r.slug, r.resource_type, r.metadata, r.is_live, r.last_checked_at, r.reliability_checks, r.reliability_live, r.featured_until, l.source AS listing_source
        FROM resources r JOIN listings l ON l.host = r.listing_host
        WHERE r.featured_until IS NOT NULL AND r.featured_until > ?
        ORDER BY r.featured_until DESC LIMIT ?`

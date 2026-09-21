@@ -85,8 +85,17 @@ async function main() {
   const aliveCount = results.filter((r) => r.alive).length;
   console.log(`  ${aliveCount}/${results.length} responded (status < 500)`);
 
+  // One history row per probe, then a rolling reliability window (last 10 checks,
+  // computed in-SQL from that history) precomputed onto the resource row itself —
+  // keeps every read-path query a plain column read, no per-row subquery at request time.
   const sql = results
-    .map((r) => `UPDATE resources SET is_live = ${r.alive ? 1 : 0}, last_checked_at = ${sqlString(now)} WHERE id = ${r.id};`)
+    .map((r) => {
+      const window = `(SELECT is_live FROM liveness_checks WHERE resource_id = ${r.id} ORDER BY checked_at DESC LIMIT 10)`;
+      return [
+        `INSERT INTO liveness_checks (resource_id, checked_at, is_live) VALUES (${r.id}, ${sqlString(now)}, ${r.alive ? 1 : 0});`,
+        `UPDATE resources SET is_live = ${r.alive ? 1 : 0}, last_checked_at = ${sqlString(now)}, reliability_checks = (SELECT COUNT(*) FROM ${window}), reliability_live = (SELECT COUNT(*) FROM ${window} WHERE is_live = 1) WHERE id = ${r.id};`,
+      ].join('\n');
+    })
     .join('\n');
 
   mkdirSync(outDir, { recursive: true });

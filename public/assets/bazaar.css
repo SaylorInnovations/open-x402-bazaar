@@ -139,6 +139,7 @@ section.block { padding: 44px 0; border-top: 1px solid var(--border); }
 .badge-mirror { color: var(--silver-soft); }
 .badge-down { color: var(--red); border-color: rgba(229, 83, 75, 0.4); background: rgba(229, 83, 75, 0.08); }
 .badge-featured { color: var(--gold-bright); border-color: rgba(201, 161, 74, 0.4); background: rgba(201, 161, 74, 0.08); }
+.badge-reliability { color: var(--green); border-color: rgba(63, 185, 80, 0.3); }
 
 /* claim-listing callout */
 .claim-banner { display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap; background: linear-gradient(135deg, rgba(201, 161, 74, 0.1), rgba(201, 161, 74, 0.03)); border: 1px solid rgba(201, 161, 74, 0.35); border-radius: var(--radius); padding: 16px 20px; margin: 20px 0; }

@@ -44,7 +44,22 @@ CREATE TABLE IF NOT EXISTS resources (
   -- featured_until is in the future. Never touches the underlying resource's own
   -- x402 payment — this is a separate x402 purchase paid to Agent Bazaar itself.
   featured_until TEXT,
+  -- Rolling reliability, precomputed by scripts/check-liveness.mjs from the last
+  -- (up to) 10 rows in liveness_checks for this resource. NULL until first checked.
+  reliability_checks INTEGER,
+  reliability_live INTEGER,
   FOREIGN KEY (listing_host) REFERENCES listings(host)
+);
+
+-- Liveness check history — one row per probe, so reliability can be a real rolling
+-- window instead of only the latest is_live boolean. Only owner-submitted resources
+-- are probed (see resources.is_live comment above), so this only ever grows for those.
+CREATE TABLE IF NOT EXISTS liveness_checks (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  resource_id INTEGER NOT NULL,
+  checked_at TEXT NOT NULL,
+  is_live INTEGER NOT NULL,
+  FOREIGN KEY (resource_id) REFERENCES resources(id)
 );
 
 CREATE TABLE IF NOT EXISTS resource_accepts (
@@ -67,6 +82,8 @@ CREATE INDEX IF NOT EXISTS idx_accepts_network ON resource_accepts(network);
 CREATE INDEX IF NOT EXISTS idx_accepts_asset ON resource_accepts(asset);
 CREATE INDEX IF NOT EXISTS idx_resources_calls_30d ON resources(calls_30d);
 CREATE UNIQUE INDEX IF NOT EXISTS idx_resources_slug ON resources(slug) WHERE slug IS NOT NULL;
+CREATE INDEX IF NOT EXISTS idx_resources_resource_type ON resources(resource_type);
+CREATE INDEX IF NOT EXISTS idx_liveness_checks_resource_id ON liveness_checks(resource_id, checked_at);
 
 -- Rate limiting for POST /submit: one row per accepted submission, keyed by the
 -- client IP. Old rows are pruned lazily (see submit.js) rather than by a cron.

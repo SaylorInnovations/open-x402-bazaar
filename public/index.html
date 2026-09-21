@@ -213,8 +213,9 @@
     var title = (r.description || r.resource).split('.')[0].slice(0, 72);
     var verified = r.verified === true;
     var down = r.liveness && r.liveness.isLive === false;
+    var rel = r.liveness && r.liveness.reliability;
     return '<div class="card">' +
-      '<div class="meta-row">' + (r.featured ? '<span class="badge badge-featured">featured</span>' : '') + (verified ? '<span class="badge badge-verified">verified</span>' : '') + (down ? '<span class="badge badge-down">not responding</span>' : '') + (r.resourceType ? '<span class="badge">' + esc(r.resourceType) + '</span>' : '') + '<span class="badge badge-protocol">x402</span></div>' +
+      '<div class="meta-row">' + (r.featured ? '<span class="badge badge-featured">featured</span>' : '') + (verified ? '<span class="badge badge-verified">verified</span>' : '') + (down ? '<span class="badge badge-down">not responding</span>' : '') + (rel ? '<span class="badge badge-reliability">' + rel.live + '/' + rel.checks + ' uptime</span>' : '') + (r.resourceType ? '<span class="badge">' + esc(r.resourceType) + '</span>' : '') + '<span class="badge badge-protocol">x402</span></div>' +
       '<h3><a href="/resources/' + esc(r.slug) + '">' + esc(title) + '</a></h3>' +
       '<p class="desc">' + esc(r.description || r.resource) + '</p>' +
       '<div class="price">' + esc(priceOf(r)) + (r.accepts && r.accepts[0] && r.accepts[0].amountUsd ? ' / request' : '') + '</div>' +

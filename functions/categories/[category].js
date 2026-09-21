@@ -18,14 +18,27 @@ function card(r) {
 }
 
 export async function onRequestGet({ params, env, request }) {
-  const category = decodeURIComponent(params.category);
-  const offset = Number(new URL(request.url).searchParams.get('offset')) || 0;
-  const { resources, total, limit } = await resourcesByCategory(env, category, { limit: 24, offset });
+  const raw = decodeURIComponent(params.category);
+  const isJson = raw.endsWith('.json');
+  const category = isJson ? raw.slice(0, -5) : raw;
+  const url = new URL(request.url);
+  const offset = Number(url.searchParams.get('offset')) || 0;
+  // JSON callers get a much higher default limit — the whole point is letting an
+  // agent fetch an entire small collection (e.g. a 26-guide library) in one request
+  // instead of walking cards one at a time. HTML keeps the smaller paginated default.
+  const limitParam = isJson ? url.searchParams.get('limit') || 100 : 24;
+  const { resources, total, limit } = await resourcesByCategory(env, category, { limit: limitParam, offset });
 
   if (total === 0) {
-    return new Response('<h1>404 — no resources in this category</h1>', {
+    return new Response(isJson ? JSON.stringify({ error: 'no resources in this category' }) : '<h1>404 — no resources in this category</h1>', {
       status: 404,
-      headers: { ...CORS, 'content-type': 'text/html' },
+      headers: { ...CORS, 'content-type': isJson ? 'application/json' : 'text/html' },
+    });
+  }
+
+  if (isJson) {
+    return new Response(JSON.stringify({ x402Version: 2, category, total, limit, offset, resources }, null, 2), {
+      headers: { ...CORS, 'content-type': 'application/json' },
     });
   }
 
@@ -34,7 +47,7 @@ export async function onRequestGet({ params, env, request }) {
 <main class="wrap" style="padding:32px 0 60px;">
   <nav class="breadcrumbs"><a href="/">Agent Bazaar</a> / <a href="/categories">Categories</a> / ${escapeHtml(category)}</nav>
   <h1>${escapeHtml(category)}</h1>
-  <p style="color:var(--silver);">${total} resource${total === 1 ? '' : 's'} in this category.</p>
+  <p style="color:var(--silver);">${total} resource${total === 1 ? '' : 's'} in this category. Machine-readable: <a href="/categories/${encodeURIComponent(category)}.json?limit=100"><code>/categories/${escapeHtml(category)}.json</code></a> returns the whole collection as one JSON array.</p>
   <div class="grid-cards" style="margin-top:22px;">${resources.map(card).join('')}</div>
   ${nextOffset < total ? `<p style="margin-top:24px;"><a class="btn btn-ghost btn-sm" href="/categories/${encodeURIComponent(category)}?offset=${nextOffset}">Next page</a></p>` : ''}
 </main>`;

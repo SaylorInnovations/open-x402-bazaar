@@ -12,6 +12,7 @@ function card(r) {
   <div class="meta-row">
     ${r.featured ? '<span class="badge badge-featured">featured</span>' : ''}
     ${r.liveness?.isLive === false ? '<span class="badge badge-down">not responding</span>' : ''}
+    ${r.liveness?.reliability ? `<span class="badge badge-reliability">${r.liveness.reliability.live}/${r.liveness.reliability.checks} uptime</span>` : ''}
     ${r.resourceType ? `<span class="badge">${escapeHtml(r.resourceType)}</span>` : ''}
     <span class="badge badge-protocol">x402</span>
   </div>

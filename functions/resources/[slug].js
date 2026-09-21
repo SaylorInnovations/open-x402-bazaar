@@ -1,5 +1,6 @@
 import { getResourceBySlugOrId } from '../../src/db.js';
 import { pageShell, escapeHtml } from '../../src/layout.js';
+import { exampleFromSchema } from '../../src/schemaExample.js';
 
 const CORS = { 'access-control-allow-origin': '*' };
 
@@ -33,6 +34,7 @@ function renderHtml(r) {
   const verified = r.provider?.source === 'submitted';
   const meta = r.metadata || {};
   const isDown = r.liveness?.isLive === false;
+  const reliability = r.liveness?.reliability;
 
   const body = `
 <main class="wrap" style="padding:32px 0 60px;">
@@ -41,6 +43,7 @@ function renderHtml(r) {
     ${r.featured ? '<span class="badge badge-featured">featured</span>' : ''}
     ${verified ? '<span class="badge badge-verified">verified owner</span>' : '<span class="badge badge-mirror">mirrored listing</span>'}
     ${isDown ? '<span class="badge badge-down">not responding</span>' : ''}
+    ${reliability ? `<span class="badge badge-reliability">${reliability.live}/${reliability.checks} uptime</span>` : ''}
     ${r.resourceType ? `<span class="badge">${escapeHtml(r.resourceType)}</span>` : ''}
     <span class="badge badge-protocol">x402</span>
     ${networks.map((n) => `<span class="badge badge-network">${escapeHtml(n)}</span>`).join('')}
@@ -99,6 +102,8 @@ function renderHtml(r) {
   <section class="block">
     <h2>Output schema</h2>
     <div class="codeblock"><pre>${escapeHtml(JSON.stringify(r.outputSchema, null, 2))}</pre></div>
+    <h3 style="font-size:0.9rem;color:var(--silver-soft);margin-top:18px;">Example shape (generated from the schema above — not a captured live response)</h3>
+    <div class="codeblock"><pre>${escapeHtml(JSON.stringify(exampleFromSchema(r.outputSchema), null, 2))}</pre></div>
   </section>` : ''}
 
   <section class="block">
@@ -154,7 +159,8 @@ export async function onRequestGet({ params, env }) {
   }
 
   if (isJson) {
-    return new Response(JSON.stringify({ x402Version: 2, ...resource }, null, 2), {
+    const exampleResponse = resource.outputSchema ? exampleFromSchema(resource.outputSchema) : undefined;
+    return new Response(JSON.stringify({ x402Version: 2, ...resource, exampleResponse }, null, 2), {
       headers: { ...CORS, 'content-type': 'application/json' },
     });
   }
