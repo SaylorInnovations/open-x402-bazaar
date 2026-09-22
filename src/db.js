@@ -37,14 +37,26 @@ function toFtsQuery(query) {
     .join(' ');
 }
 
+// D1 (SQLite) has a real bound-parameter ceiling per statement — one `?` per
+// resource id here hit it in production once a single provider (Saylor's own
+// listing) crossed ~145 resources, breaking every caller with more rows than
+// that (merchantResources, getProvider — both unlimited, unlike the capped
+// list/search paths). Chunking keeps this correct at any provider size.
+const ACCEPTS_ID_CHUNK = 100;
+
 async function attachAccepts(env, rows) {
   if (rows.length === 0) return [];
   const ids = rows.map((r) => r.id);
-  const placeholders = ids.map(() => '?').join(',');
-  const { results: acceptsRows } = await env.DB
-    .prepare(`SELECT * FROM resource_accepts WHERE resource_id IN (${placeholders})`)
-    .bind(...ids)
-    .all();
+  const acceptsRows = [];
+  for (let i = 0; i < ids.length; i += ACCEPTS_ID_CHUNK) {
+    const chunk = ids.slice(i, i + ACCEPTS_ID_CHUNK);
+    const placeholders = chunk.map(() => '?').join(',');
+    const { results } = await env.DB
+      .prepare(`SELECT * FROM resource_accepts WHERE resource_id IN (${placeholders})`)
+      .bind(...chunk)
+      .all();
+    acceptsRows.push(...results);
+  }
 
   const byResource = {};
   for (const a of acceptsRows) {
@@ -133,8 +145,15 @@ async function deleteListing(env, host) {
 
   const stmts = [];
   if (ids.length) {
+    // resource_accepts, liveness_checks, and feature_purchases all FK-reference
+    // resources.id — every one has to be cleared before the DELETE FROM resources
+    // below, or that delete fails with a foreign key violation for any resource
+    // that's ever been liveness-checked or featured (a real re-submission would
+    // hit this, not just a hypothetical). Discovered against production D1.
     const placeholders = ids.map(() => '?').join(',');
     stmts.push(env.DB.prepare(`DELETE FROM resource_accepts WHERE resource_id IN (${placeholders})`).bind(...ids));
+    stmts.push(env.DB.prepare(`DELETE FROM liveness_checks WHERE resource_id IN (${placeholders})`).bind(...ids));
+    stmts.push(env.DB.prepare(`DELETE FROM feature_purchases WHERE resource_id IN (${placeholders})`).bind(...ids));
   }
   stmts.push(env.DB.prepare('DELETE FROM resources WHERE listing_host = ?').bind(host));
   stmts.push(env.DB.prepare('DELETE FROM listings WHERE host = ?').bind(host));
