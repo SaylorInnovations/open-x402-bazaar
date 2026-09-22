@@ -224,8 +224,12 @@ async function searchResources(env, { query, network, asset, scheme, payTo, maxU
     params.push(toFtsQuery(query));
   }
 
+  // LEFT JOIN, not JOIN: a resource with zero accepts[] (deliberately free — see
+  // priceOf() in src/layout.js) must still be findable by a bare text/urlSubstring
+  // query. An accept-specific filter (network/asset/scheme/payTo/maxUsdPrice) still
+  // correctly excludes it below, since a.network etc. are NULL on the unmatched side.
   let sql = `SELECT DISTINCT r.id, r.resource_url, r.description, r.x402_version, r.output_schema, r.tags, r.last_updated, r.listing_host, r.calls_30d, r.unique_payers_30d, r.last_called_at, r.slug, r.resource_type, r.metadata, r.is_live, r.last_checked_at, r.reliability_checks, r.reliability_live, l.source AS listing_source
-             FROM ${from} JOIN resource_accepts a ON a.resource_id = r.id JOIN listings l ON l.host = r.listing_host`;
+             FROM ${from} LEFT JOIN resource_accepts a ON a.resource_id = r.id JOIN listings l ON l.host = r.listing_host`;
 
   if (network) { conditions.push('a.network = ?'); params.push(network); }
   if (asset) { conditions.push('a.asset = ?'); params.push(asset); }

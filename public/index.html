@@ -205,7 +205,7 @@
   function esc(s) { return String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
   function priceOf(r) {
     var accepts = r.accepts || [];
-    if (!accepts.length) return 'see accepts[]';
+    if (!accepts.length) return 'Free';
     var priced = accepts.find(function (a) { return a.amountUsd; });
     if (priced) return '$' + priced.amountUsd;
     var a = accepts[0];
