@@ -7,9 +7,16 @@
 // `render()` returns { response, cacheable }. Degraded output (a D1 error rendered as
 // a friendly page) is returned but never cached, so a transient failure heals on the
 // next request instead of being served for the whole TTL.
+const CACHE_VERSION = '2';
+
 export async function withEdgeCache({ request, waitUntil }, ttlSeconds, render) {
   const cache = typeof caches !== 'undefined' ? caches.default : null;
-  const key = new Request(new URL(request.url).toString(), { method: 'GET' });
+  // caches.default survives deploys, so a page rendered by an older build (pointing at
+  // older asset URLs) would keep being served after a redeploy. Bump CACHE_VERSION
+  // whenever the page shell changes to start from an empty cache.
+  const url = new URL(request.url);
+  url.searchParams.set('__cv', CACHE_VERSION);
+  const key = new Request(url.toString(), { method: 'GET' });
 
   if (cache) {
     const hit = await cache.match(key);
