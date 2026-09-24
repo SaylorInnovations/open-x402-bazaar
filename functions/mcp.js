@@ -14,7 +14,7 @@ export async function onRequestOptions() {
 export async function onRequestGet() {
   const toolRows = TOOLS.map((t) => `<tr><td><code>${t.name}</code></td><td>${t.description}</td></tr>`).join('');
   const body = `
-<main class="wrap" style="padding:40px 0 60px;max-width:760px;">
+<div class="wrap" style="padding:40px 0 60px;max-width:760px;">
   <span class="eyebrow">MCP &middot; MODEL CONTEXT PROTOCOL &middot; LIVE</span>
   <h1>MCP on Agent Bazaar</h1>
   <p class="lede" style="max-width:none;">This endpoint is a real MCP server over the marketplace catalog — the same data <code>/discovery</code> serves, over MCP's Streamable HTTP transport.</p>
@@ -50,7 +50,7 @@ export async function onRequestGet() {
     <h2>Scope</h2>
     <p style="color:var(--silver);">This server exposes read-only discovery tools over Agent Bazaar's own catalog. It does not (yet) proxy third-party MCP servers, execute x402 payments on an agent's behalf, or expose write tools — publishing still goes through <a href="/publish">/publish</a> / <code>POST /submit</code>.</p>
   </section>
-</main>`;
+</div>`;
 
   const html = pageShell({
     title: 'MCP — Agent Bazaar',

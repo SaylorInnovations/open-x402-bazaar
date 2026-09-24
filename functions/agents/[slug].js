@@ -9,7 +9,7 @@ function renderHtml(a) {
     .join('');
 
   const body = `
-<main class="wrap" style="padding:32px 0 60px;">
+<div class="wrap" style="padding:32px 0 60px;">
   <nav class="breadcrumbs"><a href="/">Agent Bazaar</a> / <a href="/agents">Agents</a></nav>
   <div class="meta-row" style="margin-bottom:14px;">
     <span class="badge badge-protocol">A2A</span>
@@ -40,7 +40,7 @@ function renderHtml(a) {
     <h2>Machine-readable</h2>
     <p>Full agent card as submitted: <a href="/agents/${escapeHtml(a.slug)}.json"><code>/agents/${escapeHtml(a.slug)}.json</code></a>. Original source: <a href="${escapeHtml(a.cardUrl)}"><code>${escapeHtml(a.cardUrl)}</code></a>.</p>
   </section>
-</main>`;
+</div>`;
 
   return pageShell({
     title: `${a.name} — Agent Bazaar`,

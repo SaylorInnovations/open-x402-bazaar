@@ -37,14 +37,26 @@ function toFtsQuery(query) {
     .join(' ');
 }
 
+// D1 (SQLite) has a real bound-parameter ceiling per statement — one `?` per
+// resource id here hit it in production once a single provider (Saylor's own
+// listing) crossed ~145 resources, breaking every caller with more rows than
+// that (merchantResources, getProvider — both unlimited, unlike the capped
+// list/search paths). Chunking keeps this correct at any provider size.
+const ACCEPTS_ID_CHUNK = 100;
+
 async function attachAccepts(env, rows) {
   if (rows.length === 0) return [];
   const ids = rows.map((r) => r.id);
-  const placeholders = ids.map(() => '?').join(',');
-  const { results: acceptsRows } = await env.DB
-    .prepare(`SELECT * FROM resource_accepts WHERE resource_id IN (${placeholders})`)
-    .bind(...ids)
-    .all();
+  const acceptsRows = [];
+  for (let i = 0; i < ids.length; i += ACCEPTS_ID_CHUNK) {
+    const chunk = ids.slice(i, i + ACCEPTS_ID_CHUNK);
+    const placeholders = chunk.map(() => '?').join(',');
+    const { results } = await env.DB
+      .prepare(`SELECT * FROM resource_accepts WHERE resource_id IN (${placeholders})`)
+      .bind(...chunk)
+      .all();
+    acceptsRows.push(...results);
+  }
 
   const byResource = {};
   for (const a of acceptsRows) {
@@ -133,8 +145,15 @@ async function deleteListing(env, host) {
 
   const stmts = [];
   if (ids.length) {
+    // resource_accepts, liveness_checks, and feature_purchases all FK-reference
+    // resources.id — every one has to be cleared before the DELETE FROM resources
+    // below, or that delete fails with a foreign key violation for any resource
+    // that's ever been liveness-checked or featured (a real re-submission would
+    // hit this, not just a hypothetical). Discovered against production D1.
     const placeholders = ids.map(() => '?').join(',');
     stmts.push(env.DB.prepare(`DELETE FROM resource_accepts WHERE resource_id IN (${placeholders})`).bind(...ids));
+    stmts.push(env.DB.prepare(`DELETE FROM liveness_checks WHERE resource_id IN (${placeholders})`).bind(...ids));
+    stmts.push(env.DB.prepare(`DELETE FROM feature_purchases WHERE resource_id IN (${placeholders})`).bind(...ids));
   }
   stmts.push(env.DB.prepare('DELETE FROM resources WHERE listing_host = ?').bind(host));
   stmts.push(env.DB.prepare('DELETE FROM listings WHERE host = ?').bind(host));
@@ -205,23 +224,33 @@ async function searchResources(env, { query, network, asset, scheme, payTo, maxU
     params.push(toFtsQuery(query));
   }
 
-  let sql = `SELECT DISTINCT r.id, r.resource_url, r.description, r.x402_version, r.output_schema, r.tags, r.last_updated, r.listing_host, r.calls_30d, r.unique_payers_30d, r.last_called_at, r.slug, r.resource_type, r.metadata, r.is_live, r.last_checked_at, r.reliability_checks, r.reliability_live, l.source AS listing_source
-             FROM ${from} JOIN resource_accepts a ON a.resource_id = r.id JOIN listings l ON l.host = r.listing_host`;
+  // accepts[] filters all apply to the SAME accepts entry, and a resource with no
+  // accepts never matches. Expressed as one EXISTS so the query walks resources in
+  // rank/usage order and probes idx_accepts_resource_id per row, stopping at LIMIT.
+  // The previous form JOINed resource_accepts and drove from it — a scan of every
+  // accepts row (43k+) plus DISTINCT and a temp sort, ~60k row reads per call, which
+  // is what exhausted D1's free-tier daily read budget.
+  const acceptConds = ['a.resource_id = r.id'];
+  const acceptParams = [];
+  if (network) { acceptConds.push('a.network = ?'); acceptParams.push(network); }
+  if (asset) { acceptConds.push('a.asset = ?'); acceptParams.push(asset); }
+  if (scheme) { acceptConds.push('a.scheme = ?'); acceptParams.push(scheme); }
+  if (payTo) { acceptConds.push('a.pay_to = ?'); acceptParams.push(payTo); }
+  if (maxUsdPrice !== undefined) { acceptConds.push('(a.amount_usd IS NULL OR a.amount_usd <= ?)'); acceptParams.push(Number(maxUsdPrice)); }
+  conditions.push(`EXISTS (SELECT 1 FROM resource_accepts a WHERE ${acceptConds.join(' AND ')})`);
+  params.push(...acceptParams);
 
-  if (network) { conditions.push('a.network = ?'); params.push(network); }
-  if (asset) { conditions.push('a.asset = ?'); params.push(asset); }
-  if (scheme) { conditions.push('a.scheme = ?'); params.push(scheme); }
-  if (payTo) { conditions.push('a.pay_to = ?'); params.push(payTo); }
-  if (maxUsdPrice !== undefined) { conditions.push('(a.amount_usd IS NULL OR a.amount_usd <= ?)'); params.push(Number(maxUsdPrice)); }
   if (urlSubstring) {
     conditions.push("r.resource_url LIKE ? ESCAPE '\\'");
     params.push(`%${urlSubstring.replace(/[%_\\]/g, '\\$&')}%`);
   }
 
-  if (conditions.length) sql += ' WHERE ' + conditions.join(' AND ');
+  let sql = `SELECT r.id, r.resource_url, r.description, r.x402_version, r.output_schema, r.tags, r.last_updated, r.listing_host, r.calls_30d, r.unique_payers_30d, r.last_called_at, r.slug, r.resource_type, r.metadata, r.is_live, r.last_checked_at, r.reliability_checks, r.reliability_live, l.source AS listing_source
+             FROM ${from} JOIN listings l ON l.host = r.listing_host`;
+  sql += ' WHERE ' + conditions.join(' AND ');
   // Text queries rank by FTS5 match quality (bm25) first; filter-only queries rank
-  // by 30-day call volume, so the busiest (most likely still-live, least-likely-spam)
-  // resources surface first among otherwise-equal matches.
+  // by 30-day call volume (idx_resources_calls_id), so the busiest (most likely
+  // still-live, least-likely-spam) resources surface first among otherwise-equal matches.
   sql += query ? ' ORDER BY bm25(resources_fts)' : ' ORDER BY r.calls_30d DESC NULLS LAST, r.id';
   sql += ' LIMIT ?';
   params.push(lim);
@@ -293,19 +322,20 @@ async function getProvider(env, host) {
 async function resourcesByNetwork(env, network, { limit, offset }) {
   const lim = clampLimit(limit);
   const off = Math.max(Number(offset) || 0, 0);
+  // EXISTS, not a JOIN-and-DISTINCT driven from resource_accepts — see searchResources.
   const { results } = await env.DB
     .prepare(
-      `SELECT DISTINCT r.id, r.resource_url, r.description, r.x402_version, r.output_schema, r.tags, r.last_updated, r.listing_host, r.calls_30d, r.unique_payers_30d, r.last_called_at, r.slug, r.resource_type, r.metadata, r.is_live, r.last_checked_at, r.reliability_checks, r.reliability_live, l.source AS listing_source
-       FROM resources r JOIN resource_accepts a ON a.resource_id = r.id JOIN listings l ON l.host = r.listing_host
-       WHERE a.network = ? ORDER BY r.calls_30d DESC NULLS LAST, r.id LIMIT ? OFFSET ?`
+      `SELECT r.id, r.resource_url, r.description, r.x402_version, r.output_schema, r.tags, r.last_updated, r.listing_host, r.calls_30d, r.unique_payers_30d, r.last_called_at, r.slug, r.resource_type, r.metadata, r.is_live, r.last_checked_at, r.reliability_checks, r.reliability_live, l.source AS listing_source
+       FROM resources r JOIN listings l ON l.host = r.listing_host
+       WHERE EXISTS (SELECT 1 FROM resource_accepts a WHERE a.resource_id = r.id AND a.network = ?)
+       ORDER BY r.calls_30d DESC NULLS LAST, r.id LIMIT ? OFFSET ?`
     )
     .bind(network, lim, off)
     .all();
-  const { total } = await env.DB
-    .prepare('SELECT COUNT(DISTINCT r.id) AS total FROM resources r JOIN resource_accepts a ON a.resource_id = r.id WHERE a.network = ?')
-    .bind(network)
-    .first();
-  return { resources: await attachAccepts(env, results), total, limit: lim, offset: off };
+  // Precomputed distinct-resource count per network (recomputeCatalogStats) — was a live
+  // COUNT(DISTINCT) over every accepts row on that network.
+  const row = await env.DB.prepare('SELECT count AS total FROM network_stats WHERE network = ?').bind(network).first();
+  return { resources: await attachAccepts(env, results), total: row ? row.total : 0, limit: lim, offset: off };
 }
 
 async function resourcesByCategory(env, resourceType, { limit, offset }) {

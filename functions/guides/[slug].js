@@ -10,7 +10,7 @@ function renderHtml(guide) {
     .filter(Boolean);
 
   const body = `
-<main class="wrap" style="padding:32px 0 60px;max-width:820px;">
+<div class="wrap" style="padding:32px 0 60px;max-width:820px;">
   <nav class="breadcrumbs"><a href="/">Agent Bazaar</a> / <a href="/guides">Guides</a> / ${escapeHtml(guide.category)}</nav>
   <span class="eyebrow">${escapeHtml(guide.category.toUpperCase())} &middot; ${guide.readMins} MIN READ</span>
   <h1>${escapeHtml(guide.title)}</h1>
@@ -41,7 +41,7 @@ function renderHtml(guide) {
     <h2>Machine-readable</h2>
     <p style="color:var(--silver);">Plain-text version for agents: <a href="/guides/${escapeHtml(guide.slug)}.json"><code>/guides/${escapeHtml(guide.slug)}.json</code></a>.</p>
   </section>
-</main>`;
+</div>`;
 
   const html = pageShell({
     title: `${guide.title} — Agent Bazaar`,

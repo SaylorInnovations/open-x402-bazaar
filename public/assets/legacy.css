@@ -1,0 +1,46 @@
+/* Compatibility layer for content pages that still use the pre-redesign class
+   names (docs, publish, agents, protocols, guides, MCP page). It maps those names
+   onto the design tokens in bazaar.css so the pages match the new look without a
+   markup rewrite. New pages should use the classes in bazaar.css directly. */
+
+.breadcrumbs { font-size: .84rem; color: var(--muted); margin-bottom: 18px; }
+.breadcrumbs a { color: var(--muted); text-decoration: none; }
+.breadcrumbs a:hover { color: var(--accent-2); }
+
+.block { padding: 28px 0; border-top: 1px solid var(--line); }
+.block:first-child { border-top: 0; }
+.block-head { display: flex; align-items: baseline; justify-content: space-between; gap: 16px; flex-wrap: wrap; margin-bottom: 22px; }
+.block-head h2 { font-size: 1.3rem; margin: 0; }
+.see-all { font-size: .86rem; color: var(--muted); }
+
+.grid-cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 16px; }
+.grid-cards .card { display: block; }
+.card .desc { color: var(--text-2); font-size: .92rem; margin: 8px 0 12px; }
+.card > .price { font-family: var(--f-mono); color: var(--accent-2); font-weight: 600; margin-top: 8px; }
+
+.meta-row { display: flex; flex-wrap: wrap; gap: 6px; margin: 0 0 10px; }
+.badge-verified { color: var(--ok); border-color: rgba(92, 201, 140, .4); background: rgba(92, 201, 140, .08); }
+.badge-mirror { color: var(--muted); }
+.badge-down { color: var(--bad); border-color: rgba(238, 122, 111, .4); background: rgba(238, 122, 111, .08); }
+.badge-featured { color: var(--accent-2); border-color: rgba(201, 161, 74, .45); background: rgba(201, 161, 74, .1); }
+.badge-reliability { color: var(--ok); border-color: rgba(92, 201, 140, .3); }
+.badge-network { color: var(--violet); }
+.badge-protocol { color: var(--signal); }
+
+.codeblock { background: var(--code); border: 1px solid var(--line-2); border-radius: var(--r-sm); padding: 16px; font: 500 .82rem/1.6 var(--f-mono); overflow-x: auto; position: relative; margin: 10px 0; }
+.codeblock pre { margin: 0; white-space: pre; }
+.copy-btn { position: absolute; top: 8px; right: 8px; font: 500 .72rem var(--f-mono); color: var(--muted); background: var(--surface-2); border: 1px solid var(--line-2); border-radius: 6px; padding: 3px 8px; cursor: pointer; }
+
+.claim-banner { display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap; background: linear-gradient(135deg, rgba(201, 161, 74, .1), rgba(201, 161, 74, .03)); border: 1px solid rgba(201, 161, 74, .35); border-radius: var(--r); padding: 16px 20px; margin: 20px 0; }
+.claim-banner p { margin: 0; color: var(--text); font-size: .9rem; max-width: 560px; }
+.claim-banner p span { display: block; color: var(--muted); font-size: .84rem; margin-top: 3px; }
+
+.stats-strip { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 12px; }
+.stats-strip .stat { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r); padding: 14px 16px; }
+.stats-strip .stat .n { font: 700 1.3rem var(--f-display); color: var(--text); }
+.stats-strip .stat .l { font: 500 .72rem var(--f-mono); color: var(--muted); text-transform: uppercase; letter-spacing: .06em; }
+
+.hero-ctas { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 22px; }
+.btn-ghost { background: transparent; }
+.label { font: 500 .72rem var(--f-mono); color: var(--muted); text-transform: uppercase; letter-spacing: .08em; }
+.tagline { font: 500 1rem var(--f-mono); color: var(--accent-2); }

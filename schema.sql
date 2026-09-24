@@ -81,6 +81,8 @@ CREATE INDEX IF NOT EXISTS idx_accepts_pay_to ON resource_accepts(pay_to);
 CREATE INDEX IF NOT EXISTS idx_accepts_network ON resource_accepts(network);
 CREATE INDEX IF NOT EXISTS idx_accepts_asset ON resource_accepts(asset);
 CREATE INDEX IF NOT EXISTS idx_resources_calls_30d ON resources(calls_30d);
+-- Serves `ORDER BY calls_30d DESC NULLS LAST, id` without a temp sort (see migrations/0009).
+CREATE INDEX IF NOT EXISTS idx_resources_calls_id ON resources(calls_30d DESC, id ASC);
 CREATE UNIQUE INDEX IF NOT EXISTS idx_resources_slug ON resources(slug) WHERE slug IS NOT NULL;
 -- COLLATE NOCASE matches the `WHERE resource_type = ? COLLATE NOCASE` queries in
 -- resourcesByCategory() — without it on the index too, SQLite can't use the index

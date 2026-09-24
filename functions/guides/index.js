@@ -9,7 +9,7 @@ export async function onRequestGet() {
   for (const g of guides) (byCategory[g.category] ||= []).push(g);
 
   const body = `
-<main class="wrap" style="padding:32px 0 60px;max-width:900px;">
+<div class="wrap" style="padding:32px 0 60px;max-width:900px;">
   <nav class="breadcrumbs"><a href="/">Agent Bazaar</a> / Guides</nav>
   <span class="eyebrow">GUIDES</span>
   <h1>Guides</h1>
@@ -30,7 +30,7 @@ export async function onRequestGet() {
   </section>`
     )
     .join('')}
-</main>`;
+</div>`;
 
   const html = pageShell({
     title: 'Guides — Agent Bazaar',

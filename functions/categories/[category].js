@@ -1,21 +1,7 @@
 import { resourcesByCategory } from '../../src/db.js';
-import { pageShell, escapeHtml, priceOf } from '../../src/layout.js';
+import { pageShell, escapeHtml, card, crumbs, fmtNum, SITE } from '../../src/layout.js';
 
 const CORS = { 'access-control-allow-origin': '*' };
-
-function card(r) {
-  const price = priceOf(r.accepts);
-  return `
-<div class="card">
-  <h3><a href="/resources/${escapeHtml(r.slug)}">${escapeHtml((r.description || r.resource).split('.')[0].slice(0, 70))}</a></h3>
-  <p class="desc">${escapeHtml(r.description || r.resource)}</p>
-  <div class="meta-row">
-    ${r.verified ? '<span class="badge badge-verified">verified</span>' : ''}
-    <span class="badge badge-protocol">x402</span>
-  </div>
-  <div class="price">${escapeHtml(price)} / request</div>
-</div>`;
-}
 
 export async function onRequestGet({ params, env, request }) {
   const raw = decodeURIComponent(params.category);
@@ -43,20 +29,25 @@ export async function onRequestGet({ params, env, request }) {
   }
 
   const nextOffset = offset + limit;
+  const base = `/categories/${encodeURIComponent(category)}`;
   const body = `
-<main class="wrap" style="padding:32px 0 60px;">
-  <nav class="breadcrumbs"><a href="/">Agent Bazaar</a> / <a href="/categories">Categories</a> / ${escapeHtml(category)}</nav>
+<div class="wrap page-head">
+  ${crumbs([['Agent Bazaar', '/'], ['Categories', '/categories'], [category, base]])}
   <h1>${escapeHtml(category)}</h1>
-  <p style="color:var(--silver);">${total} resource${total === 1 ? '' : 's'} in this category. Machine-readable: <a href="/categories/${encodeURIComponent(category)}.json?limit=100"><code>/categories/${escapeHtml(category)}.json</code></a> returns the whole collection as one JSON array.</p>
-  <div class="grid-cards" style="margin-top:22px;">${resources.map(card).join('')}</div>
-  ${nextOffset < total ? `<p style="margin-top:24px;"><a class="btn btn-ghost btn-sm" href="/categories/${encodeURIComponent(category)}?offset=${nextOffset}">Next page</a></p>` : ''}
-</main>`;
+  <p class="lede">${fmtNum(total)} resource${total === 1 ? '' : 's'} in this category.</p>
+  <p class="small mono muted"><a href="${base}.json?limit=100">JSON</a> — the whole collection as one array.</p>
+</div>
+<div class="wrap">
+  <div class="grid g3">${resources.map(card).join('')}</div>
+  ${offset > 0 || nextOffset < total ? `<nav class="pager" aria-label="Pagination">${offset > 0 ? `<a href="${base}?offset=${Math.max(offset - limit, 0)}" rel="prev">← Prev</a>` : ''}<span aria-current="page">${Math.floor(offset / limit) + 1}</span>${nextOffset < total ? `<a href="${base}?offset=${nextOffset}" rel="next">Next →</a>` : ''}</nav>` : ''}
+</div>`;
 
   const html = pageShell({
     title: `${category} APIs and resources — Agent Bazaar`,
     description: `${total} ${category} resource${total === 1 ? '' : 's'} agents can discover and pay for on Agent Bazaar.`,
-    canonical: `https://bazaar.saylorinnovations.com/categories/${encodeURIComponent(category)}`,
+    canonical: `${SITE}${base}`,
     bodyHtml: body,
+    path: '/categories',
   });
   return new Response(html, { headers: { ...CORS, 'content-type': 'text/html;charset=utf-8' } });
 }
