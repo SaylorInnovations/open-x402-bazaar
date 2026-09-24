@@ -19,7 +19,10 @@ function escapeHtml(s) {
 // Falls back to a comma-formatted raw amount, never a bare unformatted integer.
 function priceOf(accepts) {
   const list = accepts || [];
-  if (!list.length) return 'see accepts[]';
+  // Zero accepts[] only happens for a resource we deliberately listed with none —
+  // submission validation requires a non-empty accepts[] otherwise — so this means
+  // genuinely free, not malformed.
+  if (!list.length) return 'Free';
   const priced = list.find((a) => a.amountUsd);
   if (priced) return `$${priced.amountUsd}`;
   const a = list[0];

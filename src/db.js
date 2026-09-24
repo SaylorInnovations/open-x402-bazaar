@@ -224,12 +224,14 @@ async function searchResources(env, { query, network, asset, scheme, payTo, maxU
     params.push(toFtsQuery(query));
   }
 
-  // accepts[] filters all apply to the SAME accepts entry, and a resource with no
-  // accepts never matches. Expressed as one EXISTS so the query walks resources in
-  // rank/usage order and probes idx_accepts_resource_id per row, stopping at LIMIT.
-  // The previous form JOINed resource_accepts and drove from it — a scan of every
-  // accepts row (43k+) plus DISTINCT and a temp sort, ~60k row reads per call, which
-  // is what exhausted D1's free-tier daily read budget.
+  // accepts[] filters all apply to the SAME accepts entry. Expressed as one EXISTS so
+  // the query walks resources in rank/usage order and probes idx_accepts_resource_id
+  // per row, stopping at LIMIT. The previous form JOINed resource_accepts and drove
+  // from it — a scan of every accepts row (43k+) plus DISTINCT and a temp sort, ~60k
+  // row reads per call, which is what exhausted D1's free-tier daily read budget.
+  // Only added when an accept-specific filter is set: a resource with zero accepts[]
+  // (deliberately free — see priceOf() in src/layout.js) must still be findable by a
+  // bare text/urlSubstring query.
   const acceptConds = ['a.resource_id = r.id'];
   const acceptParams = [];
   if (network) { acceptConds.push('a.network = ?'); acceptParams.push(network); }
@@ -237,8 +239,10 @@ async function searchResources(env, { query, network, asset, scheme, payTo, maxU
   if (scheme) { acceptConds.push('a.scheme = ?'); acceptParams.push(scheme); }
   if (payTo) { acceptConds.push('a.pay_to = ?'); acceptParams.push(payTo); }
   if (maxUsdPrice !== undefined) { acceptConds.push('(a.amount_usd IS NULL OR a.amount_usd <= ?)'); acceptParams.push(Number(maxUsdPrice)); }
-  conditions.push(`EXISTS (SELECT 1 FROM resource_accepts a WHERE ${acceptConds.join(' AND ')})`);
-  params.push(...acceptParams);
+  if (acceptParams.length) {
+    conditions.push(`EXISTS (SELECT 1 FROM resource_accepts a WHERE ${acceptConds.join(' AND ')})`);
+    params.push(...acceptParams);
+  }
 
   if (urlSubstring) {
     conditions.push("r.resource_url LIKE ? ESCAPE '\\'");
@@ -247,7 +251,7 @@ async function searchResources(env, { query, network, asset, scheme, payTo, maxU
 
   let sql = `SELECT r.id, r.resource_url, r.description, r.x402_version, r.output_schema, r.tags, r.last_updated, r.listing_host, r.calls_30d, r.unique_payers_30d, r.last_called_at, r.slug, r.resource_type, r.metadata, r.is_live, r.last_checked_at, r.reliability_checks, r.reliability_live, l.source AS listing_source
              FROM ${from} JOIN listings l ON l.host = r.listing_host`;
-  sql += ' WHERE ' + conditions.join(' AND ');
+  if (conditions.length) sql += ' WHERE ' + conditions.join(' AND ');
   // Text queries rank by FTS5 match quality (bm25) first; filter-only queries rank
   // by 30-day call volume (idx_resources_calls_id), so the busiest (most likely
   // still-live, least-likely-spam) resources surface first among otherwise-equal matches.

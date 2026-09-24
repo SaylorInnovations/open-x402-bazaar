@@ -119,6 +119,10 @@ Also listed (as a marketplace, not an MCP server specifically) in [awesome-x402]
 
 Listing is, and always will be, free — Agent Bazaar never takes a cut of any resource's own `accepts[]` payment, including the ~15,600 mirrored resources it didn't author. The one thing it does sell directly is placement: a provider can pay Agent Bazaar itself (not the resource's payTo) to put an already-listed resource in the homepage's Featured Resources row and flag it with a `featured` badge on its resource and provider pages, for 7/30/90 days (`$2`/`$6`/`$15`). It's paid the same way every resource here works — `GET /feature?slug=&days=` returns a 402 with `accepts[]`; pay one, retry, get a `featuredUntil` timestamp back. See [`/publish#feature`](public/publish/index.html) for the full walkthrough. Implemented with Saylor Innovations' own [`solana-x402`](https://github.com/SaylorInnovations/solana-x402) library — see Architecture below.
 
+## Verified agent skills
+
+`resource_type: "Skill"` — downloadable, zip-bundled Claude-Code-style skills (a `SKILL.md` plus any supporting files/scripts), listed under Agent Bazaar's own host (`bazaar.saylorinnovations.com`) as a first-party, verified provider. Source lives in [`skills/`](skills/); `scripts/import-skills.mjs` zips and lists them, same DELETE-then-INSERT pattern as the other import scripts. A resource with an empty `accepts[]` is a deliberate signal — genuinely free, not a submission-validation gap, since this script writes directly to D1 rather than going through `POST /submit`'s manifest validation (which requires non-empty `accepts[]`). The catalog starts with one free starter skill (`agent-memory-bootstrap` — a portable, file-based persistent-memory pattern for any agent) and grows from there; paid skills work exactly like any other resource here, with real `accepts[]`.
+
 ## Architecture
 
 - **Runtime**: [Cloudflare Pages Functions](https://developers.cloudflare.com/pages/functions/) (Workers runtime).
