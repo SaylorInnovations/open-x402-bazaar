@@ -279,9 +279,9 @@ ${canonical ? `<meta property="og:url" content="${escapeHtml(canonical)}">` : ''
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Sora:wght@500;600;700&family=Manrope:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap">
-<link rel="stylesheet" href="/assets/bazaar.css">
-<link rel="stylesheet" href="/assets/legacy.css">
-<noscript><link rel="stylesheet" href="/assets/nojs.css"></noscript>
+<link rel="stylesheet" href="/assets/bazaar.css?v=6a0682376c">
+<link rel="stylesheet" href="/assets/legacy.css?v=f092b6b86a">
+<noscript><link rel="stylesheet" href="/assets/nojs.css?v=db4168833f"></noscript>
 ${jsonLdBlock}
 ${extraHead}
 </head>
@@ -291,7 +291,7 @@ ${header(path)}
 ${bodyHtml}
 </main>
 ${footer()}
-<script src="/assets/bazaar.js" defer></script>
+<script src="/assets/bazaar.js?v=4cc5d2de21" defer></script>
 </body>
 </html>`;
 }

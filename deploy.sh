@@ -29,6 +29,7 @@ if [ "${1:-}" = "--migrate" ]; then
   exit 0
 fi
 
+node scripts/stamp-assets.mjs
 npm test
 npx wrangler pages deploy public --project-name open-x402-bazaar --branch=master --commit-dirty=true
 
