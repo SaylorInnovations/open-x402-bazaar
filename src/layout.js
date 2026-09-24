@@ -185,6 +185,7 @@ const NAV = [
   ['/#explore', 'Explore'],
   ['/mcp', 'MCP'],
   ['/protocols/x402', 'x402'],
+  ['/insights', 'Insights'],
   ['/publish', 'Publish'],
   ['/guides', 'Guides'],
   ['/docs', 'Docs'],
