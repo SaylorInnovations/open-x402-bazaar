@@ -23,7 +23,7 @@ const TIERS = { 7: 2_000_000, 30: 6_000_000, 90: 15_000_000 };
 // x402.saylorinnovations.com and Propz) — this endpoint pays into the same
 // business wallets, not a new address.
 const PAY_TO = '7LSjfrJf8fNsB8VA9u7N3WEn25smQLpob3SvyUvXacy7';
-const EVM_PAY_TO = '0xf8A376eBF123D7252cd7b66bcD77A727a4def22f';
+const EVM_PAY_TO = '0xA2A8dF0f7CaaBEa4e120a2568118f141569fc8aa';
 const DEFAULT_RPC = 'https://api.mainnet-beta.solana.com';
 
 function json(body, status = 200) {
