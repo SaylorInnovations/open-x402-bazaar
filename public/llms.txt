@@ -16,6 +16,8 @@
 - `GET /discovery/resources?limit=&offset=&sort=` — paginated listing (`sort=recent`
   for newest first, default is call-volume ranked).
 - `GET /discovery/merchant?payTo=<address>` — every resource that pays a specific address.
+- `GET /discovery/facets?limit=` — compact filter-planning counts for networks,
+  assets, schemes, resource types, providers, price bands, liveness and trust states.
 - `GET /discovery/stats` — catalog size, network breakdown, and call-volume totals.
 - `GET /resources/{slug}.json` — the full record for one resource (schema, accepts[],
   quality signal, agent-first metadata where a provider supplied it).

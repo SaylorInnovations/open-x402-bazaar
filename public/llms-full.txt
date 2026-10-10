@@ -46,6 +46,11 @@ GET /discovery/resources?limit=&offset=&sort=
 GET /discovery/merchant?payTo=<address>
   Every resource that settles to a given payment address.
 
+GET /discovery/facets?limit=
+  Compact counts for available networks, assets, schemes, resource types,
+  providers, price bands, liveness and trust states. Use this before search when
+  an agent needs to choose valid filters without pulling the whole catalog.
+
 GET /discovery/stats
   Catalog totals: listings, resources, accepts, merchants, 30-day call volume,
   network breakdown, and source breakdown (owner-submitted vs. mirrored).

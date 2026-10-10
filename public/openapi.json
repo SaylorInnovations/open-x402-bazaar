@@ -105,6 +105,21 @@
         }
       }
     },
+    "/discovery/facets": {
+      "get": {
+        "operationId": "getDiscoveryFacets",
+        "summary": "Compact filter-planning counts for networks, assets, schemes, resource types, providers, price bands, liveness and trust states",
+        "parameters": [
+          { "name": "limit", "in": "query", "schema": { "type": "integer", "default": 25, "maximum": 100 }, "description": "Maximum number of values to return for ranked facet lists." }
+        ],
+        "responses": {
+          "200": {
+            "description": "Discovery facets",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/FacetsResponse" } } }
+          }
+        }
+      }
+    },
     "/discovery/stats": {
       "get": {
         "operationId": "getStats",
@@ -317,6 +332,36 @@
           "total": { "type": "integer" },
           "limit": { "type": "integer" },
           "offset": { "type": "integer" }
+        }
+      },
+      "FacetValue": {
+        "type": "object",
+        "properties": {
+          "value": { "type": "string" },
+          "count": { "type": "integer" }
+        }
+      },
+      "FacetsResponse": {
+        "type": "object",
+        "properties": {
+          "x402Version": { "type": "integer" },
+          "limit": { "type": "integer" },
+          "facets": {
+            "type": "object",
+            "properties": {
+              "networks": { "type": "array", "items": { "$ref": "#/components/schemas/FacetValue" } },
+              "assets": { "type": "array", "items": { "$ref": "#/components/schemas/FacetValue" } },
+              "schemes": { "type": "array", "items": { "$ref": "#/components/schemas/FacetValue" } },
+              "resourceTypes": { "type": "array", "items": { "$ref": "#/components/schemas/FacetValue" } },
+              "providers": { "type": "array", "items": { "$ref": "#/components/schemas/FacetValue" } },
+              "priceBands": { "type": "object", "additionalProperties": { "type": "integer" } },
+              "liveness": { "type": "object", "additionalProperties": { "type": "integer" } },
+              "trust": { "type": "object", "additionalProperties": { "type": "integer" } }
+            }
+          },
+          "note": { "type": "string" },
+          "fallback": { "type": "string" },
+          "warning": { "type": "string" }
         }
       },
       "Agent": {

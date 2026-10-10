@@ -375,6 +375,123 @@ async function listNetworks(env) {
   return results;
 }
 
+function facetLimit(limit) {
+  const n = Number(limit) || 25;
+  return Math.min(Math.max(n, 1), 100);
+}
+
+async function listDiscoveryFacets(env, { limit = 25 } = {}) {
+  const lim = facetLimit(limit);
+  const now = new Date().toISOString();
+  const [networks, assets, schemes, resourceTypes, providers, priceBands, liveness, verification] = await Promise.all([
+    env.DB.prepare('SELECT network AS value, count FROM network_stats ORDER BY count DESC LIMIT ?').bind(lim).all(),
+    env.DB
+      .prepare(
+        `SELECT asset AS value, COUNT(DISTINCT resource_id) AS count
+         FROM resource_accepts
+         WHERE asset IS NOT NULL AND asset != ''
+         GROUP BY asset
+         ORDER BY count DESC
+         LIMIT ?`
+      )
+      .bind(lim)
+      .all(),
+    env.DB
+      .prepare(
+        `SELECT scheme AS value, COUNT(DISTINCT resource_id) AS count
+         FROM resource_accepts
+         WHERE scheme IS NOT NULL AND scheme != ''
+         GROUP BY scheme
+         ORDER BY count DESC
+         LIMIT ?`
+      )
+      .bind(lim)
+      .all(),
+    env.DB
+      .prepare(
+        `SELECT resource_type AS value, COUNT(*) AS count
+         FROM resources
+         WHERE resource_type IS NOT NULL AND resource_type != ''
+         GROUP BY resource_type
+         ORDER BY count DESC
+         LIMIT ?`
+      )
+      .bind(lim)
+      .all(),
+    env.DB
+      .prepare(
+        `SELECT listing_host AS value, COUNT(*) AS count
+         FROM resources
+         GROUP BY listing_host
+         ORDER BY count DESC
+         LIMIT ?`
+      )
+      .bind(lim)
+      .all(),
+    env.DB
+      .prepare(
+        `SELECT
+           SUM(CASE WHEN amount_usd IS NOT NULL AND amount_usd = 0 THEN 1 ELSE 0 END) AS free,
+           SUM(CASE WHEN amount_usd IS NOT NULL AND amount_usd > 0 AND amount_usd <= 0.001 THEN 1 ELSE 0 END) AS micro,
+           SUM(CASE WHEN amount_usd IS NOT NULL AND amount_usd > 0.001 AND amount_usd <= 0.01 THEN 1 ELSE 0 END) AS subCent,
+           SUM(CASE WHEN amount_usd IS NOT NULL AND amount_usd > 0.01 AND amount_usd <= 0.1 THEN 1 ELSE 0 END) AS cents,
+           SUM(CASE WHEN amount_usd IS NOT NULL AND amount_usd > 0.1 AND amount_usd <= 1 THEN 1 ELSE 0 END) AS underDollar,
+           SUM(CASE WHEN amount_usd IS NOT NULL AND amount_usd > 1 THEN 1 ELSE 0 END) AS overDollar,
+           SUM(CASE WHEN amount_usd IS NULL THEN 1 ELSE 0 END) AS unknown
+         FROM resource_accepts`
+      )
+      .first(),
+    env.DB
+      .prepare(
+        `SELECT
+           SUM(CASE WHEN is_live = 1 THEN 1 ELSE 0 END) AS live,
+           SUM(CASE WHEN is_live = 0 THEN 1 ELSE 0 END) AS down,
+           SUM(CASE WHEN is_live IS NULL THEN 1 ELSE 0 END) AS unchecked
+         FROM resources`
+      )
+      .first(),
+    env.DB
+      .prepare(
+        `SELECT
+           SUM(CASE WHEN l.source = 'submitted' THEN 1 ELSE 0 END) AS verified,
+           SUM(CASE WHEN l.source != 'submitted' THEN 1 ELSE 0 END) AS mirrored,
+           SUM(CASE WHEN r.featured_until IS NOT NULL AND r.featured_until > ? THEN 1 ELSE 0 END) AS featured
+         FROM resources r
+         JOIN listings l ON l.host = r.listing_host`
+      )
+      .bind(now)
+      .first(),
+  ]);
+
+  const list = (rows) => rows.results.map((r) => ({ value: r.value, count: r.count }));
+  return {
+    networks: list(networks),
+    assets: list(assets),
+    schemes: list(schemes),
+    resourceTypes: list(resourceTypes),
+    providers: list(providers),
+    priceBands: {
+      free: priceBands.free || 0,
+      micro: priceBands.micro || 0,
+      subCent: priceBands.subCent || 0,
+      cents: priceBands.cents || 0,
+      underDollar: priceBands.underDollar || 0,
+      overDollar: priceBands.overDollar || 0,
+      unknown: priceBands.unknown || 0,
+    },
+    liveness: {
+      live: liveness.live || 0,
+      down: liveness.down || 0,
+      unchecked: liveness.unchecked || 0,
+    },
+    trust: {
+      verified: verification.verified || 0,
+      mirrored: verification.mirrored || 0,
+      featured: verification.featured || 0,
+    },
+  };
+}
+
 // `full: true` adds byNetwork/bySource, each a GROUP BY over the WHOLE
 // resource_accepts/listings table (no WHERE to prune) — that's an unavoidable full
 // scan every single call, no matter how well-indexed, because an unfiltered
@@ -493,6 +610,7 @@ export {
   resourcesByCategory,
   listCategories,
   listNetworks,
+  listDiscoveryFacets,
   isRateLimited,
   logSubmission,
   getFeaturedResources,

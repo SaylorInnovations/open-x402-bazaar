@@ -75,6 +75,7 @@ Mirrors the field names and shape of Coinbase's CDP Bazaar API, plus an additive
 | `GET /discovery/search?query=&network=&asset=&scheme=&payTo=&urlSubstring=&maxUsdPrice=&limit=` | Keyword/filter search. Text queries rank by relevance (FTS5 bm25); filter-only queries rank by 30-day call volume |
 | `GET /discovery/resources?limit=&offset=&sort=` | Paginated listing of every indexed resource. `sort=recent` for newest-first, default ranks by 30-day call volume |
 | `GET /discovery/merchant?payTo=<address>` | All resources that pay a specific address |
+| `GET /discovery/facets?limit=` | Compact counts for available networks, assets, schemes, resource types, providers, price bands, liveness and trust states — useful before choosing search filters |
 | `GET /discovery/stats?full=` | Catalog totals: listings, resources, accepts, merchants, network count, calls. `full=1` adds the per-network/per-source breakdown — a full table scan, so it's opt-in, not computed by default |
 | `GET /resources/{slug}.json` | Full machine-readable record for a single resource |
 | `GET /discovery/agents?query=&limit=&offset=` | Search/list the A2A agent registry (other agents' cards, not Agent Bazaar's own) |
