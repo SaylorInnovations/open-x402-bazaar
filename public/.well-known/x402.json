@@ -5,7 +5,14 @@
   "site": "https://bazaar.saylorinnovations.com",
   "contact": "saylorinnovations@gmail.com",
   "updated": "2026-10-11",
-  "tags": ["x402", "agent discovery", "coinbase-compatible", "mcp", "a2a", "pay-per-request"],
+  "tags": [
+    "x402",
+    "agent discovery",
+    "coinbase-compatible",
+    "mcp",
+    "a2a",
+    "pay-per-request"
+  ],
   "capabilities": [
     "Search x402-payable resources by keyword, provider, network, asset, payment recipient, URL substring, and max USD price.",
     "List paginated resource records using Coinbase Bazaar-compatible items and pagination aliases.",
@@ -18,7 +25,12 @@
       "method": "GET",
       "price": "free",
       "description": "Search the x402 resource catalog by keyword, network, asset, payment recipient, URL substring, scheme, or maximum USD price.",
-      "tags": ["search", "resources", "x402", "coinbase-compatible"],
+      "tags": [
+        "search",
+        "resources",
+        "x402",
+        "coinbase-compatible"
+      ],
       "parameters": {
         "query": "Optional free-text search over URL, description, type, tags, provider, and metadata.",
         "network": "Optional CAIP-2 network filter, such as eip155:8453 or solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp.",
@@ -30,134 +42,279 @@
         "limit": "Optional result limit, default 20, max 1000."
       },
       "useWhen": "Use when an agent has intent or constraints and needs the best matching x402 resources.",
-      "output": { "type": "object", "fields": ["resources", "items", "count", "pagination"] }
+      "output": {
+        "type": "object",
+        "fields": [
+          "resources",
+          "items",
+          "count",
+          "pagination"
+        ]
+      }
     },
     "resources": {
       "url": "https://bazaar.saylorinnovations.com/discovery/resources?limit={limit}&offset={offset}&sort={sort}",
       "method": "GET",
       "price": "free",
       "description": "Paginated x402 discovery resource listing, ranked by call volume or recency.",
-      "tags": ["list", "resources", "pagination", "coinbase-compatible"],
+      "tags": [
+        "list",
+        "resources",
+        "pagination",
+        "coinbase-compatible"
+      ],
       "parameters": {
         "limit": "Optional page size, default 20, max 1000.",
         "offset": "Optional zero-based offset.",
         "sort": "popular or recent."
       },
       "useWhen": "Use when crawling or synchronizing the catalog page by page.",
-      "output": { "type": "object", "fields": ["resources", "items", "count", "pagination"] }
+      "output": {
+        "type": "object",
+        "fields": [
+          "resources",
+          "items",
+          "count",
+          "pagination"
+        ]
+      }
     },
     "facets": {
       "url": "https://bazaar.saylorinnovations.com/discovery/facets?limit={limit}",
       "method": "GET",
       "price": "free",
       "description": "Compact discovery facets for networks, assets, schemes, resource types, providers, price bands, liveness, and trust states.",
-      "tags": ["facets", "filters", "planning", "catalog-intelligence"],
+      "tags": [
+        "facets",
+        "filters",
+        "planning",
+        "catalog-intelligence"
+      ],
       "parameters": {
         "limit": "Optional maximum values per ranked facet list, default 25, max 100."
       },
       "useWhen": "Use before search when an agent needs to understand available filters or decide which network/provider/asset slices to crawl.",
-      "output": { "type": "object", "fields": ["networks", "assets", "schemes", "resourceTypes", "providers", "priceBands", "liveness", "trust"] }
+      "output": {
+        "type": "object",
+        "fields": [
+          "networks",
+          "assets",
+          "schemes",
+          "resourceTypes",
+          "providers",
+          "priceBands",
+          "liveness",
+          "trust"
+        ]
+      }
     },
     "merchant": {
       "url": "https://bazaar.saylorinnovations.com/discovery/merchant?payTo={payTo}",
       "method": "GET",
       "price": "free",
       "description": "Find all resources payable to a specific receiving wallet or merchant address.",
-      "tags": ["merchant", "payTo", "wallet", "resources"],
+      "tags": [
+        "merchant",
+        "payTo",
+        "wallet",
+        "resources"
+      ],
       "parameters": {
         "payTo": "Required receiving wallet or merchant address."
       },
       "useWhen": "Use when grouping endpoints by provider wallet or verifying which resources share a payment recipient.",
-      "output": { "type": "object", "fields": ["resources", "items", "count", "pagination"] }
+      "output": {
+        "type": "object",
+        "fields": [
+          "resources",
+          "items",
+          "count",
+          "pagination"
+        ]
+      }
     },
     "stats": {
       "url": "https://bazaar.saylorinnovations.com/discovery/stats?full={full}",
       "method": "GET",
       "price": "free",
       "description": "Catalog totals for listings, resources, accepts, merchants, networks, and 30-day call volume. full=1 adds network/source breakdowns.",
-      "tags": ["stats", "catalog-health", "network-counts"],
+      "tags": [
+        "stats",
+        "catalog-health",
+        "network-counts"
+      ],
       "parameters": {
         "full": "Optional 1 for per-network and per-source breakdowns."
       },
       "useWhen": "Use for quick connectivity checks, catalog sizing, and high-level health checks.",
-      "output": { "type": "object", "fields": ["listings", "resources", "accepts", "merchants", "networks", "calls30d"] }
+      "output": {
+        "type": "object",
+        "fields": [
+          "listings",
+          "resources",
+          "accepts",
+          "merchants",
+          "networks",
+          "calls30d"
+        ]
+      }
     },
     "featured": {
       "url": "https://bazaar.saylorinnovations.com/discovery/featured?limit={limit}",
       "method": "GET",
       "price": "free",
       "description": "Currently featured resources in the catalog.",
-      "tags": ["featured", "promoted", "resources"],
+      "tags": [
+        "featured",
+        "promoted",
+        "resources"
+      ],
       "parameters": {
         "limit": "Optional number of featured resources to return."
       },
       "useWhen": "Use when an agent wants a short starter set of promoted or highlighted x402 resources.",
-      "output": { "type": "object", "fields": ["resources"] }
+      "output": {
+        "type": "object",
+        "fields": [
+          "resources"
+        ]
+      }
     },
     "agents": {
       "url": "https://bazaar.saylorinnovations.com/discovery/agents?query={query}&limit={limit}&offset={offset}",
       "method": "GET",
       "price": "free",
       "description": "Search or list registered A2A agents and their machine-readable agent cards.",
-      "tags": ["a2a", "agent-card", "agent-discovery"],
+      "tags": [
+        "a2a",
+        "agent-card",
+        "agent-discovery"
+      ],
       "parameters": {
         "query": "Optional free-text search over agent name, provider, description, skills, and card URL.",
         "limit": "Optional page size, default 20, max 100.",
         "offset": "Optional zero-based offset."
       },
       "useWhen": "Use when finding other agents rather than payable x402 resources.",
-      "output": { "type": "object", "fields": ["agents", "count"] }
+      "output": {
+        "type": "object",
+        "fields": [
+          "agents",
+          "count"
+        ]
+      }
     },
     "resourceRecord": {
       "url": "https://bazaar.saylorinnovations.com/resources/{slug}.json",
       "method": "GET",
       "price": "free",
       "description": "Full machine-readable record for one resource, including accepts, schema, tags, metadata, liveness, and verification state.",
-      "tags": ["resource-record", "accepts", "schema", "x402"],
+      "tags": [
+        "resource-record",
+        "accepts",
+        "schema",
+        "x402"
+      ],
       "parameters": {
         "slug": "Required resource slug from discovery results."
       },
       "useWhen": "Use after search/list to inspect payment options, schema, and agent-facing metadata before attempting a paid call.",
-      "output": { "type": "object", "fields": ["resource", "description", "accepts", "outputSchema", "tags", "metadata", "liveness", "verified"] }
+      "output": {
+        "type": "object",
+        "fields": [
+          "resource",
+          "description",
+          "accepts",
+          "outputSchema",
+          "tags",
+          "metadata",
+          "liveness",
+          "verified"
+        ]
+      }
     },
     "guides": {
       "url": "https://bazaar.saylorinnovations.com/guides.json",
       "method": "GET",
       "price": "free",
       "description": "Machine-readable guide index for x402, MCP, A2A, publishing, and agent discovery documentation.",
-      "tags": ["guides", "documentation", "llm-readable"],
+      "tags": [
+        "guides",
+        "documentation",
+        "llm-readable"
+      ],
       "useWhen": "Use when an agent needs implementation guidance or explanatory context.",
-      "output": { "type": "object", "fields": ["guides"] }
+      "output": {
+        "type": "object",
+        "fields": [
+          "guides"
+        ]
+      }
     },
     "guideRecord": {
       "url": "https://bazaar.saylorinnovations.com/guides/{slug}.json",
       "method": "GET",
       "price": "free",
       "description": "Plain-text machine twin of a guide.",
-      "tags": ["guide-record", "documentation", "plain-text"],
+      "tags": [
+        "guide-record",
+        "documentation",
+        "plain-text"
+      ],
       "parameters": {
         "slug": "Required guide slug from guides.json."
       },
       "useWhen": "Use when an agent needs the full text of a specific guide without parsing HTML.",
-      "output": { "type": "object", "fields": ["slug", "title", "text", "related"] }
+      "output": {
+        "type": "object",
+        "fields": [
+          "slug",
+          "title",
+          "text",
+          "related"
+        ]
+      }
     },
     "openapi": {
       "url": "https://bazaar.saylorinnovations.com/openapi.json",
       "method": "GET",
       "price": "free",
       "description": "OpenAPI 3.1 schema for Agent Bazaar discovery, submission, resource, agent, and guide endpoints.",
-      "tags": ["openapi", "schema", "tool-generation"],
+      "tags": [
+        "openapi",
+        "schema",
+        "tool-generation"
+      ],
       "useWhen": "Use when generating client tools or validating request/response shapes.",
-      "output": { "type": "object", "fields": ["openapi", "info", "paths", "components"] }
+      "output": {
+        "type": "object",
+        "fields": [
+          "openapi",
+          "info",
+          "paths",
+          "components"
+        ]
+      }
     },
     "mcp": {
       "url": "https://bazaar.saylorinnovations.com/mcp",
       "method": "POST",
       "price": "free",
       "description": "MCP interface over the same discovery catalog.",
-      "tags": ["mcp", "tools", "agent-discovery"],
+      "tags": [
+        "mcp",
+        "tools",
+        "agent-discovery"
+      ],
       "useWhen": "Use when an MCP-native client wants tool calls instead of direct REST requests.",
-      "output": { "type": "object", "fields": ["jsonrpc", "result", "error"] }
+      "output": {
+        "type": "object",
+        "fields": [
+          "jsonrpc",
+          "result",
+          "error"
+        ]
+      }
     }
   },
   "resources": [
@@ -167,17 +324,313 @@
       "description": "Token price by Solana mint: USD and native price, changes, liquidity, volume, FDV, market cap, best pair and thin-liquidity flag.",
       "type": "http",
       "x402Version": 2,
-      "tags": ["token-price", "dexscreener", "multichain", "defi", "solana"],
-      "accepts": [
-        { "network": "solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp", "scheme": "exact", "amount": "10000", "asset": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v", "payTo": "7LSjfrJf8fNsB8VA9u7N3WEn25smQLpob3SvyUvXacy7", "maxTimeoutSeconds": 120 },
-        { "network": "solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp", "scheme": "exact", "amount": "10000", "asset": "Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB", "payTo": "7LSjfrJf8fNsB8VA9u7N3WEn25smQLpob3SvyUvXacy7", "maxTimeoutSeconds": 120 },
-        { "network": "eip155:8453", "scheme": "exact", "amount": "10000", "asset": "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913", "payTo": "0xA2A8dF0f7CaaBEa4e120a2568118f141569fc8aa", "maxTimeoutSeconds": 120, "extra": { "assetTransferMethod": "eip3009", "name": "USD Coin", "version": "2", "facilitatorOnly": true } },
-        { "network": "eip155:137", "scheme": "exact", "amount": "10000", "asset": "0x3c499c542cEF5E3811e1192ce70d8cC03d5c3359", "payTo": "0xA2A8dF0f7CaaBEa4e120a2568118f141569fc8aa", "maxTimeoutSeconds": 120, "extra": { "assetTransferMethod": "eip3009", "name": "USD Coin", "version": "2", "facilitatorOnly": true } },
-        { "network": "eip155:42161", "scheme": "exact", "amount": "10000", "asset": "0xaf88d065e77c8cC2239327C5EDb3A432268e5831", "payTo": "0xA2A8dF0f7CaaBEa4e120a2568118f141569fc8aa", "maxTimeoutSeconds": 120, "extra": { "assetTransferMethod": "eip3009", "name": "USD Coin", "version": "2", "facilitatorOnly": true } }
+      "tags": [
+        "token-price",
+        "dexscreener",
+        "multichain",
+        "defi",
+        "solana"
       ],
+      "accepts": [
+        {
+          "network": "solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp",
+          "scheme": "exact",
+          "amount": "10000",
+          "asset": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+          "payTo": "7LSjfrJf8fNsB8VA9u7N3WEn25smQLpob3SvyUvXacy7",
+          "maxTimeoutSeconds": 120
+        },
+        {
+          "network": "solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp",
+          "scheme": "exact",
+          "amount": "10000",
+          "asset": "Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB",
+          "payTo": "7LSjfrJf8fNsB8VA9u7N3WEn25smQLpob3SvyUvXacy7",
+          "maxTimeoutSeconds": 120
+        },
+        {
+          "network": "eip155:8453",
+          "scheme": "exact",
+          "amount": "10000",
+          "asset": "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
+          "payTo": "0xA2A8dF0f7CaaBEa4e120a2568118f141569fc8aa",
+          "maxTimeoutSeconds": 120,
+          "extra": {
+            "assetTransferMethod": "eip3009",
+            "name": "USD Coin",
+            "version": "2",
+            "facilitatorOnly": true
+          }
+        },
+        {
+          "network": "eip155:137",
+          "scheme": "exact",
+          "amount": "10000",
+          "asset": "0x3c499c542cEF5E3811e1192ce70d8cC03d5c3359",
+          "payTo": "0xA2A8dF0f7CaaBEa4e120a2568118f141569fc8aa",
+          "maxTimeoutSeconds": 120,
+          "extra": {
+            "assetTransferMethod": "eip3009",
+            "name": "USD Coin",
+            "version": "2",
+            "facilitatorOnly": true
+          }
+        },
+        {
+          "network": "eip155:42161",
+          "scheme": "exact",
+          "amount": "10000",
+          "asset": "0xaf88d065e77c8cC2239327C5EDb3A432268e5831",
+          "payTo": "0xA2A8dF0f7CaaBEa4e120a2568118f141569fc8aa",
+          "maxTimeoutSeconds": 120,
+          "extra": {
+            "assetTransferMethod": "eip3009",
+            "name": "USD Coin",
+            "version": "2",
+            "facilitatorOnly": true
+          }
+        }
+      ],
+      "outputSchema": {
+        "type": "object",
+        "properties": {
+          "mint": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "symbol": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "name": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "decimals": {
+            "type": [
+              "number",
+              "null"
+            ]
+          },
+          "supply": {
+            "type": [
+              "number",
+              "null"
+            ]
+          },
+          "price_usd": {
+            "type": [
+              "number",
+              "null"
+            ]
+          },
+          "market_cap_usd": {
+            "type": [
+              "number",
+              "null"
+            ]
+          },
+          "fdv_usd": {
+            "type": [
+              "number",
+              "null"
+            ]
+          },
+          "liquidity_usd": {
+            "type": [
+              "number",
+              "null"
+            ]
+          },
+          "volume_24h_usd": {
+            "type": [
+              "number",
+              "null"
+            ]
+          },
+          "price_change_24h": {
+            "type": [
+              "number",
+              "null"
+            ]
+          },
+          "buys_24h": {
+            "type": [
+              "number",
+              "null"
+            ]
+          },
+          "sells_24h": {
+            "type": [
+              "number",
+              "null"
+            ]
+          },
+          "holder_count": {
+            "type": [
+              "number",
+              "null"
+            ]
+          },
+          "token_age_days": {
+            "type": [
+              "number",
+              "null"
+            ]
+          },
+          "tradable_on_jupiter": {
+            "type": [
+              "boolean",
+              "null"
+            ]
+          },
+          "pairs": {
+            "type": "array",
+            "items": {
+              "type": "object"
+            }
+          },
+          "security": {
+            "type": "object",
+            "properties": {
+              "mint_authority_revoked": {
+                "type": [
+                  "boolean",
+                  "null"
+                ],
+                "description": "False means new supply can still be minted."
+              },
+              "freeze_authority_revoked": {
+                "type": [
+                  "boolean",
+                  "null"
+                ],
+                "description": "False means your balance can be frozen."
+              },
+              "lp_locked_pct": {
+                "type": [
+                  "number",
+                  "null"
+                ],
+                "description": "Percent of liquidity locked, 0-100."
+              },
+              "lp_unlock_date": {
+                "type": [
+                  "string",
+                  "null"
+                ],
+                "description": "ISO timestamp of the nearest future LP unlock, if any locked LP has a known unlock date. Null if fully unlocked or no lock data."
+              },
+              "top10_holder_pct": {
+                "type": [
+                  "number",
+                  "null"
+                ],
+                "description": "Percent of supply held by the top 10 holders."
+              },
+              "insider_network_count": {
+                "type": [
+                  "number",
+                  "null"
+                ],
+                "description": "Number of connected-wallet clusters RugCheck's graph analysis detected across ALL holders (not just the top 10/20)."
+              },
+              "insider_accounts_detected": {
+                "type": [
+                  "number",
+                  "null"
+                ],
+                "description": "Total accounts across all detected clusters."
+              },
+              "insider_accounts_pct_of_holders": {
+                "type": [
+                  "number",
+                  "null"
+                ],
+                "description": "insider_accounts_detected as a percent of total_holders. A lead to investigate, not a verdict — legitimate exchanges/market makers can also show up as large connected clusters."
+              },
+              "rugcheck_score": {
+                "type": [
+                  "number",
+                  "null"
+                ],
+                "description": "Raw upstream RugCheck score."
+              },
+              "rugcheck_risks": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                },
+                "description": "Named risks."
+              }
+            }
+          },
+          "socials": {
+            "type": "object"
+          },
+          "narratives": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "security_score": {
+            "type": [
+              "number",
+              "null"
+            ]
+          },
+          "liquidity_score": {
+            "type": [
+              "number",
+              "null"
+            ]
+          },
+          "momentum_score": {
+            "type": [
+              "number",
+              "null"
+            ]
+          },
+          "watchdog_score": {
+            "type": [
+              "number",
+              "null"
+            ]
+          },
+          "ai_summary": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "fetched_at": {
+            "type": [
+              "number",
+              "null"
+            ]
+          }
+        }
+      },
       "extensions": {
         "bazaar": {
-          "info": { "input": { "type": "http", "method": "GET", "discoverable": true }, "output": { "type": "json" } },
+          "info": {
+            "input": {
+              "type": "http",
+              "method": "GET",
+              "discoverable": true,
+              "exampleUrl": "https://saylorinnovations.com/api/token-price/solana/DezXAZ8z7PnrnRJjz3wXBoRgixCa6xjnB7YaB1pPB263"
+            },
+            "output": {
+              "type": "json"
+            }
+          },
           "canonicalResource": "https://saylorinnovations.com/api/token-price/solana/{mint}"
         }
       }
@@ -188,17 +641,86 @@
       "description": "Stock quote for any ticker: price, change, day and 52-week range, volume, exchange and market time.",
       "type": "http",
       "x402Version": 2,
-      "tags": ["stocks", "equities", "market-data", "quote", "sec"],
+      "tags": [
+        "stocks",
+        "equities",
+        "market-data",
+        "quote",
+        "sec"
+      ],
       "accepts": [
-        { "network": "solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp", "scheme": "exact", "amount": "10000", "asset": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v", "payTo": "7LSjfrJf8fNsB8VA9u7N3WEn25smQLpob3SvyUvXacy7", "maxTimeoutSeconds": 120 },
-        { "network": "solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp", "scheme": "exact", "amount": "10000", "asset": "Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB", "payTo": "7LSjfrJf8fNsB8VA9u7N3WEn25smQLpob3SvyUvXacy7", "maxTimeoutSeconds": 120 },
-        { "network": "eip155:8453", "scheme": "exact", "amount": "10000", "asset": "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913", "payTo": "0xA2A8dF0f7CaaBEa4e120a2568118f141569fc8aa", "maxTimeoutSeconds": 120, "extra": { "assetTransferMethod": "eip3009", "name": "USD Coin", "version": "2", "facilitatorOnly": true } },
-        { "network": "eip155:137", "scheme": "exact", "amount": "10000", "asset": "0x3c499c542cEF5E3811e1192ce70d8cC03d5c3359", "payTo": "0xA2A8dF0f7CaaBEa4e120a2568118f141569fc8aa", "maxTimeoutSeconds": 120, "extra": { "assetTransferMethod": "eip3009", "name": "USD Coin", "version": "2", "facilitatorOnly": true } },
-        { "network": "eip155:42161", "scheme": "exact", "amount": "10000", "asset": "0xaf88d065e77c8cC2239327C5EDb3A432268e5831", "payTo": "0xA2A8dF0f7CaaBEa4e120a2568118f141569fc8aa", "maxTimeoutSeconds": 120, "extra": { "assetTransferMethod": "eip3009", "name": "USD Coin", "version": "2", "facilitatorOnly": true } }
+        {
+          "network": "solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp",
+          "scheme": "exact",
+          "amount": "10000",
+          "asset": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+          "payTo": "7LSjfrJf8fNsB8VA9u7N3WEn25smQLpob3SvyUvXacy7",
+          "maxTimeoutSeconds": 120
+        },
+        {
+          "network": "solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp",
+          "scheme": "exact",
+          "amount": "10000",
+          "asset": "Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB",
+          "payTo": "7LSjfrJf8fNsB8VA9u7N3WEn25smQLpob3SvyUvXacy7",
+          "maxTimeoutSeconds": 120
+        },
+        {
+          "network": "eip155:8453",
+          "scheme": "exact",
+          "amount": "10000",
+          "asset": "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
+          "payTo": "0xA2A8dF0f7CaaBEa4e120a2568118f141569fc8aa",
+          "maxTimeoutSeconds": 120,
+          "extra": {
+            "assetTransferMethod": "eip3009",
+            "name": "USD Coin",
+            "version": "2",
+            "facilitatorOnly": true
+          }
+        },
+        {
+          "network": "eip155:137",
+          "scheme": "exact",
+          "amount": "10000",
+          "asset": "0x3c499c542cEF5E3811e1192ce70d8cC03d5c3359",
+          "payTo": "0xA2A8dF0f7CaaBEa4e120a2568118f141569fc8aa",
+          "maxTimeoutSeconds": 120,
+          "extra": {
+            "assetTransferMethod": "eip3009",
+            "name": "USD Coin",
+            "version": "2",
+            "facilitatorOnly": true
+          }
+        },
+        {
+          "network": "eip155:42161",
+          "scheme": "exact",
+          "amount": "10000",
+          "asset": "0xaf88d065e77c8cC2239327C5EDb3A432268e5831",
+          "payTo": "0xA2A8dF0f7CaaBEa4e120a2568118f141569fc8aa",
+          "maxTimeoutSeconds": 120,
+          "extra": {
+            "assetTransferMethod": "eip3009",
+            "name": "USD Coin",
+            "version": "2",
+            "facilitatorOnly": true
+          }
+        }
       ],
       "extensions": {
         "bazaar": {
-          "info": { "input": { "type": "http", "method": "GET", "discoverable": true }, "output": { "type": "json" } },
+          "info": {
+            "input": {
+              "type": "http",
+              "method": "GET",
+              "discoverable": true,
+              "exampleUrl": "https://saylorinnovations.com/api/stocks/quote/AAPL"
+            },
+            "output": {
+              "type": "json"
+            }
+          },
           "canonicalResource": "https://saylorinnovations.com/api/stocks/quote/{symbol}"
         }
       }
@@ -206,21 +728,2370 @@
     {
       "url": "https://saylorinnovations.com/api/python/report?name=:name",
       "serviceName": "Saylor Innovations Python Package Report",
-      "description": "Inspect a Python package's latest release, Python compatibility, declared dependencies, license metadata and PyPI-reported advisories. No code execution.",
+      "description": "Inspect a Python package’s latest release, Python compatibility, declared dependencies, license metadata and PyPI-reported advisories. No code execution.",
       "type": "http",
       "x402Version": 2,
-      "tags": ["python", "pypi", "dependencies", "package-security"],
+      "tags": [
+        "python",
+        "pypi",
+        "dependencies",
+        "package-security"
+      ],
       "accepts": [
-        { "network": "solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp", "scheme": "exact", "amount": "10000", "asset": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v", "payTo": "7LSjfrJf8fNsB8VA9u7N3WEn25smQLpob3SvyUvXacy7", "maxTimeoutSeconds": 120 },
-        { "network": "solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp", "scheme": "exact", "amount": "10000", "asset": "Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB", "payTo": "7LSjfrJf8fNsB8VA9u7N3WEn25smQLpob3SvyUvXacy7", "maxTimeoutSeconds": 120 },
-        { "network": "eip155:8453", "scheme": "exact", "amount": "10000", "asset": "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913", "payTo": "0xA2A8dF0f7CaaBEa4e120a2568118f141569fc8aa", "maxTimeoutSeconds": 120, "extra": { "assetTransferMethod": "eip3009", "name": "USD Coin", "version": "2", "facilitatorOnly": true } },
-        { "network": "eip155:137", "scheme": "exact", "amount": "10000", "asset": "0x3c499c542cEF5E3811e1192ce70d8cC03d5c3359", "payTo": "0xA2A8dF0f7CaaBEa4e120a2568118f141569fc8aa", "maxTimeoutSeconds": 120, "extra": { "assetTransferMethod": "eip3009", "name": "USD Coin", "version": "2", "facilitatorOnly": true } },
-        { "network": "eip155:42161", "scheme": "exact", "amount": "10000", "asset": "0xaf88d065e77c8cC2239327C5EDb3A432268e5831", "payTo": "0xA2A8dF0f7CaaBEa4e120a2568118f141569fc8aa", "maxTimeoutSeconds": 120, "extra": { "assetTransferMethod": "eip3009", "name": "USD Coin", "version": "2", "facilitatorOnly": true } }
+        {
+          "network": "solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp",
+          "scheme": "exact",
+          "amount": "10000",
+          "asset": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+          "payTo": "7LSjfrJf8fNsB8VA9u7N3WEn25smQLpob3SvyUvXacy7",
+          "maxTimeoutSeconds": 120
+        },
+        {
+          "network": "solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp",
+          "scheme": "exact",
+          "amount": "10000",
+          "asset": "Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB",
+          "payTo": "7LSjfrJf8fNsB8VA9u7N3WEn25smQLpob3SvyUvXacy7",
+          "maxTimeoutSeconds": 120
+        },
+        {
+          "network": "eip155:8453",
+          "scheme": "exact",
+          "amount": "10000",
+          "asset": "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
+          "payTo": "0xA2A8dF0f7CaaBEa4e120a2568118f141569fc8aa",
+          "maxTimeoutSeconds": 120,
+          "extra": {
+            "assetTransferMethod": "eip3009",
+            "name": "USD Coin",
+            "version": "2",
+            "facilitatorOnly": true
+          }
+        },
+        {
+          "network": "eip155:137",
+          "scheme": "exact",
+          "amount": "10000",
+          "asset": "0x3c499c542cEF5E3811e1192ce70d8cC03d5c3359",
+          "payTo": "0xA2A8dF0f7CaaBEa4e120a2568118f141569fc8aa",
+          "maxTimeoutSeconds": 120,
+          "extra": {
+            "assetTransferMethod": "eip3009",
+            "name": "USD Coin",
+            "version": "2",
+            "facilitatorOnly": true
+          }
+        },
+        {
+          "network": "eip155:42161",
+          "scheme": "exact",
+          "amount": "10000",
+          "asset": "0xaf88d065e77c8cC2239327C5EDb3A432268e5831",
+          "payTo": "0xA2A8dF0f7CaaBEa4e120a2568118f141569fc8aa",
+          "maxTimeoutSeconds": 120,
+          "extra": {
+            "assetTransferMethod": "eip3009",
+            "name": "USD Coin",
+            "version": "2",
+            "facilitatorOnly": true
+          }
+        }
+      ],
+      "outputSchema": {
+        "type": "object",
+        "required": [
+          "service",
+          "subject",
+          "retrievedAt",
+          "source",
+          "report"
+        ],
+        "properties": {
+          "service": {
+            "type": "string"
+          },
+          "subject": {
+            "type": "string"
+          },
+          "retrievedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "source": {
+            "type": "object",
+            "required": [
+              "name",
+              "url"
+            ],
+            "properties": {
+              "name": {
+                "type": "string"
+              },
+              "url": {
+                "type": "string",
+                "format": "uri"
+              }
+            }
+          },
+          "report": {
+            "type": "object",
+            "properties": {
+              "name": {
+                "type": "string"
+              },
+              "version": {
+                "type": "string"
+              },
+              "summary": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "requiresPython": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "license": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "dependencies": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              },
+              "vulnerabilities": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "aliases": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
+                    },
+                    "link": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    }
+                  }
+                }
+              },
+              "limitations": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "name",
+              "version",
+              "dependencies",
+              "vulnerabilities",
+              "limitations"
+            ]
+          }
+        }
+      },
+      "extensions": {
+        "bazaar": {
+          "info": {
+            "input": {
+              "type": "http",
+              "method": "GET",
+              "discoverable": true,
+              "exampleUrl": "https://saylorinnovations.com/api/python/report?name=requests"
+            },
+            "output": {
+              "type": "json"
+            }
+          },
+          "canonicalResource": "https://saylorinnovations.com/api/python/report?name={name}"
+        }
+      }
+    },
+    {
+      "url": "https://saylorinnovations.com/api/data/country?country=:country",
+      "serviceName": "Saylor Innovations Country Profile",
+      "description": "Resolve a two-letter country code into its World Bank name, region, capital, income group and lending classification for data enrichment.",
+      "type": "http",
+      "x402Version": 2,
+      "tags": [
+        "country",
+        "geography",
+        "enrichment",
+        "world-bank"
+      ],
+      "accepts": [
+        {
+          "network": "solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp",
+          "scheme": "exact",
+          "amount": "10000",
+          "asset": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+          "payTo": "7LSjfrJf8fNsB8VA9u7N3WEn25smQLpob3SvyUvXacy7",
+          "maxTimeoutSeconds": 120
+        },
+        {
+          "network": "solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp",
+          "scheme": "exact",
+          "amount": "10000",
+          "asset": "Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB",
+          "payTo": "7LSjfrJf8fNsB8VA9u7N3WEn25smQLpob3SvyUvXacy7",
+          "maxTimeoutSeconds": 120
+        },
+        {
+          "network": "eip155:8453",
+          "scheme": "exact",
+          "amount": "10000",
+          "asset": "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
+          "payTo": "0xA2A8dF0f7CaaBEa4e120a2568118f141569fc8aa",
+          "maxTimeoutSeconds": 120,
+          "extra": {
+            "assetTransferMethod": "eip3009",
+            "name": "USD Coin",
+            "version": "2",
+            "facilitatorOnly": true
+          }
+        },
+        {
+          "network": "eip155:137",
+          "scheme": "exact",
+          "amount": "10000",
+          "asset": "0x3c499c542cEF5E3811e1192ce70d8cC03d5c3359",
+          "payTo": "0xA2A8dF0f7CaaBEa4e120a2568118f141569fc8aa",
+          "maxTimeoutSeconds": 120,
+          "extra": {
+            "assetTransferMethod": "eip3009",
+            "name": "USD Coin",
+            "version": "2",
+            "facilitatorOnly": true
+          }
+        },
+        {
+          "network": "eip155:42161",
+          "scheme": "exact",
+          "amount": "10000",
+          "asset": "0xaf88d065e77c8cC2239327C5EDb3A432268e5831",
+          "payTo": "0xA2A8dF0f7CaaBEa4e120a2568118f141569fc8aa",
+          "maxTimeoutSeconds": 120,
+          "extra": {
+            "assetTransferMethod": "eip3009",
+            "name": "USD Coin",
+            "version": "2",
+            "facilitatorOnly": true
+          }
+        }
+      ],
+      "outputSchema": {
+        "type": "object",
+        "required": [
+          "service",
+          "subject",
+          "retrievedAt",
+          "source",
+          "report"
+        ],
+        "properties": {
+          "service": {
+            "type": "string"
+          },
+          "subject": {
+            "type": "string"
+          },
+          "retrievedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "source": {
+            "type": "object",
+            "required": [
+              "name",
+              "url"
+            ],
+            "properties": {
+              "name": {
+                "type": "string"
+              },
+              "url": {
+                "type": "string",
+                "format": "uri"
+              }
+            }
+          },
+          "report": {
+            "type": "object",
+            "properties": {
+              "code": {
+                "type": "string"
+              },
+              "iso3": {
+                "type": "string"
+              },
+              "name": {
+                "type": "string"
+              },
+              "region": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "capital": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "incomeGroup": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "lendingType": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "attribution": {
+                "type": "string"
+              },
+              "limitations": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "code",
+              "iso3",
+              "name",
+              "attribution",
+              "limitations"
+            ]
+          }
+        }
+      },
+      "extensions": {
+        "bazaar": {
+          "info": {
+            "input": {
+              "type": "http",
+              "method": "GET",
+              "discoverable": true,
+              "exampleUrl": "https://saylorinnovations.com/api/data/country?country=US"
+            },
+            "output": {
+              "type": "json"
+            }
+          },
+          "canonicalResource": "https://saylorinnovations.com/api/data/country?country={country}"
+        }
+      }
+    },
+    {
+      "url": "https://saylorinnovations.com/api/data/economy?country=:country",
+      "serviceName": "Saylor Innovations Country Economic Indicators",
+      "description": "Get up to five recent annual observations for population, GDP in current US dollars and consumer-price inflation. Includes years, units, source links and missing values.",
+      "type": "http",
+      "x402Version": 2,
+      "tags": [
+        "economy",
+        "gdp",
+        "population",
+        "inflation"
+      ],
+      "accepts": [
+        {
+          "network": "solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp",
+          "scheme": "exact",
+          "amount": "10000",
+          "asset": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+          "payTo": "7LSjfrJf8fNsB8VA9u7N3WEn25smQLpob3SvyUvXacy7",
+          "maxTimeoutSeconds": 120
+        },
+        {
+          "network": "solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp",
+          "scheme": "exact",
+          "amount": "10000",
+          "asset": "Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB",
+          "payTo": "7LSjfrJf8fNsB8VA9u7N3WEn25smQLpob3SvyUvXacy7",
+          "maxTimeoutSeconds": 120
+        },
+        {
+          "network": "eip155:8453",
+          "scheme": "exact",
+          "amount": "10000",
+          "asset": "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
+          "payTo": "0xA2A8dF0f7CaaBEa4e120a2568118f141569fc8aa",
+          "maxTimeoutSeconds": 120,
+          "extra": {
+            "assetTransferMethod": "eip3009",
+            "name": "USD Coin",
+            "version": "2",
+            "facilitatorOnly": true
+          }
+        },
+        {
+          "network": "eip155:137",
+          "scheme": "exact",
+          "amount": "10000",
+          "asset": "0x3c499c542cEF5E3811e1192ce70d8cC03d5c3359",
+          "payTo": "0xA2A8dF0f7CaaBEa4e120a2568118f141569fc8aa",
+          "maxTimeoutSeconds": 120,
+          "extra": {
+            "assetTransferMethod": "eip3009",
+            "name": "USD Coin",
+            "version": "2",
+            "facilitatorOnly": true
+          }
+        },
+        {
+          "network": "eip155:42161",
+          "scheme": "exact",
+          "amount": "10000",
+          "asset": "0xaf88d065e77c8cC2239327C5EDb3A432268e5831",
+          "payTo": "0xA2A8dF0f7CaaBEa4e120a2568118f141569fc8aa",
+          "maxTimeoutSeconds": 120,
+          "extra": {
+            "assetTransferMethod": "eip3009",
+            "name": "USD Coin",
+            "version": "2",
+            "facilitatorOnly": true
+          }
+        }
+      ],
+      "outputSchema": {
+        "type": "object",
+        "required": [
+          "service",
+          "subject",
+          "retrievedAt",
+          "source",
+          "report"
+        ],
+        "properties": {
+          "service": {
+            "type": "string"
+          },
+          "subject": {
+            "type": "string"
+          },
+          "retrievedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "source": {
+            "type": "object",
+            "required": [
+              "name",
+              "url"
+            ],
+            "properties": {
+              "name": {
+                "type": "string"
+              },
+              "url": {
+                "type": "string",
+                "format": "uri"
+              }
+            }
+          },
+          "report": {
+            "type": "object",
+            "properties": {
+              "countryCode": {
+                "type": "string"
+              },
+              "countryName": {
+                "type": "string"
+              },
+              "datasetUpdated": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "indicators": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string"
+                    },
+                    "name": {
+                      "type": "string"
+                    },
+                    "unit": {
+                      "type": "string"
+                    },
+                    "source": {
+                      "type": "string"
+                    },
+                    "observations": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "year": {
+                            "type": "string"
+                          },
+                          "value": {
+                            "type": [
+                              "number",
+                              "null"
+                            ]
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              },
+              "attribution": {
+                "type": "string"
+              },
+              "limitations": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "countryCode",
+              "countryName",
+              "indicators",
+              "attribution",
+              "limitations"
+            ]
+          }
+        }
+      },
+      "extensions": {
+        "bazaar": {
+          "info": {
+            "input": {
+              "type": "http",
+              "method": "GET",
+              "discoverable": true,
+              "exampleUrl": "https://saylorinnovations.com/api/data/economy?country=US"
+            },
+            "output": {
+              "type": "json"
+            }
+          },
+          "canonicalResource": "https://saylorinnovations.com/api/data/economy?country={country}"
+        }
+      }
+    },
+    {
+      "url": "https://saylorinnovations.com/api/data/exchange-rates?base=:base",
+      "serviceName": "Saylor Innovations Reference Exchange Rates",
+      "description": "Get daily reference exchange rates per one unit of a base currency, with observation date and currency codes. Not executable trading quotes. ECB source data is also available free from ecb.europa.eu.",
+      "type": "http",
+      "x402Version": 2,
+      "tags": [
+        "currencies",
+        "exchange-rates",
+        "reference-data"
+      ],
+      "accepts": [
+        {
+          "network": "solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp",
+          "scheme": "exact",
+          "amount": "10000",
+          "asset": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+          "payTo": "7LSjfrJf8fNsB8VA9u7N3WEn25smQLpob3SvyUvXacy7",
+          "maxTimeoutSeconds": 120
+        },
+        {
+          "network": "solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp",
+          "scheme": "exact",
+          "amount": "10000",
+          "asset": "Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB",
+          "payTo": "7LSjfrJf8fNsB8VA9u7N3WEn25smQLpob3SvyUvXacy7",
+          "maxTimeoutSeconds": 120
+        },
+        {
+          "network": "eip155:8453",
+          "scheme": "exact",
+          "amount": "10000",
+          "asset": "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
+          "payTo": "0xA2A8dF0f7CaaBEa4e120a2568118f141569fc8aa",
+          "maxTimeoutSeconds": 120,
+          "extra": {
+            "assetTransferMethod": "eip3009",
+            "name": "USD Coin",
+            "version": "2",
+            "facilitatorOnly": true
+          }
+        },
+        {
+          "network": "eip155:137",
+          "scheme": "exact",
+          "amount": "10000",
+          "asset": "0x3c499c542cEF5E3811e1192ce70d8cC03d5c3359",
+          "payTo": "0xA2A8dF0f7CaaBEa4e120a2568118f141569fc8aa",
+          "maxTimeoutSeconds": 120,
+          "extra": {
+            "assetTransferMethod": "eip3009",
+            "name": "USD Coin",
+            "version": "2",
+            "facilitatorOnly": true
+          }
+        },
+        {
+          "network": "eip155:42161",
+          "scheme": "exact",
+          "amount": "10000",
+          "asset": "0xaf88d065e77c8cC2239327C5EDb3A432268e5831",
+          "payTo": "0xA2A8dF0f7CaaBEa4e120a2568118f141569fc8aa",
+          "maxTimeoutSeconds": 120,
+          "extra": {
+            "assetTransferMethod": "eip3009",
+            "name": "USD Coin",
+            "version": "2",
+            "facilitatorOnly": true
+          }
+        }
+      ],
+      "outputSchema": {
+        "type": "object",
+        "required": [
+          "service",
+          "subject",
+          "retrievedAt",
+          "source",
+          "report"
+        ],
+        "properties": {
+          "service": {
+            "type": "string"
+          },
+          "subject": {
+            "type": "string"
+          },
+          "retrievedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "source": {
+            "type": "object",
+            "required": [
+              "name",
+              "url"
+            ],
+            "properties": {
+              "name": {
+                "type": "string"
+              },
+              "url": {
+                "type": "string",
+                "format": "uri"
+              }
+            }
+          },
+          "report": {
+            "type": "object",
+            "properties": {
+              "base": {
+                "type": "string"
+              },
+              "date": {
+                "type": "string"
+              },
+              "amount": {
+                "type": "number"
+              },
+              "rates": {
+                "type": "object",
+                "additionalProperties": {
+                  "type": "number"
+                }
+              },
+              "notice": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "base",
+              "date",
+              "amount",
+              "rates",
+              "notice"
+            ]
+          }
+        }
+      },
+      "extensions": {
+        "bazaar": {
+          "info": {
+            "input": {
+              "type": "http",
+              "method": "GET",
+              "discoverable": true,
+              "exampleUrl": "https://saylorinnovations.com/api/data/exchange-rates?base=USD"
+            },
+            "output": {
+              "type": "json"
+            }
+          },
+          "canonicalResource": "https://saylorinnovations.com/api/data/exchange-rates?base={base}"
+        }
+      }
+    },
+    {
+      "url": "https://saylorinnovations.com/api/package/report?name=:name",
+      "serviceName": "Saylor Innovations npm Package Report",
+      "description": "Inspect the latest npm package release: version, license, dependency counts, engine requirements, deprecation notice and source links. Does not download or execute package code.",
+      "type": "http",
+      "x402Version": 2,
+      "tags": [
+        "npm",
+        "packages",
+        "dependencies",
+        "security"
+      ],
+      "accepts": [
+        {
+          "network": "solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp",
+          "scheme": "exact",
+          "amount": "10000",
+          "asset": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+          "payTo": "7LSjfrJf8fNsB8VA9u7N3WEn25smQLpob3SvyUvXacy7",
+          "maxTimeoutSeconds": 120
+        },
+        {
+          "network": "solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp",
+          "scheme": "exact",
+          "amount": "10000",
+          "asset": "Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB",
+          "payTo": "7LSjfrJf8fNsB8VA9u7N3WEn25smQLpob3SvyUvXacy7",
+          "maxTimeoutSeconds": 120
+        },
+        {
+          "network": "eip155:8453",
+          "scheme": "exact",
+          "amount": "10000",
+          "asset": "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
+          "payTo": "0xA2A8dF0f7CaaBEa4e120a2568118f141569fc8aa",
+          "maxTimeoutSeconds": 120,
+          "extra": {
+            "assetTransferMethod": "eip3009",
+            "name": "USD Coin",
+            "version": "2",
+            "facilitatorOnly": true
+          }
+        },
+        {
+          "network": "eip155:137",
+          "scheme": "exact",
+          "amount": "10000",
+          "asset": "0x3c499c542cEF5E3811e1192ce70d8cC03d5c3359",
+          "payTo": "0xA2A8dF0f7CaaBEa4e120a2568118f141569fc8aa",
+          "maxTimeoutSeconds": 120,
+          "extra": {
+            "assetTransferMethod": "eip3009",
+            "name": "USD Coin",
+            "version": "2",
+            "facilitatorOnly": true
+          }
+        },
+        {
+          "network": "eip155:42161",
+          "scheme": "exact",
+          "amount": "10000",
+          "asset": "0xaf88d065e77c8cC2239327C5EDb3A432268e5831",
+          "payTo": "0xA2A8dF0f7CaaBEa4e120a2568118f141569fc8aa",
+          "maxTimeoutSeconds": 120,
+          "extra": {
+            "assetTransferMethod": "eip3009",
+            "name": "USD Coin",
+            "version": "2",
+            "facilitatorOnly": true
+          }
+        }
+      ],
+      "outputSchema": {
+        "type": "object",
+        "required": [
+          "service",
+          "subject",
+          "retrievedAt",
+          "source",
+          "report"
+        ],
+        "properties": {
+          "service": {
+            "type": "string"
+          },
+          "subject": {
+            "type": "string"
+          },
+          "retrievedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "source": {
+            "type": "object",
+            "required": [
+              "name",
+              "url"
+            ],
+            "properties": {
+              "name": {
+                "type": "string"
+              },
+              "url": {
+                "type": "string",
+                "format": "uri"
+              }
+            }
+          },
+          "report": {
+            "type": "object",
+            "required": [
+              "name",
+              "version",
+              "dependencyCount",
+              "dependencies",
+              "signals"
+            ],
+            "properties": {
+              "name": {
+                "type": "string"
+              },
+              "version": {
+                "type": "string"
+              },
+              "license": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "dependencyCount": {
+                "type": "integer"
+              },
+              "dependencies": {
+                "type": "object",
+                "additionalProperties": {
+                  "type": "string"
+                }
+              },
+              "peerDependencies": {
+                "type": "object",
+                "additionalProperties": {
+                  "type": "string"
+                }
+              },
+              "engines": {
+                "type": "object",
+                "additionalProperties": {
+                  "type": "string"
+                }
+              },
+              "deprecated": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "signals": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              },
+              "limitations": {
+                "type": "string"
+              }
+            }
+          }
+        }
+      },
+      "extensions": {
+        "bazaar": {
+          "info": {
+            "input": {
+              "type": "http",
+              "method": "GET",
+              "discoverable": true,
+              "exampleUrl": "https://saylorinnovations.com/api/package/report?name=typescript"
+            },
+            "output": {
+              "type": "json"
+            }
+          },
+          "canonicalResource": "https://saylorinnovations.com/api/package/report?name={name}"
+        }
+      }
+    },
+    {
+      "url": "https://saylorinnovations.com/api/package/search?q=:q",
+      "serviceName": "Saylor Innovations npm Package Search",
+      "description": "Find up to five npm packages with versions, descriptions, registry ranking scores and source links for package discovery.",
+      "type": "http",
+      "x402Version": 2,
+      "tags": [
+        "npm",
+        "search",
+        "packages",
+        "developer-tools"
+      ],
+      "accepts": [
+        {
+          "network": "solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp",
+          "scheme": "exact",
+          "amount": "10000",
+          "asset": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+          "payTo": "7LSjfrJf8fNsB8VA9u7N3WEn25smQLpob3SvyUvXacy7",
+          "maxTimeoutSeconds": 120
+        },
+        {
+          "network": "solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp",
+          "scheme": "exact",
+          "amount": "10000",
+          "asset": "Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB",
+          "payTo": "7LSjfrJf8fNsB8VA9u7N3WEn25smQLpob3SvyUvXacy7",
+          "maxTimeoutSeconds": 120
+        },
+        {
+          "network": "eip155:8453",
+          "scheme": "exact",
+          "amount": "10000",
+          "asset": "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
+          "payTo": "0xA2A8dF0f7CaaBEa4e120a2568118f141569fc8aa",
+          "maxTimeoutSeconds": 120,
+          "extra": {
+            "assetTransferMethod": "eip3009",
+            "name": "USD Coin",
+            "version": "2",
+            "facilitatorOnly": true
+          }
+        },
+        {
+          "network": "eip155:137",
+          "scheme": "exact",
+          "amount": "10000",
+          "asset": "0x3c499c542cEF5E3811e1192ce70d8cC03d5c3359",
+          "payTo": "0xA2A8dF0f7CaaBEa4e120a2568118f141569fc8aa",
+          "maxTimeoutSeconds": 120,
+          "extra": {
+            "assetTransferMethod": "eip3009",
+            "name": "USD Coin",
+            "version": "2",
+            "facilitatorOnly": true
+          }
+        },
+        {
+          "network": "eip155:42161",
+          "scheme": "exact",
+          "amount": "10000",
+          "asset": "0xaf88d065e77c8cC2239327C5EDb3A432268e5831",
+          "payTo": "0xA2A8dF0f7CaaBEa4e120a2568118f141569fc8aa",
+          "maxTimeoutSeconds": 120,
+          "extra": {
+            "assetTransferMethod": "eip3009",
+            "name": "USD Coin",
+            "version": "2",
+            "facilitatorOnly": true
+          }
+        }
+      ],
+      "outputSchema": {
+        "type": "object",
+        "required": [
+          "service",
+          "subject",
+          "retrievedAt",
+          "source",
+          "report"
+        ],
+        "properties": {
+          "service": {
+            "type": "string"
+          },
+          "subject": {
+            "type": "string"
+          },
+          "retrievedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "source": {
+            "type": "object",
+            "required": [
+              "name",
+              "url"
+            ],
+            "properties": {
+              "name": {
+                "type": "string"
+              },
+              "url": {
+                "type": "string",
+                "format": "uri"
+              }
+            }
+          },
+          "report": {
+            "type": "object",
+            "properties": {
+              "query": {
+                "type": "string"
+              },
+              "totalResults": {
+                "type": "integer"
+              },
+              "results": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "name": {
+                      "type": "string"
+                    },
+                    "version": {
+                      "type": "string"
+                    },
+                    "description": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "url": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "score": {
+                      "type": [
+                        "number",
+                        "null"
+                      ]
+                    }
+                  }
+                }
+              }
+            },
+            "required": [
+              "query",
+              "totalResults",
+              "results"
+            ]
+          }
+        }
+      },
+      "extensions": {
+        "bazaar": {
+          "info": {
+            "input": {
+              "type": "http",
+              "method": "GET",
+              "discoverable": true,
+              "exampleUrl": "https://saylorinnovations.com/api/package/search?q=json%20schema"
+            },
+            "output": {
+              "type": "json"
+            }
+          },
+          "canonicalResource": "https://saylorinnovations.com/api/package/search?q={q}"
+        }
+      }
+    },
+    {
+      "url": "https://saylorinnovations.com/api/research/doi?doi=:doi",
+      "serviceName": "Saylor Innovations DOI Citation Report",
+      "description": "Resolve a DOI into normalized publication metadata, citation text, identifiers and source links. Abstracts and full paper text are excluded.",
+      "type": "http",
+      "x402Version": 2,
+      "tags": [
+        "research",
+        "doi",
+        "citations",
+        "papers"
+      ],
+      "accepts": [
+        {
+          "network": "solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp",
+          "scheme": "exact",
+          "amount": "10000",
+          "asset": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+          "payTo": "7LSjfrJf8fNsB8VA9u7N3WEn25smQLpob3SvyUvXacy7",
+          "maxTimeoutSeconds": 120
+        },
+        {
+          "network": "solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp",
+          "scheme": "exact",
+          "amount": "10000",
+          "asset": "Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB",
+          "payTo": "7LSjfrJf8fNsB8VA9u7N3WEn25smQLpob3SvyUvXacy7",
+          "maxTimeoutSeconds": 120
+        },
+        {
+          "network": "eip155:8453",
+          "scheme": "exact",
+          "amount": "10000",
+          "asset": "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
+          "payTo": "0xA2A8dF0f7CaaBEa4e120a2568118f141569fc8aa",
+          "maxTimeoutSeconds": 120,
+          "extra": {
+            "assetTransferMethod": "eip3009",
+            "name": "USD Coin",
+            "version": "2",
+            "facilitatorOnly": true
+          }
+        },
+        {
+          "network": "eip155:137",
+          "scheme": "exact",
+          "amount": "10000",
+          "asset": "0x3c499c542cEF5E3811e1192ce70d8cC03d5c3359",
+          "payTo": "0xA2A8dF0f7CaaBEa4e120a2568118f141569fc8aa",
+          "maxTimeoutSeconds": 120,
+          "extra": {
+            "assetTransferMethod": "eip3009",
+            "name": "USD Coin",
+            "version": "2",
+            "facilitatorOnly": true
+          }
+        },
+        {
+          "network": "eip155:42161",
+          "scheme": "exact",
+          "amount": "10000",
+          "asset": "0xaf88d065e77c8cC2239327C5EDb3A432268e5831",
+          "payTo": "0xA2A8dF0f7CaaBEa4e120a2568118f141569fc8aa",
+          "maxTimeoutSeconds": 120,
+          "extra": {
+            "assetTransferMethod": "eip3009",
+            "name": "USD Coin",
+            "version": "2",
+            "facilitatorOnly": true
+          }
+        }
+      ],
+      "outputSchema": {
+        "type": "object",
+        "required": [
+          "service",
+          "subject",
+          "retrievedAt",
+          "source",
+          "report"
+        ],
+        "properties": {
+          "service": {
+            "type": "string"
+          },
+          "subject": {
+            "type": "string"
+          },
+          "retrievedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "source": {
+            "type": "object",
+            "required": [
+              "name",
+              "url"
+            ],
+            "properties": {
+              "name": {
+                "type": "string"
+              },
+              "url": {
+                "type": "string",
+                "format": "uri"
+              }
+            }
+          },
+          "report": {
+            "type": "object",
+            "required": [
+              "doi",
+              "title",
+              "authors",
+              "citation"
+            ],
+            "properties": {
+              "doi": {
+                "type": "string"
+              },
+              "title": {
+                "type": "string"
+              },
+              "authors": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              },
+              "publisher": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "publication": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "year": {
+                "type": [
+                  "integer",
+                  "null"
+                ]
+              },
+              "citation": {
+                "type": "string"
+              },
+              "referenceCount": {
+                "type": [
+                  "integer",
+                  "null"
+                ]
+              },
+              "citedByCount": {
+                "type": [
+                  "integer",
+                  "null"
+                ]
+              },
+              "type": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "url": {
+                "type": "string"
+              }
+            }
+          }
+        }
+      },
+      "extensions": {
+        "bazaar": {
+          "info": {
+            "input": {
+              "type": "http",
+              "method": "GET",
+              "discoverable": true,
+              "exampleUrl": "https://saylorinnovations.com/api/research/doi?doi=10.1038%2Fnphys1170"
+            },
+            "output": {
+              "type": "json"
+            }
+          },
+          "canonicalResource": "https://saylorinnovations.com/api/research/doi?doi={doi}"
+        }
+      }
+    },
+    {
+      "url": "https://saylorinnovations.com/api/research/search?q=:q",
+      "serviceName": "Saylor Innovations Publication Search",
+      "description": "Find up to five publications with DOI identifiers, authors, publication years and citation counts. Returns metadata, not abstracts or full text.",
+      "type": "http",
+      "x402Version": 2,
+      "tags": [
+        "research",
+        "papers",
+        "search",
+        "citations"
+      ],
+      "accepts": [
+        {
+          "network": "solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp",
+          "scheme": "exact",
+          "amount": "10000",
+          "asset": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+          "payTo": "7LSjfrJf8fNsB8VA9u7N3WEn25smQLpob3SvyUvXacy7",
+          "maxTimeoutSeconds": 120
+        },
+        {
+          "network": "solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp",
+          "scheme": "exact",
+          "amount": "10000",
+          "asset": "Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB",
+          "payTo": "7LSjfrJf8fNsB8VA9u7N3WEn25smQLpob3SvyUvXacy7",
+          "maxTimeoutSeconds": 120
+        },
+        {
+          "network": "eip155:8453",
+          "scheme": "exact",
+          "amount": "10000",
+          "asset": "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
+          "payTo": "0xA2A8dF0f7CaaBEa4e120a2568118f141569fc8aa",
+          "maxTimeoutSeconds": 120,
+          "extra": {
+            "assetTransferMethod": "eip3009",
+            "name": "USD Coin",
+            "version": "2",
+            "facilitatorOnly": true
+          }
+        },
+        {
+          "network": "eip155:137",
+          "scheme": "exact",
+          "amount": "10000",
+          "asset": "0x3c499c542cEF5E3811e1192ce70d8cC03d5c3359",
+          "payTo": "0xA2A8dF0f7CaaBEa4e120a2568118f141569fc8aa",
+          "maxTimeoutSeconds": 120,
+          "extra": {
+            "assetTransferMethod": "eip3009",
+            "name": "USD Coin",
+            "version": "2",
+            "facilitatorOnly": true
+          }
+        },
+        {
+          "network": "eip155:42161",
+          "scheme": "exact",
+          "amount": "10000",
+          "asset": "0xaf88d065e77c8cC2239327C5EDb3A432268e5831",
+          "payTo": "0xA2A8dF0f7CaaBEa4e120a2568118f141569fc8aa",
+          "maxTimeoutSeconds": 120,
+          "extra": {
+            "assetTransferMethod": "eip3009",
+            "name": "USD Coin",
+            "version": "2",
+            "facilitatorOnly": true
+          }
+        }
+      ],
+      "outputSchema": {
+        "type": "object",
+        "required": [
+          "service",
+          "subject",
+          "retrievedAt",
+          "source",
+          "report"
+        ],
+        "properties": {
+          "service": {
+            "type": "string"
+          },
+          "subject": {
+            "type": "string"
+          },
+          "retrievedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "source": {
+            "type": "object",
+            "required": [
+              "name",
+              "url"
+            ],
+            "properties": {
+              "name": {
+                "type": "string"
+              },
+              "url": {
+                "type": "string",
+                "format": "uri"
+              }
+            }
+          },
+          "report": {
+            "type": "object",
+            "properties": {
+              "query": {
+                "type": "string"
+              },
+              "totalResults": {
+                "type": "integer"
+              },
+              "results": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "doi": {
+                      "type": "string"
+                    },
+                    "title": {
+                      "type": "string"
+                    },
+                    "authors": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
+                    },
+                    "year": {
+                      "type": [
+                        "integer",
+                        "null"
+                      ]
+                    },
+                    "url": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            },
+            "required": [
+              "query",
+              "totalResults",
+              "results"
+            ]
+          }
+        }
+      },
+      "extensions": {
+        "bazaar": {
+          "info": {
+            "input": {
+              "type": "http",
+              "method": "GET",
+              "discoverable": true,
+              "exampleUrl": "https://saylorinnovations.com/api/research/search?q=machine%20learning"
+            },
+            "output": {
+              "type": "json"
+            }
+          },
+          "canonicalResource": "https://saylorinnovations.com/api/research/search?q={q}"
+        }
+      }
+    },
+    {
+      "url": "https://saylorinnovations.com/api/security/cve?cve=:cve",
+      "serviceName": "Saylor Innovations CVE Vulnerability Report",
+      "description": "Resolve a CVE into its published description, status, CVSS metrics, weakness identifiers and vendor/reference links. This does not scan a system or prove safety.",
+      "type": "http",
+      "x402Version": 2,
+      "tags": [
+        "security",
+        "cve",
+        "vulnerabilities"
+      ],
+      "accepts": [
+        {
+          "network": "solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp",
+          "scheme": "exact",
+          "amount": "10000",
+          "asset": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+          "payTo": "7LSjfrJf8fNsB8VA9u7N3WEn25smQLpob3SvyUvXacy7",
+          "maxTimeoutSeconds": 120
+        },
+        {
+          "network": "solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp",
+          "scheme": "exact",
+          "amount": "10000",
+          "asset": "Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB",
+          "payTo": "7LSjfrJf8fNsB8VA9u7N3WEn25smQLpob3SvyUvXacy7",
+          "maxTimeoutSeconds": 120
+        },
+        {
+          "network": "eip155:8453",
+          "scheme": "exact",
+          "amount": "10000",
+          "asset": "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
+          "payTo": "0xA2A8dF0f7CaaBEa4e120a2568118f141569fc8aa",
+          "maxTimeoutSeconds": 120,
+          "extra": {
+            "assetTransferMethod": "eip3009",
+            "name": "USD Coin",
+            "version": "2",
+            "facilitatorOnly": true
+          }
+        },
+        {
+          "network": "eip155:137",
+          "scheme": "exact",
+          "amount": "10000",
+          "asset": "0x3c499c542cEF5E3811e1192ce70d8cC03d5c3359",
+          "payTo": "0xA2A8dF0f7CaaBEa4e120a2568118f141569fc8aa",
+          "maxTimeoutSeconds": 120,
+          "extra": {
+            "assetTransferMethod": "eip3009",
+            "name": "USD Coin",
+            "version": "2",
+            "facilitatorOnly": true
+          }
+        },
+        {
+          "network": "eip155:42161",
+          "scheme": "exact",
+          "amount": "10000",
+          "asset": "0xaf88d065e77c8cC2239327C5EDb3A432268e5831",
+          "payTo": "0xA2A8dF0f7CaaBEa4e120a2568118f141569fc8aa",
+          "maxTimeoutSeconds": 120,
+          "extra": {
+            "assetTransferMethod": "eip3009",
+            "name": "USD Coin",
+            "version": "2",
+            "facilitatorOnly": true
+          }
+        }
+      ],
+      "outputSchema": {
+        "type": "object",
+        "required": [
+          "service",
+          "subject",
+          "retrievedAt",
+          "source",
+          "report"
+        ],
+        "properties": {
+          "service": {
+            "type": "string"
+          },
+          "subject": {
+            "type": "string"
+          },
+          "retrievedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "source": {
+            "type": "object",
+            "required": [
+              "name",
+              "url"
+            ],
+            "properties": {
+              "name": {
+                "type": "string"
+              },
+              "url": {
+                "type": "string",
+                "format": "uri"
+              }
+            }
+          },
+          "report": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "status": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "published": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "modified": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "description": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "metrics": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "version": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "score": {
+                      "type": [
+                        "number",
+                        "null"
+                      ]
+                    },
+                    "severity": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "vector": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "source": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    }
+                  }
+                }
+              },
+              "weaknesses": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              },
+              "references": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "url": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "tags": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
+                    }
+                  }
+                }
+              },
+              "limitations": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "id",
+              "metrics",
+              "weaknesses",
+              "references",
+              "limitations"
+            ]
+          }
+        }
+      },
+      "extensions": {
+        "bazaar": {
+          "info": {
+            "input": {
+              "type": "http",
+              "method": "GET",
+              "discoverable": true,
+              "exampleUrl": "https://saylorinnovations.com/api/security/cve?cve=CVE-2021-44228"
+            },
+            "output": {
+              "type": "json"
+            }
+          },
+          "canonicalResource": "https://saylorinnovations.com/api/security/cve?cve={cve}"
+        }
+      }
+    },
+    {
+      "url": "https://saylorinnovations.com/api/games/deals",
+      "serviceName": "Saylor Innovations PC Game Deals",
+      "description": "PC game prices across stores (Steam, GOG, Epic, Humble, Fanatical and more): current price per store, retail price, discount and cheapest price ever for a title, or the best current deals.",
+      "type": "http",
+      "x402Version": 2,
+      "tags": [
+        "games",
+        "deals",
+        "steam",
+        "pricing"
+      ],
+      "accepts": [
+        {
+          "network": "solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp",
+          "scheme": "exact",
+          "amount": "10000",
+          "asset": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+          "payTo": "7LSjfrJf8fNsB8VA9u7N3WEn25smQLpob3SvyUvXacy7",
+          "maxTimeoutSeconds": 120
+        },
+        {
+          "network": "solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp",
+          "scheme": "exact",
+          "amount": "10000",
+          "asset": "Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB",
+          "payTo": "7LSjfrJf8fNsB8VA9u7N3WEn25smQLpob3SvyUvXacy7",
+          "maxTimeoutSeconds": 120
+        },
+        {
+          "network": "eip155:8453",
+          "scheme": "exact",
+          "amount": "10000",
+          "asset": "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
+          "payTo": "0xA2A8dF0f7CaaBEa4e120a2568118f141569fc8aa",
+          "maxTimeoutSeconds": 120,
+          "extra": {
+            "assetTransferMethod": "eip3009",
+            "name": "USD Coin",
+            "version": "2",
+            "facilitatorOnly": true
+          }
+        },
+        {
+          "network": "eip155:137",
+          "scheme": "exact",
+          "amount": "10000",
+          "asset": "0x3c499c542cEF5E3811e1192ce70d8cC03d5c3359",
+          "payTo": "0xA2A8dF0f7CaaBEa4e120a2568118f141569fc8aa",
+          "maxTimeoutSeconds": 120,
+          "extra": {
+            "assetTransferMethod": "eip3009",
+            "name": "USD Coin",
+            "version": "2",
+            "facilitatorOnly": true
+          }
+        },
+        {
+          "network": "eip155:42161",
+          "scheme": "exact",
+          "amount": "10000",
+          "asset": "0xaf88d065e77c8cC2239327C5EDb3A432268e5831",
+          "payTo": "0xA2A8dF0f7CaaBEa4e120a2568118f141569fc8aa",
+          "maxTimeoutSeconds": 120,
+          "extra": {
+            "assetTransferMethod": "eip3009",
+            "name": "USD Coin",
+            "version": "2",
+            "facilitatorOnly": true
+          }
+        }
       ],
       "extensions": {
         "bazaar": {
-          "info": { "input": { "type": "http", "method": "GET", "discoverable": true }, "output": { "type": "json" } },
-          "canonicalResource": "https://saylorinnovations.com/api/python/report?name={name}"
+          "info": {
+            "input": {
+              "type": "http",
+              "method": "GET",
+              "discoverable": true,
+              "exampleUrl": "https://saylorinnovations.com/api/games/deals?title=elden%20ring"
+            },
+            "output": {
+              "type": "json"
+            }
+          },
+          "canonicalResource": "https://saylorinnovations.com/api/games/deals"
+        }
+      }
+    },
+    {
+      "url": "https://saylorinnovations.com/api/aircraft/military",
+      "serviceName": "Saylor Innovations Aircraft Tracker",
+      "description": "Military aircraft airborne right now worldwide (those broadcasting ADS-B/MLAT): positions, types, callsigns and a count by aircraft type.",
+      "type": "http",
+      "x402Version": 2,
+      "tags": [
+        "aircraft",
+        "flights",
+        "ads-b",
+        "aviation",
+        "military"
+      ],
+      "accepts": [
+        {
+          "network": "solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp",
+          "scheme": "exact",
+          "amount": "10000",
+          "asset": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+          "payTo": "7LSjfrJf8fNsB8VA9u7N3WEn25smQLpob3SvyUvXacy7",
+          "maxTimeoutSeconds": 120
+        },
+        {
+          "network": "solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp",
+          "scheme": "exact",
+          "amount": "10000",
+          "asset": "Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB",
+          "payTo": "7LSjfrJf8fNsB8VA9u7N3WEn25smQLpob3SvyUvXacy7",
+          "maxTimeoutSeconds": 120
+        },
+        {
+          "network": "eip155:8453",
+          "scheme": "exact",
+          "amount": "10000",
+          "asset": "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
+          "payTo": "0xA2A8dF0f7CaaBEa4e120a2568118f141569fc8aa",
+          "maxTimeoutSeconds": 120,
+          "extra": {
+            "assetTransferMethod": "eip3009",
+            "name": "USD Coin",
+            "version": "2",
+            "facilitatorOnly": true
+          }
+        },
+        {
+          "network": "eip155:137",
+          "scheme": "exact",
+          "amount": "10000",
+          "asset": "0x3c499c542cEF5E3811e1192ce70d8cC03d5c3359",
+          "payTo": "0xA2A8dF0f7CaaBEa4e120a2568118f141569fc8aa",
+          "maxTimeoutSeconds": 120,
+          "extra": {
+            "assetTransferMethod": "eip3009",
+            "name": "USD Coin",
+            "version": "2",
+            "facilitatorOnly": true
+          }
+        },
+        {
+          "network": "eip155:42161",
+          "scheme": "exact",
+          "amount": "10000",
+          "asset": "0xaf88d065e77c8cC2239327C5EDb3A432268e5831",
+          "payTo": "0xA2A8dF0f7CaaBEa4e120a2568118f141569fc8aa",
+          "maxTimeoutSeconds": 120,
+          "extra": {
+            "assetTransferMethod": "eip3009",
+            "name": "USD Coin",
+            "version": "2",
+            "facilitatorOnly": true
+          }
+        }
+      ],
+      "extensions": {
+        "bazaar": {
+          "info": {
+            "input": {
+              "type": "http",
+              "method": "GET",
+              "discoverable": true,
+              "exampleUrl": "https://saylorinnovations.com/api/aircraft/military"
+            },
+            "output": {
+              "type": "json"
+            }
+          },
+          "canonicalResource": "https://saylorinnovations.com/api/aircraft/military"
+        }
+      }
+    },
+    {
+      "url": "https://saylorinnovations.com/api/market/bestsellers",
+      "serviceName": "Saylor Innovations x402 Market Intelligence",
+      "description": "x402 bestsellers: what agents actually pay for, from Coinbase's own 30-day usage — resources ranked by unique paying agents with price, calls, estimated revenue and networks. Filter by category, network and minimum payers. Free summary at /api/market/summary.",
+      "type": "http",
+      "x402Version": 2,
+      "tags": [
+        "x402",
+        "market",
+        "bazaar",
+        "bestsellers"
+      ],
+      "accepts": [
+        {
+          "network": "solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp",
+          "scheme": "exact",
+          "amount": "10000",
+          "asset": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+          "payTo": "7LSjfrJf8fNsB8VA9u7N3WEn25smQLpob3SvyUvXacy7",
+          "maxTimeoutSeconds": 120
+        },
+        {
+          "network": "solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp",
+          "scheme": "exact",
+          "amount": "10000",
+          "asset": "Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB",
+          "payTo": "7LSjfrJf8fNsB8VA9u7N3WEn25smQLpob3SvyUvXacy7",
+          "maxTimeoutSeconds": 120
+        },
+        {
+          "network": "eip155:8453",
+          "scheme": "exact",
+          "amount": "10000",
+          "asset": "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
+          "payTo": "0xA2A8dF0f7CaaBEa4e120a2568118f141569fc8aa",
+          "maxTimeoutSeconds": 120,
+          "extra": {
+            "assetTransferMethod": "eip3009",
+            "name": "USD Coin",
+            "version": "2",
+            "facilitatorOnly": true
+          }
+        },
+        {
+          "network": "eip155:137",
+          "scheme": "exact",
+          "amount": "10000",
+          "asset": "0x3c499c542cEF5E3811e1192ce70d8cC03d5c3359",
+          "payTo": "0xA2A8dF0f7CaaBEa4e120a2568118f141569fc8aa",
+          "maxTimeoutSeconds": 120,
+          "extra": {
+            "assetTransferMethod": "eip3009",
+            "name": "USD Coin",
+            "version": "2",
+            "facilitatorOnly": true
+          }
+        },
+        {
+          "network": "eip155:42161",
+          "scheme": "exact",
+          "amount": "10000",
+          "asset": "0xaf88d065e77c8cC2239327C5EDb3A432268e5831",
+          "payTo": "0xA2A8dF0f7CaaBEa4e120a2568118f141569fc8aa",
+          "maxTimeoutSeconds": 120,
+          "extra": {
+            "assetTransferMethod": "eip3009",
+            "name": "USD Coin",
+            "version": "2",
+            "facilitatorOnly": true
+          }
+        }
+      ],
+      "extensions": {
+        "bazaar": {
+          "info": {
+            "input": {
+              "type": "http",
+              "method": "GET",
+              "discoverable": true,
+              "exampleUrl": "https://saylorinnovations.com/api/market/bestsellers?limit=25"
+            },
+            "output": {
+              "type": "json"
+            }
+          },
+          "canonicalResource": "https://saylorinnovations.com/api/market/bestsellers"
+        }
+      }
+    },
+    {
+      "url": "https://saylorinnovations.com/api/security/:mint",
+      "serviceName": "Saylor Innovations Watchdog API",
+      "description": "Solana token rug risk check — is this token safe to buy? Rug-pull and scam screening for any SPL / pump.fun mint: mint and freeze authority (read from on-chain RPC), LP locked %, top-10 holder concentration, RugCheck named risks, and a plain-English safety summary.",
+      "type": "http",
+      "x402Version": 2,
+      "tags": [
+        "solana",
+        "onchain",
+        "token-data",
+        "security",
+        "rug-risk"
+      ],
+      "accepts": [
+        {
+          "network": "solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp",
+          "scheme": "exact",
+          "amount": "10000",
+          "asset": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+          "payTo": "7LSjfrJf8fNsB8VA9u7N3WEn25smQLpob3SvyUvXacy7",
+          "maxTimeoutSeconds": 120
+        },
+        {
+          "network": "solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp",
+          "scheme": "exact",
+          "amount": "10000",
+          "asset": "Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB",
+          "payTo": "7LSjfrJf8fNsB8VA9u7N3WEn25smQLpob3SvyUvXacy7",
+          "maxTimeoutSeconds": 120
+        },
+        {
+          "network": "eip155:8453",
+          "scheme": "exact",
+          "amount": "10000",
+          "asset": "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
+          "payTo": "0xA2A8dF0f7CaaBEa4e120a2568118f141569fc8aa",
+          "maxTimeoutSeconds": 120,
+          "extra": {
+            "assetTransferMethod": "eip3009",
+            "name": "USD Coin",
+            "version": "2",
+            "facilitatorOnly": true
+          }
+        },
+        {
+          "network": "eip155:137",
+          "scheme": "exact",
+          "amount": "10000",
+          "asset": "0x3c499c542cEF5E3811e1192ce70d8cC03d5c3359",
+          "payTo": "0xA2A8dF0f7CaaBEa4e120a2568118f141569fc8aa",
+          "maxTimeoutSeconds": 120,
+          "extra": {
+            "assetTransferMethod": "eip3009",
+            "name": "USD Coin",
+            "version": "2",
+            "facilitatorOnly": true
+          }
+        },
+        {
+          "network": "eip155:42161",
+          "scheme": "exact",
+          "amount": "10000",
+          "asset": "0xaf88d065e77c8cC2239327C5EDb3A432268e5831",
+          "payTo": "0xA2A8dF0f7CaaBEa4e120a2568118f141569fc8aa",
+          "maxTimeoutSeconds": 120,
+          "extra": {
+            "assetTransferMethod": "eip3009",
+            "name": "USD Coin",
+            "version": "2",
+            "facilitatorOnly": true
+          }
+        }
+      ],
+      "outputSchema": {
+        "type": "object",
+        "properties": {
+          "mint": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "symbol": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "name": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "security_score": {
+            "type": [
+              "number",
+              "null"
+            ],
+            "description": "0-100. Transparent rule-based math, not a model."
+          },
+          "watchdog_score": {
+            "type": [
+              "number",
+              "null"
+            ],
+            "description": "Composite. Security is 45%; a security score under 30 caps this at 25."
+          },
+          "security": {
+            "type": "object",
+            "properties": {
+              "mint_authority_revoked": {
+                "type": [
+                  "boolean",
+                  "null"
+                ],
+                "description": "False means new supply can still be minted."
+              },
+              "freeze_authority_revoked": {
+                "type": [
+                  "boolean",
+                  "null"
+                ],
+                "description": "False means your balance can be frozen."
+              },
+              "lp_locked_pct": {
+                "type": [
+                  "number",
+                  "null"
+                ],
+                "description": "Percent of liquidity locked, 0-100."
+              },
+              "lp_unlock_date": {
+                "type": [
+                  "string",
+                  "null"
+                ],
+                "description": "ISO timestamp of the nearest future LP unlock, if any locked LP has a known unlock date. Null if fully unlocked or no lock data."
+              },
+              "top10_holder_pct": {
+                "type": [
+                  "number",
+                  "null"
+                ],
+                "description": "Percent of supply held by the top 10 holders."
+              },
+              "insider_network_count": {
+                "type": [
+                  "number",
+                  "null"
+                ],
+                "description": "Number of connected-wallet clusters RugCheck's graph analysis detected across ALL holders (not just the top 10/20)."
+              },
+              "insider_accounts_detected": {
+                "type": [
+                  "number",
+                  "null"
+                ],
+                "description": "Total accounts across all detected clusters."
+              },
+              "insider_accounts_pct_of_holders": {
+                "type": [
+                  "number",
+                  "null"
+                ],
+                "description": "insider_accounts_detected as a percent of total_holders. A lead to investigate, not a verdict — legitimate exchanges/market makers can also show up as large connected clusters."
+              },
+              "rugcheck_score": {
+                "type": [
+                  "number",
+                  "null"
+                ],
+                "description": "Raw upstream RugCheck score."
+              },
+              "rugcheck_risks": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                },
+                "description": "Named risks."
+              }
+            }
+          },
+          "holder_count": {
+            "type": [
+              "number",
+              "null"
+            ]
+          },
+          "token_age_days": {
+            "type": [
+              "number",
+              "null"
+            ]
+          },
+          "summary": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Plain-English verdict."
+          },
+          "sources_ok": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "sources_failed": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "fetched_at": {
+            "type": [
+              "number",
+              "null"
+            ]
+          }
+        }
+      },
+      "extensions": {
+        "bazaar": {
+          "info": {
+            "input": {
+              "type": "http",
+              "method": "GET",
+              "discoverable": true,
+              "exampleUrl": "https://saylorinnovations.com/api/security/DezXAZ8z7PnrnRJjz3wXBoRgixCa6xjnB7YaB1pPB263"
+            },
+            "output": {
+              "type": "json"
+            }
+          },
+          "canonicalResource": "https://saylorinnovations.com/api/security/{mint}"
+        }
+      }
+    },
+    {
+      "url": "https://saylorinnovations.com/api/docs/pypi/fastapi",
+      "serviceName": "Saylor Innovations Library Docs",
+      "description": "Latest PyPI package documentation and metadata for FastAPI: README, version, install command, docs URL, repository and sections.",
+      "type": "http",
+      "x402Version": 2,
+      "tags": [
+        "docs",
+        "documentation",
+        "pypi",
+        "readme",
+        "coding"
+      ],
+      "accepts": [
+        {
+          "network": "solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp",
+          "scheme": "exact",
+          "amount": "10000",
+          "asset": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+          "payTo": "7LSjfrJf8fNsB8VA9u7N3WEn25smQLpob3SvyUvXacy7",
+          "maxTimeoutSeconds": 120
+        },
+        {
+          "network": "solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp",
+          "scheme": "exact",
+          "amount": "10000",
+          "asset": "Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB",
+          "payTo": "7LSjfrJf8fNsB8VA9u7N3WEn25smQLpob3SvyUvXacy7",
+          "maxTimeoutSeconds": 120
+        },
+        {
+          "network": "eip155:8453",
+          "scheme": "exact",
+          "amount": "10000",
+          "asset": "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
+          "payTo": "0xA2A8dF0f7CaaBEa4e120a2568118f141569fc8aa",
+          "maxTimeoutSeconds": 120,
+          "extra": {
+            "assetTransferMethod": "eip3009",
+            "name": "USD Coin",
+            "version": "2",
+            "facilitatorOnly": true
+          }
+        },
+        {
+          "network": "eip155:137",
+          "scheme": "exact",
+          "amount": "10000",
+          "asset": "0x3c499c542cEF5E3811e1192ce70d8cC03d5c3359",
+          "payTo": "0xA2A8dF0f7CaaBEa4e120a2568118f141569fc8aa",
+          "maxTimeoutSeconds": 120,
+          "extra": {
+            "assetTransferMethod": "eip3009",
+            "name": "USD Coin",
+            "version": "2",
+            "facilitatorOnly": true
+          }
+        },
+        {
+          "network": "eip155:42161",
+          "scheme": "exact",
+          "amount": "10000",
+          "asset": "0xaf88d065e77c8cC2239327C5EDb3A432268e5831",
+          "payTo": "0xA2A8dF0f7CaaBEa4e120a2568118f141569fc8aa",
+          "maxTimeoutSeconds": 120,
+          "extra": {
+            "assetTransferMethod": "eip3009",
+            "name": "USD Coin",
+            "version": "2",
+            "facilitatorOnly": true
+          }
+        }
+      ],
+      "extensions": {
+        "bazaar": {
+          "info": {
+            "input": {
+              "type": "http",
+              "method": "GET",
+              "discoverable": true,
+              "exampleUrl": "https://saylorinnovations.com/api/docs/npm/zod?q=safeParse"
+            },
+            "output": {
+              "type": "json"
+            }
+          },
+          "canonicalResource": "https://saylorinnovations.com/api/docs/{ecosystem}/{package}"
+        }
+      }
+    },
+    {
+      "url": "https://saylorinnovations.com/api/evm/ethereum/block/latest",
+      "serviceName": "Saylor Innovations On-Chain Lookup",
+      "description": "Ethereum block by number or latest: hash, time, tx count and first 100 tx hashes, gas used/limit, base fee, miner.",
+      "type": "http",
+      "x402Version": 2,
+      "tags": [
+        "evm",
+        "ethereum",
+        "block",
+        "onchain"
+      ],
+      "accepts": [
+        {
+          "network": "solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp",
+          "scheme": "exact",
+          "amount": "10000",
+          "asset": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+          "payTo": "7LSjfrJf8fNsB8VA9u7N3WEn25smQLpob3SvyUvXacy7",
+          "maxTimeoutSeconds": 120
+        },
+        {
+          "network": "solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp",
+          "scheme": "exact",
+          "amount": "10000",
+          "asset": "Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB",
+          "payTo": "7LSjfrJf8fNsB8VA9u7N3WEn25smQLpob3SvyUvXacy7",
+          "maxTimeoutSeconds": 120
+        },
+        {
+          "network": "eip155:8453",
+          "scheme": "exact",
+          "amount": "10000",
+          "asset": "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
+          "payTo": "0xA2A8dF0f7CaaBEa4e120a2568118f141569fc8aa",
+          "maxTimeoutSeconds": 120,
+          "extra": {
+            "assetTransferMethod": "eip3009",
+            "name": "USD Coin",
+            "version": "2",
+            "facilitatorOnly": true
+          }
+        },
+        {
+          "network": "eip155:137",
+          "scheme": "exact",
+          "amount": "10000",
+          "asset": "0x3c499c542cEF5E3811e1192ce70d8cC03d5c3359",
+          "payTo": "0xA2A8dF0f7CaaBEa4e120a2568118f141569fc8aa",
+          "maxTimeoutSeconds": 120,
+          "extra": {
+            "assetTransferMethod": "eip3009",
+            "name": "USD Coin",
+            "version": "2",
+            "facilitatorOnly": true
+          }
+        },
+        {
+          "network": "eip155:42161",
+          "scheme": "exact",
+          "amount": "10000",
+          "asset": "0xaf88d065e77c8cC2239327C5EDb3A432268e5831",
+          "payTo": "0xA2A8dF0f7CaaBEa4e120a2568118f141569fc8aa",
+          "maxTimeoutSeconds": 120,
+          "extra": {
+            "assetTransferMethod": "eip3009",
+            "name": "USD Coin",
+            "version": "2",
+            "facilitatorOnly": true
+          }
+        }
+      ],
+      "extensions": {
+        "bazaar": {
+          "info": {
+            "input": {
+              "type": "http",
+              "method": "GET",
+              "discoverable": true,
+              "exampleUrl": "https://saylorinnovations.com/api/evm/ethereum/block/latest"
+            },
+            "output": {
+              "type": "json"
+            }
+          },
+          "canonicalResource": "https://saylorinnovations.com/api/evm/ethereum/block/{number}"
         }
       }
     }

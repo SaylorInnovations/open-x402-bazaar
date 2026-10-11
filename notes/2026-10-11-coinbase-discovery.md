@@ -52,7 +52,30 @@ The endpoints that got real Coinbase activity had these traits:
 - Fallback Saylor records now include top-level `serviceName`.
 - Fallback Saylor records now include `extensions.bazaar.info.input` with `type`, `method`, and `discoverable`.
 - DB-backed records now include the same callable URL normalization, `serviceName`, and `extensions.bazaar` shape.
-- Agent Bazaar's own `/.well-known/x402.json` now seeds three high-performing payable resources instead of advertising an empty `resources[]`.
+- Agent Bazaar's own `/.well-known/x402.json` now seeds high-performing payable resources instead of advertising an empty `resources[]`.
+- Follow-up expansion added 17 Coinbase-facing Saylor resources sourced from the live Saylor manifest's real `accepts[]`.
+
+## Seeded In Agent Bazaar Manifest
+
+These are now present in `public/.well-known/x402.json` as payable resources:
+
+- `https://saylorinnovations.com/api/token-price/solana/:solana_address`
+- `https://saylorinnovations.com/api/stocks/quote/:symbol`
+- `https://saylorinnovations.com/api/python/report?name=:name`
+- `https://saylorinnovations.com/api/data/country?country=:country`
+- `https://saylorinnovations.com/api/data/economy?country=:country`
+- `https://saylorinnovations.com/api/data/exchange-rates?base=:base`
+- `https://saylorinnovations.com/api/package/report?name=:name`
+- `https://saylorinnovations.com/api/package/search?q=:q`
+- `https://saylorinnovations.com/api/research/doi?doi=:doi`
+- `https://saylorinnovations.com/api/research/search?q=:q`
+- `https://saylorinnovations.com/api/security/cve?cve=:cve`
+- `https://saylorinnovations.com/api/games/deals`
+- `https://saylorinnovations.com/api/aircraft/military`
+- `https://saylorinnovations.com/api/market/bestsellers`
+- `https://saylorinnovations.com/api/security/:mint`
+- `https://saylorinnovations.com/api/docs/pypi/fastapi`
+- `https://saylorinnovations.com/api/evm/ethereum/block/latest`
 
 ## Follow-Ups
 
