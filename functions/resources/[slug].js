@@ -58,7 +58,7 @@ function renderHtml(r) {
 <div class="wrap detail">
   <div>
     ${isDown ? `<div class="warnbox" role="alert"><b>Not responding.</b> This endpoint did not answer its last liveness check (${escapeHtml(fmtDate(r.liveness.lastCheckedAt))}). It may be temporarily down.</div>` : ''}
-    ${!verified ? `<p class="note">Mirrored from Coinbase's public x402 Bazaar. The description is the provider's own text and has not been reviewed here; the payment requirements are a discovery snapshot. Always fetch the endpoint's live <code>402</code> before paying.</p>` : ''}
+    ${!verified ? `<p class="note">Mirrored from Coinbase's public x402 Bazaar. The description is the provider's own text and has not been reviewed here; the payment requirements are copied as published.</p>` : ''}
 
     <nav class="anchors" aria-label="On this page">
       <a href="#overview">Overview</a><a href="#use">Use with an agent</a><a href="#pricing">Pricing &amp; payment</a>${r.outputSchema ? '<a href="#schemas">Schemas</a>' : ''}<a href="#examples">Examples</a><a href="#details">Details</a>
@@ -79,8 +79,8 @@ function renderHtml(r) {
       <h2>Use with an agent</h2>
       <ol class="list-check">
         <li><b>Discover.</b> Agents find this listing with <code>GET ${SITE}/discovery/search?query=…</code>, the MCP tool <code>search_resources</code>, or <code>/discovery/resources</code>.</li>
-        <li><b>Inspect.</b> Fetch <a href="/resources/${slug}.json"><code>/resources/${slug}.json</code></a> for listed payment options and schema.</li>
-        <li><b>Pay.</b> Call <code>GET ${escapeHtml(r.resource)}</code> unpaid first. The provider answers <code>402</code> with the live payment requirements. An x402 client signs one of the live options and retries with <code>PAYMENT-SIGNATURE</code>.</li>
+        <li><b>Inspect.</b> Fetch <a href="/resources/${slug}.json"><code>/resources/${slug}.json</code></a> for the price and payment options.</li>
+        <li><b>Pay.</b> Call <code>GET ${escapeHtml(r.resource)}</code>. The provider answers <code>402</code> with its payment requirements. An x402 client signs one of the options below and retries with <code>PAYMENT-SIGNATURE</code>.</li>
         <li><b>Execute.</b> The provider returns <code>200</code> with the data. Agent Bazaar is not in the request path and never sees your payment.</li>
       </ol>
       <h3>For humans</h3>
@@ -90,7 +90,7 @@ function renderHtml(r) {
     <section class="block" id="pricing">
       <h2>Pricing &amp; payment</h2>
       <dl class="kv">
-        <dt>Catalog quote</dt><dd>${escapeHtml(price.main)}${price.unit ? ' ' + escapeHtml(price.unit) : ''} <span class="muted xs">live 402 wins</span></dd>
+        <dt>Price</dt><dd>${escapeHtml(price.main)}${price.unit ? ' ' + escapeHtml(price.unit) : ''}</dd>
         <dt>Protocol</dt><dd>x402 v${escapeHtml(r.x402Version || 2)}</dd>
         <dt>Auth</dt><dd>No account or API key. Pay per request.</dd>
         <dt>Networks</dt><dd>${escapeHtml(nets.join(', ') || '—')}</dd>
@@ -98,7 +98,6 @@ function renderHtml(r) {
         ${r.quality?.calls30d ? `<dt>Calls (30d)</dt><dd>${fmtNum(r.quality.calls30d)} · ${fmtNum(r.quality.uniquePayers30d)} unique payers <span class="muted xs">(third-party data from the public x402 Bazaar)</span></dd>` : ''}
       </dl>
       <h3>x402 payment requirements</h3>
-      <p class="small muted">These are the catalog's listed payment options. Coinbase Bazaar listings and provider manifests can drift; the endpoint's live unpaid <code>402</code> response is the source of truth before payment.</p>
       <div class="tscroll"><table><thead><tr><th>Scheme</th><th>Network</th><th>Asset</th><th>Amount</th><th>Pay to</th><th>Timeout</th></tr></thead><tbody>${rowsHtml}</tbody></table></div>
       <details class="schema"><summary>accepts[] (raw JSON)</summary><pre><code>${escapeHtml(JSON.stringify(r.accepts, null, 2))}</code></pre></details>
     </section>

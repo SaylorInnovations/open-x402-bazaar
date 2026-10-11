@@ -18,147 +18,11 @@ const KNOWN_USD_STABLECOINS = new Set([
   '0x3c499c542cEF5E3811e1192ce70d8cC03d5c3359', // Polygon (native) USDC
   '0xaf88d065e77c8cC2239327C5EDb3A432268e5831', // Arbitrum USDC
 ]);
-const MIN_USD_BASE_UNITS = 10000;
-const MIN_USD_AMOUNT = 0.01;
 
 function computedAmountUsd(asset, amount) {
   if (!asset || !amount || !KNOWN_USD_STABLECOINS.has(asset)) return undefined;
   const n = Number(amount);
   return Number.isFinite(n) ? n / 1e6 : undefined;
-}
-
-function normalizeAcceptAmount(asset, amount, amountUsd) {
-  const out = { amount: amount || undefined, amountUsd };
-  const numericAmount = Number(amount);
-  if (Number.isFinite(numericAmount) && numericAmount > 0 && numericAmount < MIN_USD_BASE_UNITS) {
-    out.amount = String(MIN_USD_BASE_UNITS);
-  }
-
-  const computedUsd = amountUsd ?? computedAmountUsd(asset, out.amount);
-  const numericUsd = Number(computedUsd);
-  if (Number.isFinite(numericUsd) && numericUsd > 0 && numericUsd < MIN_USD_AMOUNT) {
-    out.amountUsd = MIN_USD_AMOUNT;
-  } else {
-    out.amountUsd = computedUsd;
-  }
-  return out;
-}
-
-function callableUrl(url) {
-  return String(url || '').replace(/\{([^}]+)\}/g, ':$1');
-}
-
-const PARAM_HINTS = {
-  address: 'Blockchain wallet or account address.',
-  base: 'Base currency or asset code, for example USD.',
-  chain: 'Blockchain network name or chain identifier.',
-  country: 'Country name or ISO country code.',
-  cve: 'CVE identifier, for example CVE-2021-44228.',
-  doi: 'Digital Object Identifier.',
-  mint: 'Solana SPL token mint address.',
-  name: 'Package, project, or entity name.',
-  number: 'Block number or the literal latest when supported.',
-  package: 'Package name.',
-  q: 'Search query.',
-  query: 'Search query.',
-  slug: 'Resource or content slug.',
-  symbol: 'Ticker or asset symbol.',
-};
-
-function paramHint(name, required, kind) {
-  const base = PARAM_HINTS[name] || `${kind === 'query' ? 'Query' : 'Path'} parameter.`;
-  return `${required ? 'Required' : 'Optional'} ${name}: ${base}`;
-}
-
-function paramsFromUrl(url, exampleUrl) {
-  const params = {};
-  for (const name of String(url).matchAll(/\{([^}]+)\}/g)) {
-    params[name[1]] = paramHint(name[1], true, 'path');
-  }
-  for (const name of String(url).matchAll(/[?&]([^=&#]+)=\{([^}]+)\}/g)) {
-    params[name[1]] = paramHint(name[1], true, 'query');
-  }
-  if (exampleUrl) {
-    try {
-      for (const [key] of new URL(exampleUrl).searchParams) {
-        if (!params[key]) params[key] = paramHint(key, false, 'query');
-      }
-    } catch {}
-  }
-  return params;
-}
-
-function inferredOutputSchema(row, metadata) {
-  const type = String(row.resource_type || '').toLowerCase();
-  if (type === 'guide') {
-    return {
-      type: 'object',
-      additionalProperties: true,
-      properties: {
-        title: { type: 'string' },
-        summary: { type: 'string' },
-        content: { type: 'string' },
-        sections: { type: 'array', items: { type: 'object' } },
-        updatedAt: { type: 'string' },
-      },
-    };
-  }
-  return {
-    type: 'object',
-    additionalProperties: true,
-    properties: {
-      ok: { type: 'boolean' },
-      data: { description: 'Primary JSON payload for this endpoint.' },
-      source: { type: 'string' },
-      updatedAt: { type: 'string' },
-      error: { type: 'string' },
-    },
-  };
-}
-
-function serviceNameFor(row, metadata) {
-  if (metadata?.name) return metadata.name;
-  if (metadata?.serviceName) return metadata.serviceName;
-  if (row.listing_host !== 'saylorinnovations.com') return row.listing_host;
-  try {
-    const path = decodeURIComponent(new URL(row.resource_url).pathname).replace(/^\/api\//, '').replace(/[{}]/g, '');
-    return path ? `Saylor ${path.split('/').filter(Boolean).join(' ')}` : row.listing_host;
-  } catch {
-    return row.listing_host;
-  }
-}
-
-function discoveryExtensions(row, resourceUrl, metadata, outputSchema) {
-  const method = String(metadata?.method || 'GET').toUpperCase();
-  const parameters = paramsFromUrl(row.resource_url, metadata?.exampleUrl);
-  const info = {
-    input: {
-      type: 'http',
-      method,
-      discoverable: true,
-      ...(Object.keys(parameters).length ? { parameters } : {}),
-    },
-    output: {
-      type: 'json',
-      schema: outputSchema,
-    },
-  };
-  if (metadata?.exampleUrl) info.input.exampleUrl = metadata.exampleUrl;
-  if (metadata?.outputExample) info.output.example = metadata.outputExample;
-
-  return {
-    bazaar: {
-      info,
-      schema: {
-        type: 'object',
-        properties: {
-          output: outputSchema,
-        },
-      },
-      canonicalResource: row.resource_url,
-      callableResource: resourceUrl,
-    },
-  };
 }
 
 // FTS5 gives special meaning to quotes, *, -, NEAR, AND/OR/NOT etc. Wrapping every
@@ -196,76 +60,57 @@ async function attachAccepts(env, rows) {
 
   const byResource = {};
   for (const a of acceptsRows) {
-    const normalized = normalizeAcceptAmount(a.asset, a.amount, a.amount_usd ?? computedAmountUsd(a.asset, a.amount));
     (byResource[a.resource_id] ||= []).push({
       scheme: a.scheme,
       network: a.network,
       payTo: a.pay_to,
       asset: a.asset || undefined,
-      amount: normalized.amount,
-      amountUsd: normalized.amountUsd,
+      amount: a.amount || undefined,
+      amountUsd: a.amount_usd ?? computedAmountUsd(a.asset, a.amount),
       maxTimeoutSeconds: a.max_timeout_seconds ?? undefined,
     });
   }
 
-  return rows.map((r) => {
-    const metadata = r.metadata ? JSON.parse(r.metadata) : undefined;
-    const outputSchema = r.output_schema ? JSON.parse(r.output_schema) : inferredOutputSchema(r, metadata);
-    const resource = callableUrl(r.resource_url);
-    const serviceName = serviceNameFor(r, metadata);
-    return {
-      id: r.id,
-      slug: r.slug || String(r.id),
-      resource,
-      serviceName,
-      description: r.description,
-      type: 'http',
-      resourceType: r.resource_type || undefined,
-      x402Version: r.x402_version,
-      accepts: byResource[r.id] || [],
-      outputSchema,
-      tags: JSON.parse(r.tags || '[]'),
-      sourceHost: r.listing_host,
-      lastUpdated: r.last_updated,
-      extensions: discoveryExtensions(r, resource, metadata, outputSchema),
+  return rows.map((r) => ({
+    id: r.id,
+    slug: r.slug || String(r.id),
+    resource: r.resource_url,
+    description: r.description,
+    type: 'http',
+    resourceType: r.resource_type || undefined,
+    x402Version: r.x402_version,
+    accepts: byResource[r.id] || [],
+    outputSchema: r.output_schema ? JSON.parse(r.output_schema) : undefined,
+    tags: JSON.parse(r.tags || '[]'),
+    sourceHost: r.listing_host,
+    lastUpdated: r.last_updated,
     // Extra fields beyond CDP's wire shape — additive, so existing clients that only
     // read the standard fields are unaffected. Trust/popularity signal for agents
     // choosing between many permissionless (unverified) listings.
-      quality: {
-        calls30d: r.calls_30d ?? undefined,
-        uniquePayers30d: r.unique_payers_30d ?? undefined,
-        lastCalledAt: r.last_called_at ?? undefined,
-        l30DaysTotalCalls: r.calls_30d ?? undefined,
-        l30DaysUniquePayers: r.unique_payers_30d ?? undefined,
-      },
-    // Agent-first fields. Preserve provider-supplied metadata, then fill conservative
-    // read-only defaults so discovery clients can still reason about sparse records.
-      metadata: {
-        ...(metadata || {}),
-        capabilities: metadata?.capabilities || [r.description || serviceName],
-        useWhen: metadata?.useWhen || 'Use when an agent needs fresh external data that should be fetched from the source instead of guessed by a language model.',
-        doNotUseWhen: metadata?.doNotUseWhen || 'Do not use as sole authority for regulated professional advice, safety-critical action, trade execution, or irreversible decisions without independent verification.',
-        sideEffects: metadata?.sideEffects || 'none',
-        permissions: metadata?.permissions || ['Read-only endpoint. No account or API key; send an x402 payment proof for paid calls.'],
-        canonicalResource: r.resource_url,
-        callableResource: resource,
-      },
+    quality: {
+      calls30d: r.calls_30d ?? undefined,
+      uniquePayers30d: r.unique_payers_30d ?? undefined,
+      lastCalledAt: r.last_called_at ?? undefined,
+    },
+    // Agent-first fields (capabilities/useWhen/doNotUseWhen/sideEffects/permissions/
+    // license/repository/documentation/examples), only present when a provider
+    // actually supplied them — never fabricated for mirrored resources.
+    metadata: r.metadata ? JSON.parse(r.metadata) : undefined,
     // Liveness: null/undefined = never checked (not the same as "down"). Only
     // owner-submitted resources are probed — see scripts/check-liveness.mjs.
-      liveness: {
-        isLive: r.is_live === null || r.is_live === undefined ? undefined : Boolean(r.is_live),
-        lastCheckedAt: r.last_checked_at ?? undefined,
+    liveness: {
+      isLive: r.is_live === null || r.is_live === undefined ? undefined : Boolean(r.is_live),
+      lastCheckedAt: r.last_checked_at ?? undefined,
       // Rolling reliability over the last N liveness checks (N capped at 10 by
       // scripts/check-liveness.mjs) — null when never checked, not the same as 0/10.
-        reliability: r.reliability_checks ? { checks: r.reliability_checks, live: r.reliability_live } : null,
-      },
+      reliability: r.reliability_checks ? { checks: r.reliability_checks, live: r.reliability_live } : null,
+    },
     // true only when the provider proved control via POST /submit — never inferred
     // from hostname or any other heuristic.
-      verified: r.listing_source === 'submitted',
+    verified: r.listing_source === 'submitted',
     // Paid placement, not a quality signal — see functions/feature.js.
-      featured: Boolean(r.featured_until && r.featured_until > new Date().toISOString()),
-    };
-  });
+    featured: Boolean(r.featured_until && r.featured_until > new Date().toISOString()),
+  }));
 }
 
 // Recomputes the catalog_stats cache row from a real (expensive) full scan. Only
@@ -353,14 +198,13 @@ async function upsertListing(env, { host, sourceManifestUrl, manifestName, submi
   const acceptStmts = [];
   resources.forEach((r, i) => {
     for (const a of r.accepts) {
-      const normalized = normalizeAcceptAmount(a.asset, a.amount, a.amountUsd);
       acceptStmts.push(
         env.DB
           .prepare(
             `INSERT INTO resource_accepts (resource_id, scheme, network, pay_to, asset, amount, amount_usd, max_timeout_seconds)
              VALUES (?, ?, ?, ?, ?, ?, ?, ?)`
           )
-          .bind(resourceIds[i], a.scheme, a.network, a.payTo, a.asset || null, normalized.amount || null, normalized.amountUsd ?? null, a.maxTimeoutSeconds ?? null)
+          .bind(resourceIds[i], a.scheme, a.network, a.payTo, a.asset || null, a.amount || null, a.amountUsd ?? null, a.maxTimeoutSeconds ?? null)
       );
     }
   });
