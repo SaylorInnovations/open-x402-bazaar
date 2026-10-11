@@ -54,7 +54,7 @@ const GUIDES = [
     description: 'The full picture of x402: where the HTTP 402 status code came from, exactly what happens on the wire during a payment, the scheme and network model, and how it compares to the alternatives.',
     category: 'Protocols',
     readMins: 12,
-    related: ['how-do-ai-agents-pay-for-apis', 'how-to-build-an-x402-endpoint', 'x402-vs-api-keys'],
+    related: ['how-do-ai-agents-pay-for-apis', 'x402-manifest-checklist', 'how-to-build-an-x402-endpoint'],
     body: `
 <p><strong>x402</strong> is an open protocol that turns the long-dormant HTTP <code>402 Payment Required</code> status code into a working machine-payment handshake: a server can tell a client exactly how to pay for a resource, in the response itself, and the client can pay and retry in the same exchange. No account creation, no stored card, no API key — payment <em>is</em> the authentication.</p>
 
@@ -118,7 +118,7 @@ const GUIDES = [
     description: 'Working JavaScript and Python code for handling an x402 402 response end to end: detecting it, picking a payment option, settling it, and retrying — plus the mistakes that trip up a first implementation.',
     category: 'For Agent Builders',
     readMins: 11,
-    related: ['what-is-x402', 'how-to-build-an-x402-endpoint', 'x402-vs-api-keys'],
+    related: ['what-is-x402', 'troubleshooting-x402-payments', 'how-to-build-an-x402-endpoint'],
     body: `
 <p>This is the practical companion to <a href="/guides/what-is-x402">What Is x402?</a> — actual code for the client side: catching a 402, choosing how to pay, settling it, and retrying successfully.</p>
 
@@ -175,8 +175,8 @@ def call_x402_resource(url: str, wallet) -> httpx.Response:
 <ul>
 <li><strong>The quote expires.</strong> <code>maxTimeoutSeconds</code> means the amount and any embedded reference are only valid for that long. If your agent evaluates a bunch of options before deciding, re-fetch the 402 right before paying rather than using a stale quote.</li>
 <li><strong>Retry once, not in a loop.</strong> A second 402 after you paid usually means the payment didn't verify (wrong amount, wrong network, expired quote) — not that you should keep retrying the same broken payment. Surface the error.</li>
-<li><strong>Pick the cheapest viable option, not the first one.</strong> Multi-network resources often list the same USD price across several chains; if your wallet holds funds on more than one, compare actual gas/settlement cost, not just the listed amount.</li>
-<li><strong>Budget checks belong before the request, not after.</strong> If your agent has a per-task spending limit, check the resource's price via <a href="/resources/solana-token-security-intelligence.json">the JSON record</a> or an MCP <code>get_pricing</code> call before making the first request at all — don't rely on catching the 402 as your only price discovery.</li>
+<li><strong>Pick the cheapest viable option, not the first one.</strong> Multi-network resources may list similar USD quotes across several chains; if your wallet holds funds on more than one, compare actual gas/settlement cost, not just the catalog amount.</li>
+<li><strong>Budget checks belong before payment, not after.</strong> If your agent has a per-task spending limit, use the JSON record or an MCP <code>get_pricing</code> call for discovery, then fetch the endpoint's live unpaid <code>402</code> immediately before paying. The live 402 is authoritative.</li>
 </ul>
 
 <h2>Using the MCP tool instead of raw HTTP</h2>
@@ -290,7 +290,7 @@ server -> client: { content: [...] }  (or isError: true)</pre></div>
 <p>What's left is trust built from things a machine <em>can</em> check: has this provider proven control of this listing (Agent Bazaar's <code>verified</code> flag), does this endpoint actually respond (the <a href="/guides/how-do-agents-discover-apis">liveness checks</a> covered elsewhere), and how much real usage does it have (the <code>quality</code> object's call volume — a much harder signal to fake at scale than a written review). None of these are perfect. All of them are at least mechanically verifiable without a human in the loop, which is the actual bar agentic commerce infrastructure has to clear.</p>
 
 <h2>Pricing without negotiation</h2>
-<p>Most agentic commerce today is fixed-price, not because negotiation is impossible in principle but because negotiation requires a shared protocol for making and evaluating offers — infrastructure that doesn't broadly exist yet. Fixed, machine-readable pricing (an x402 <code>accepts[]</code> entry, an OpenAPI-documented rate) is the version that works today: an agent reads a price, compares it to a budget, and decides yes or no. That's a much lower bar than negotiation, and it's sufficient for the overwhelming majority of pay-per-request API and data use cases — which is most of what agentic commerce looks like in practice right now.</p>
+<p>Most agentic commerce today is quote-based pay-per-call, not negotiated in real time. The practical flow is: a catalog helps the agent discover a likely resource, the agent fetches the endpoint's live unpaid <code>402</code>, reads the current <code>accepts[]</code> options, compares them to a budget, and decides yes or no. The catalog is for discovery and comparison; the live 402 is the source of truth before payment.</p>
 
 <h2>Why this needs a marketplace, not just a protocol</h2>
 <p>x402 solves the payment mechanics. It doesn't solve the prior question: <em>which</em> endpoint should an agent even consider paying? Agentic commerce at any scale needs a discovery layer connecting "an agent has a task" to "here is a priced, payable resource that helps with it" — which is the actual job description of <a href="/guides/what-is-an-ai-agent-marketplace">an AI agent marketplace</a>. Payment infrastructure and discovery infrastructure are both necessary; neither is sufficient alone.</p>
@@ -443,7 +443,7 @@ server -> client: { content: [...] }  (or isError: true)</pre></div>
     description: 'A complete, working walkthrough of building an x402-payable API endpoint on Cloudflare Workers: the 402 response, verifying payment, and the manifest that makes it discoverable.',
     category: 'For Providers',
     readMins: 13,
-    related: ['how-do-ai-agents-pay-for-apis', 'how-to-sell-an-api-to-ai-agents', 'what-is-x402'],
+    related: ['x402-manifest-checklist', 'troubleshooting-x402-payments', 'how-do-ai-agents-pay-for-apis'],
     body: `
 <p>This walks through building a real x402 endpoint from nothing — the payment-required response, verifying a payment, and the manifest that makes it discoverable. The example targets Cloudflare Workers (matching Agent Bazaar's own stack), but the logic translates directly to any HTTP framework.</p>
 
@@ -528,6 +528,167 @@ function paymentRequiredResponse() {
 <p>Verify the unpaid path first (confirm you get a well-formed 402 with valid <code>accepts[]</code>) using a plain <code>curl</code> — no wallet needed:</p>
 <div class="codeblock"><pre>curl -i https://yourapi.com/api/security-report</pre></div>
 <p>Then test the full paid round trip with a small real payment before listing publicly. See <a href="/guides/how-to-sell-an-api-to-ai-agents">How to Sell an API to AI Agents</a> for pricing and description guidance once it's live.</p>
+`,
+  },
+
+  {
+    slug: 'x402-manifest-checklist',
+    title: 'x402 Manifest Checklist: Make Your API Discoverable',
+    description: 'A practical pre-publish checklist for x402 manifests: required fields, accepts[] hygiene, pricing clarity, schemas, liveness, and the details agents rely on when choosing a payable API.',
+    category: 'For Providers',
+    readMins: 10,
+    related: ['how-to-build-an-x402-endpoint', 'how-to-sell-an-api-to-ai-agents', 'troubleshooting-x402-payments'],
+    body: `
+<p>A working x402 endpoint is only half the job. If agents cannot discover, quote, and evaluate it reliably, it might as well be a private URL. Your manifest is the bridge between "this endpoint accepts payment" and "an autonomous client can safely decide whether to fetch the live 402 and use it."</p>
+
+<h2>The short version</h2>
+<p>Before submitting a manifest to Agent Bazaar, make sure it passes this minimum bar:</p>
+<ul>
+<li><strong>Public HTTPS URL.</strong> Host it at a stable URL, ideally <code>/.well-known/x402.json</code>. It must be fetchable without cookies, JavaScript, auth headers, or IP allowlists.</li>
+<li><strong>Top-level <code>x402Version</code>.</strong> Include the protocol version once at the top level. Agent Bazaar currently expects the modern resource-list shape with <code>x402Version: 2</code>.</li>
+<li><strong>At least one resource.</strong> Empty manifests are ignored. Every listed resource should correspond to a real payable endpoint.</li>
+<li><strong>Every resource has <code>url</code>, <code>description</code>, and <code>accepts[]</code>.</strong> A URL tells the agent where to call, the description tells it when to call, and <code>accepts[]</code> tells it how to pay.</li>
+<li><strong>Amounts are base units.</strong> For 6-decimal USDC, <code>"10000"</code> means 0.01 USDC, not 10,000 USDC.</li>
+<li><strong>Output schema is present when possible.</strong> Agents trust a resource faster when they know the shape of the response before spending.</li>
+</ul>
+
+<h2>A clean minimal manifest</h2>
+<div class="codeblock"><pre>{
+  "x402Version": 2,
+  "resources": [
+    {
+      "url": "https://api.example.com/v1/token-risk?mint={mint}",
+      "description": "Returns a token risk report with authority, liquidity, holder concentration and risk score.",
+      "accepts": [
+        {
+          "scheme": "exact",
+          "network": "eip155:8453",
+          "payTo": "0xYourBaseWallet",
+          "asset": "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
+          "amount": "10000",
+          "maxTimeoutSeconds": 120
+        }
+      ],
+      "outputSchema": {
+        "type": "object",
+        "required": ["risk_score", "summary"],
+        "properties": {
+          "risk_score": { "type": "number" },
+          "summary": { "type": "string" },
+          "warnings": { "type": "array", "items": { "type": "string" } }
+        }
+      },
+      "tags": ["solana", "token-risk", "security"]
+    }
+  ]
+}</pre></div>
+
+<h2><code>accepts[]</code> hygiene</h2>
+<p>The <code>accepts[]</code> array is where most bad listings break. Treat every row as a quote an agent might execute exactly as written.</p>
+<table>
+<tr><th>Field</th><th>Checklist</th></tr>
+<tr><td><code>scheme</code></td><td>Use a scheme your server actually verifies. If you only support exact payment, say <code>exact</code> and do not advertise anything else.</td></tr>
+<tr><td><code>network</code></td><td>Use a precise chain id. <code>eip155:8453</code> means Base; <code>eip155:1</code> means Ethereum mainnet. Do not write informal names like <code>base</code>.</td></tr>
+<tr><td><code>payTo</code></td><td>Use the wallet for that network. A Solana address and an EVM address are not interchangeable.</td></tr>
+<tr><td><code>asset</code></td><td>Use the exact token address or mint. If you accept USDC on multiple networks, each network gets its own asset value.</td></tr>
+<tr><td><code>amount</code></td><td>Use a string in base units. This avoids float rounding and keeps the value precise across languages.</td></tr>
+<tr><td><code>maxTimeoutSeconds</code></td><td>Set a realistic validity window. Short enough that stale quotes do not linger, long enough that a wallet can settle.</td></tr>
+</table>
+
+<h2>Descriptions agents can use</h2>
+<p>A good description is not marketing copy. It should tell the agent when the resource is useful, what input it expects, and what output it returns. Compare:</p>
+<table>
+<tr><th>Weak</th><th>Better</th></tr>
+<tr><td>"Best token API."</td><td>"Returns Solana token risk data for one mint address: mint authority, freeze authority, liquidity status, holder concentration, and numeric risk score."</td></tr>
+<tr><td>"AI search endpoint."</td><td>"Searches public webpages for a query and returns ranked results with title, URL, snippet, and crawl timestamp."</td></tr>
+</table>
+
+<h2>Schema discipline</h2>
+<p>If your response is JSON, publish an <code>outputSchema</code>. It helps agents plan the next step after payment: parse a score, call another tool, summarize a report, or stop because the resource does not return the field they need. Keep schemas honest. A small accurate schema beats an impressive one that does not match reality.</p>
+
+<h2>Pre-submit test</h2>
+<p>Run these checks before listing:</p>
+<div class="codeblock"><pre># Manifest is public and JSON
+curl -i https://api.example.com/.well-known/x402.json
+
+# Endpoint returns a structured 402 when unpaid
+curl -i "https://api.example.com/v1/token-risk?mint=..."
+
+# Submit or refresh the listing
+curl -X POST https://bazaar.saylorinnovations.com/submit \\
+  -H "content-type: application/json" \\
+  -d '{"manifestUrl":"https://api.example.com/.well-known/x402.json"}'</pre></div>
+
+<h2>When to re-submit</h2>
+<p>Re-submit whenever the manifest changes: price, wallet address, network, resource URL, schema, tags, or description. Agent Bazaar treats a verified direct submission as the provider's current source of truth, so refreshing is cheap and intentional.</p>
+`,
+  },
+
+  {
+    slug: 'troubleshooting-x402-payments',
+    title: 'Troubleshooting x402 Payments',
+    description: 'A field guide for debugging x402 integrations: malformed 402 responses, wrong asset decimals, stale quotes, repeated 402s after payment, CORS, facilitator failures, and manifest listing issues.',
+    category: 'For Providers',
+    readMins: 11,
+    related: ['how-to-build-an-x402-endpoint', 'how-do-ai-agents-pay-for-apis', 'x402-manifest-checklist'],
+    body: `
+<p>Most x402 bugs are not mysterious blockchain bugs. They are usually one of a handful of mismatches: the server quoted one thing and verified another, the client paid on the wrong network, the manifest advertised stale data, or the payment proof expired before the retry.</p>
+
+<h2>Start with the unpaid response</h2>
+<p>Before testing wallets, facilitators, or settlement, confirm your endpoint returns a clean <code>402</code> with JSON an agent can parse:</p>
+<div class="codeblock"><pre>curl -i https://api.example.com/paid-resource</pre></div>
+<p>You should see <code>HTTP/1.1 402 Payment Required</code>, <code>content-type: application/json</code>, <code>x402Version</code>, and at least one valid <code>accepts[]</code> entry. If that part is wrong, payment cannot work reliably no matter how good the client is.</p>
+
+<h2>Common failure modes</h2>
+<table>
+<tr><th>Symptom</th><th>Likely cause</th><th>Fix</th></tr>
+<tr><td>Client never sees a payable option</td><td><code>accepts[]</code> is missing, empty, or uses informal network names</td><td>Return a real array with exact chain ids such as <code>eip155:8453</code>.</td></tr>
+<tr><td>Payment succeeds on-chain, but retry still returns 402</td><td>Server verifies against a different <code>payTo</code>, asset, amount, or request reference than the quote</td><td>Log the quoted requirements and the verification requirements side by side; they must match exactly.</td></tr>
+<tr><td>Amount looks wildly too high or too low</td><td>Decimal confusion</td><td>Use base units as strings. For 6-decimal USDC, 0.01 USDC is <code>"10000"</code>.</td></tr>
+<tr><td>Works locally, fails from browser clients</td><td>CORS does not allow payment headers</td><td>Allow the header your client uses, commonly <code>PAYMENT-SIGNATURE</code> or <code>PAYMENT</code>, and expose useful response headers.</td></tr>
+<tr><td>Works once, then replay attempts fail</td><td>Correct behavior: proof is single-use</td><td>Do not reuse a proof across requests. Pay again or use an explicit batching scheme if your protocol supports it.</td></tr>
+<tr><td>Quote worked a minute ago, then fails</td><td><code>maxTimeoutSeconds</code> expired</td><td>Re-fetch the 402 immediately before paying, especially in agents that deliberate across multiple resources.</td></tr>
+<tr><td>Agent Bazaar listing does not update</td><td>Manifest was changed but not re-submitted, or the URL is not publicly fetchable</td><td>Fetch the manifest with plain <code>curl</code>, then re-submit with <code>POST /submit</code>.</td></tr>
+</table>
+
+<h2>Debug the retry as a separate request</h2>
+<p>Treat the paid retry as its own HTTP request with its own logs. For each failed retry, log:</p>
+<ul>
+<li>Request URL and method.</li>
+<li>The payment header name that was present, without logging the full secret/proof in public logs.</li>
+<li>The quoted <code>network</code>, <code>asset</code>, <code>payTo</code>, and <code>amount</code>.</li>
+<li>The verified <code>network</code>, <code>asset</code>, <code>payTo</code>, and <code>amount</code> extracted from the proof or facilitator response.</li>
+<li>Whether the quote/reference was expired or already used.</li>
+</ul>
+<p>That single comparison usually points straight at the mismatch.</p>
+
+<h2>CORS checklist for browser-based clients</h2>
+<p>Server-to-server agents rarely care about CORS, but browser clients do. If you expect web wallets or browser demos to call your endpoint, include the payment header in preflight handling:</p>
+<div class="codeblock"><pre>Access-Control-Allow-Origin: *
+Access-Control-Allow-Methods: GET, POST, OPTIONS
+Access-Control-Allow-Headers: content-type, payment, payment-signature
+Access-Control-Expose-Headers: x-payment-response</pre></div>
+<p>Use the exact header names your client library sends. Header names are case-insensitive on the wire, but your framework's config may not feel that forgiving.</p>
+
+<h2>Facilitator vs self-verification bugs</h2>
+<p>If you use a facilitator, isolate whether the failure happens before or after facilitator verification:</p>
+<ul>
+<li>If the facilitator rejects the payment, inspect the client-side payment construction and wallet/network choice.</li>
+<li>If the facilitator accepts it but your server rejects it, inspect your local expected values and replay/expiry storage.</li>
+<li>If both accept it but the client still receives 402, inspect whether the retry is actually carrying the returned proof header.</li>
+</ul>
+<p>If you self-verify, add a confirmation-depth policy and be explicit about it. "Transaction submitted" is not the same as "server is willing to serve the paid resource."</p>
+
+<h2>Manifest listing issues</h2>
+<p>If <code>POST /submit</code> fails, test the manifest from the outside world, not your local machine with special access:</p>
+<div class="codeblock"><pre>curl -i https://yourapi.com/.well-known/x402.json
+curl -X POST https://bazaar.saylorinnovations.com/submit \\
+  -H "content-type: application/json" \\
+  -d '{"manifestUrl":"https://yourapi.com/.well-known/x402.json"}'</pre></div>
+<p>Typical listing blockers are private hosts, localhost URLs, invalid JSON, no paid resources, non-HTTPS URLs, and malformed <code>accepts[]</code> entries. The fix is almost always in the manifest, not in Agent Bazaar.</p>
+
+<h2>The best sanity test</h2>
+<p>Publish one tiny endpoint priced at a very small amount, test it end to end, then copy that exact payment path into more expensive resources. Once one route works, adding more x402 endpoints is mostly a manifest and routing exercise.</p>
 `,
   },
 

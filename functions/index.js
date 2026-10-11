@@ -165,10 +165,10 @@ ${shelves.length ? `
       <div class="eyebrow">Why this exists</div>
       <h2>Humans browse marketplaces. Agents need structured discovery.</h2>
       <p class="lede">A marketplace built for people to scroll is not enough for software that has to find, judge, pay for and call a service on its own. Agent Bazaar is both: a marketplace people can browse, and a discovery layer machines can query.</p>
-      <p>Every listing carries what an agent needs to decide without a human: what the resource does, the exact price, which payment assets and networks it accepts, and its output schema. The same record renders this page, answers <a href="/discovery/search?query=solana">/discovery/search</a>, fills <a href="/discovery/resources">/discovery/resources</a> and powers the <a href="/mcp">MCP server</a>.</p>
+      <p>Every listing carries what an agent needs to decide without a human: what the resource does, the listed payment options, which assets and networks it accepts, and its output schema. The live unpaid <code>402</code> response is always authoritative before payment. The same record renders this page, answers <a href="/discovery/search?query=solana">/discovery/search</a>, fills <a href="/discovery/resources">/discovery/resources</a> and powers the <a href="/mcp">MCP server</a>.</p>
     </div>
     <div class="duo">
-      <div><b>For people</b><span class="small">Search in plain English, compare prices and networks, and see exactly what each verification badge proves.</span></div>
+      <div><b>For people</b><span class="small">Search in plain English, compare listed quotes and networks, and see exactly what each verification badge proves.</span></div>
       <div><b>For agents</b><span class="small">JSON for every entity, x402 v2 discovery items, an MCP server, an A2A agent registry, OpenAPI and llms.txt.</span></div>
       <div><b>One catalog</b><span class="small">No separate human and machine databases. The website is just one client of the structured catalog.</span></div>
     </div>
@@ -189,7 +189,7 @@ ${kinds.length ? `
     <h2>Discover. Inspect. Pay. Execute. Verify.</h2>
     <ol class="steps">
       <li><b>Discover</b><span>Search by intent over REST, MCP or A2A.</span></li>
-      <li><b>Inspect</b><span>Pull the price and payment options as JSON.</span></li>
+      <li><b>Inspect</b><span>Pull the listed payment options as JSON.</span></li>
       <li><b>Pay</b><span>Answer the provider's HTTP 402 with a signed x402 payment.</span></li>
       <li><b>Execute</b><span>Call the provider directly. Agent Bazaar is not in the path.</span></li>
       <li><b>Verify</b><span>Check the PAYMENT-RESPONSE settlement and the output schema.</span></li>

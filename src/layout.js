@@ -8,14 +8,20 @@
 const SITE = 'https://bazaar.saylorinnovations.com';
 const REPO = 'https://github.com/SaylorInnovations/open-x402-bazaar';
 const PARENT = 'https://saylorinnovations.com';
+const PROPZ_WIDGET = '<script src="https://propz.saylorinnovations.com/widget.js" '
+  + 'data-sol="7LSjfrJf8fNsB8VA9u7N3WEn25smQLpob3SvyUvXacy7" '
+  + 'data-name="Agent Bazaar" '
+  + 'data-message="If Agent Bazaar helped you discover, publish, or wire up an x402 endpoint, optional tips support the open marketplace." '
+  + 'data-accent="cyan" async></script>';
 
 function escapeHtml(s) {
   return String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 }
 
-// Prefers the first accepts[] entry that actually has a USD price (not just
+// Prefers the first accepts[] entry that actually has a USD estimate (not just
 // whichever happens to be first — most resources list several networks and only
 // some assets get a computed amountUsd, see computedAmountUsd() in src/db.js).
+// This is a catalog quote, not an instruction to pay without checking the live 402.
 // Falls back to a comma-formatted raw amount, never a bare unformatted integer.
 function priceOf(accepts) {
   const list = accepts || [];
@@ -24,7 +30,7 @@ function priceOf(accepts) {
   // genuinely free, not malformed.
   if (!list.length) return 'Free';
   const priced = list.find((a) => a.amountUsd);
-  if (priced) return `$${priced.amountUsd}`;
+  if (priced) return `~$${priced.amountUsd}`;
   const a = list[0];
   return a.amount ? `${Number(a.amount).toLocaleString()} raw units` : 'free';
 }
@@ -109,7 +115,7 @@ function typeLabel(r) {
 function priceParts(accepts) {
   const list = accepts || [];
   const priced = list.find((a) => a.amountUsd);
-  if (priced) return { main: `$${priced.amountUsd}`, unit: '/ request', free: false };
+  if (priced) return { main: `~$${priced.amountUsd}`, unit: 'listed', free: false };
   if (!list.length) return { main: 'Free', unit: '', free: true };
   return { main: 'see accepts', unit: '', free: false };
 }
@@ -261,6 +267,7 @@ function pageShell({ title, description, canonical, bodyHtml, jsonLd, extraHead 
 <title>${escapeHtml(title)}</title>
 <meta name="description" content="${escapeHtml(description)}">
 ${canonical ? `<link rel="canonical" href="${escapeHtml(canonical)}">` : ''}
+<meta name="robots" content="index,follow,max-image-preview:large,max-snippet:-1">
 <meta name="theme-color" content="#050F1A">
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="Agent Bazaar by Saylor Innovations">
@@ -270,7 +277,9 @@ ${canonical ? `<meta property="og:url" content="${escapeHtml(canonical)}">` : ''
 <meta property="og:image" content="${SITE}/assets/og.png">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="Agent Bazaar by Saylor Innovations">
 <meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:site" content="@ThisisDave69">
 <meta name="twitter:title" content="${escapeHtml(title)}">
 <meta name="twitter:description" content="${escapeHtml(description)}">
 <meta name="twitter:image" content="${SITE}/assets/og.png">
@@ -284,6 +293,15 @@ ${canonical ? `<meta property="og:url" content="${escapeHtml(canonical)}">` : ''
 <link rel="stylesheet" href="/assets/legacy.css?v=f092b6b86a">
 <noscript><link rel="stylesheet" href="/assets/nojs.css?v=db4168833f"></noscript>
 ${jsonLdBlock}
+<script type="application/ld+json">${JSON.stringify({
+    '@context': 'https://schema.org',
+    '@type': 'WebSite',
+    '@id': `${SITE}/#website`,
+    name: 'Agent Bazaar by Saylor Innovations',
+    alternateName: 'Agent Bazaar',
+    url: `${SITE}/`,
+    publisher: { '@type': 'Organization', name: 'Saylor Innovations Digital Solutions', url: 'https://saylorinnovations.com/' },
+  }).replace(/</g, '\\u003c')}</script>
 ${extraHead}
 </head>
 <body>
@@ -293,6 +311,7 @@ ${bodyHtml}
 </main>
 ${footer()}
 <script src="/assets/bazaar.js?v=4cc5d2de21" defer></script>
+${PROPZ_WIDGET}
 </body>
 </html>`;
 }
