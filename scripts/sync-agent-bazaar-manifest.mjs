@@ -8,6 +8,26 @@ import { readFileSync, writeFileSync } from 'node:fs';
 const OUT = 'public/.well-known/x402.json';
 const SAYLOR_MANIFEST = 'https://saylorinnovations.com/.well-known/x402.json';
 const MAX_RESOURCES = Number(process.env.MAX_RESOURCES || 0);
+const POPULARITY_HINTS = new Map([
+  ['/api/token-price/solana/', 2700],
+  ['/api/stocks/quote/', 2000],
+  ['/api/python/report', 800],
+  ['/api/kb/cuda-driver-ollama', 640],
+  ['/api/data/country', 630],
+  ['/api/data/economy', 620],
+  ['/api/data/exchange-rates', 610],
+  ['/api/docs/pypi/', 600],
+  ['/api/evm/ethereum/block/', 590],
+  ['/api/package/report', 580],
+  ['/api/package/search', 570],
+  ['/api/research/doi', 560],
+  ['/api/research/search', 550],
+  ['/api/security/cve', 540],
+  ['/api/games/deals', 530],
+  ['/api/aircraft/military', 520],
+  ['/api/market/bestsellers', 510],
+  ['/api/security/{mint}', 500],
+]);
 
 function callableUrl(url) {
   return String(url || '').replace(/\{([^}]+)\}/g, ':$1');
@@ -50,8 +70,9 @@ function paramsFromUrl(url) {
 }
 
 function resourceType(endpoint) {
+  if (endpoint.__source === 'guide') return 'Guide';
   const tags = (endpoint.tags || []).map((t) => String(t).toLowerCase());
-  if (tags.some((t) => ['solana', 'evm', 'onchain', 'token-data', 'defi', 'x402'].includes(t))) return 'Blockchain Data';
+  if (tags.some((t) => ['solana', 'evm', 'onchain', 'token-data', 'defi'].includes(t))) return 'Blockchain Data';
   if (tags.some((t) => ['docs', 'documentation', 'npm', 'pypi', 'github', 'coding'].includes(t))) return 'Developer Tool';
   if (tags.some((t) => ['research', 'papers', 'doi', 'citations'].includes(t))) return 'Research Data';
   if (tags.some((t) => ['security', 'cve', 'vulnerabilities', 'sanctions'].includes(t))) return 'Security Data';
@@ -59,6 +80,7 @@ function resourceType(endpoint) {
 }
 
 function useWhen(endpoint) {
+  if (endpoint.__source === 'guide') return 'Use when an agent needs a focused technical guide, playbook or implementation reference before acting.';
   const tags = (endpoint.tags || []).map((t) => String(t).toLowerCase());
   if (tags.includes('token-price')) return 'Use when an agent needs live token price, liquidity or market context before ranking, quoting or alerting.';
   if (tags.includes('security') || tags.includes('cve')) return 'Use when an agent needs a machine-readable security, risk or vulnerability lookup.';
@@ -86,6 +108,10 @@ function shapeResource(endpoint) {
     accepts: endpoint.accepts,
     metadata: {
       provider: 'Saylor Innovations',
+      ...(popularityScore(endpoint.url) ? { discoveryPriority: popularityScore(endpoint.url) } : {}),
+      ...(endpoint.category ? { category: endpoint.category } : {}),
+      ...(endpoint.difficulty ? { difficulty: endpoint.difficulty } : {}),
+      ...(endpoint.readMins ? { readMins: endpoint.readMins } : {}),
       useWhen: endpoint.useWhen || useWhen(endpoint),
       sideEffects: 'none',
       permissions: ['Read-only endpoint. No account or API key; send an x402 payment proof for paid calls.'],
@@ -122,6 +148,13 @@ function shapeResource(endpoint) {
   return shaped;
 }
 
+function popularityScore(url) {
+  for (const [needle, score] of POPULARITY_HINTS) {
+    if (String(url).includes(needle)) return score;
+  }
+  return 0;
+}
+
 async function main() {
   const bazaar = JSON.parse(readFileSync(OUT, 'utf8'));
   const live = await fetch(SAYLOR_MANIFEST, {
@@ -130,8 +163,9 @@ async function main() {
   if (!live.ok) throw new Error(`fetch ${SAYLOR_MANIFEST} failed: ${live.status}`);
   const manifest = await live.json();
   const candidates = [
-    ...(manifest.liveDataEndpoints || []),
-    ...(manifest.utilityEndpoints || []),
+    ...(manifest.liveDataEndpoints || []).map((endpoint) => ({ ...endpoint, __source: 'liveDataEndpoint' })),
+    ...(manifest.utilityEndpoints || []).map((endpoint) => ({ ...endpoint, __source: 'utilityEndpoint' })),
+    ...(manifest.resources || []).map((endpoint) => ({ ...endpoint, __source: 'guide' })),
   ].filter((endpoint) => endpoint?.url && Array.isArray(endpoint.accepts) && endpoint.accepts.length > 0);
 
   const seen = new Set();
@@ -142,6 +176,7 @@ async function main() {
     seen.add(key);
     resources.push(shapeResource(endpoint));
   }
+  resources.sort((a, b) => (b.metadata?.discoveryPriority || 0) - (a.metadata?.discoveryPriority || 0) || a.url.localeCompare(b.url));
 
   bazaar.updated = new Date().toISOString().slice(0, 10);
   bazaar.resources = MAX_RESOURCES > 0 ? resources.slice(0, MAX_RESOURCES) : resources;
