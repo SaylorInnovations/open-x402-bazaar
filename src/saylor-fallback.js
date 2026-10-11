@@ -109,20 +109,35 @@ function matches(resource, filters) {
 async function fallbackListResources({ limit, offset } = {}) {
   const lim = clampLimit(limit);
   const off = Math.max(Number(offset) || 0, 0);
-  const resources = await fetchSaylorResources();
+  const all = await fetchSaylorResources();
+  const resources = all.slice(off, off + lim);
+  const pagination = { total: all.length, limit: lim, offset: off };
   return {
-    resources: resources.slice(off, off + lim),
-    total: resources.length,
+    resources,
+    items: resources,
+    total: all.length,
     limit: lim,
     offset: off,
+    pagination,
     fallback: 'saylor-manifest',
   };
 }
 
 async function fallbackSearchResources(filters = {}) {
   const lim = clampLimit(filters.limit);
+  const offset = Math.max(Number(filters.offset) || 0, 0);
   const resources = await fetchSaylorResources();
-  return resources.filter((resource) => matches(resource, filters)).slice(0, lim);
+  const matched = resources.filter((resource) => matches(resource, filters));
+  const page = matched.slice(offset, offset + lim);
+  return {
+    resources: page,
+    items: page,
+    total: matched.length,
+    limit: lim,
+    offset,
+    pagination: { total: matched.length, limit: lim, offset },
+    fallback: 'saylor-manifest',
+  };
 }
 
 function fallbackHeaders(extra = {}) {

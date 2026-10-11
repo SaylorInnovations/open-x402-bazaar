@@ -30,16 +30,19 @@ export async function onRequestGet({ request, env }) {
       { headers: { ...CORS, 'content-type': 'application/json' } }
     );
   } catch (error) {
-    const resources = await fallbackSearchResources(q);
+    const { resources, items, pagination, fallback } = await fallbackSearchResources(q);
     return new Response(
       JSON.stringify({
         x402Version: 2,
         resources,
-        items: resources,
-        pagination: { total: resources.length, limit: resources.length, offset: 0 },
+        items,
+        total: pagination.total,
+        limit: pagination.limit,
+        offset: pagination.offset,
+        pagination,
         partialResults: true,
         searchMethod: q.query ? 'text' : 'filter',
-        fallback: 'saylor-manifest',
+        fallback,
         warning: 'Primary catalog database is temporarily unavailable; searching verified Saylor Innovations manifest listings.',
       }),
       { headers: fallbackHeaders() }
