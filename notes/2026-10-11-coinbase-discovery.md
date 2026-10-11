@@ -88,3 +88,4 @@ These are now present in `public/.well-known/x402.json` as payable resources:
 - Each generated endpoint keeps real `accepts[]`, has a callable `:param` URL, top-level `serviceName`, focused tags, canonical URL metadata, and `extensions.bazaar.info.input`.
 - `/discovery/resources` fallback and DB-backed records also include extracted parameter hints for `{path}` and `{query}` variables.
 - The generated manifest includes live data endpoints, utility endpoints, and paid guide endpoints. Known high-performing Coinbase resources are sorted first via `metadata.discoveryPriority`; this is an ordering hint, not a fabricated call count.
+- Pricing floor pass: public manifest generation, live Saylor fallback discovery, DB-backed discovery output, DB inserts, and the Saylor official importer now clamp positive numeric accepts to at least `10000` base units / `$0.01`. Current generated manifest audit: 534 resources, 0 accepts below `$0.01`.

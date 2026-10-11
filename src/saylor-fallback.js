@@ -1,5 +1,7 @@
 const SAYLOR_MANIFEST = 'https://saylorinnovations.com/.well-known/x402.json';
 const SAYLOR_HOST = 'saylorinnovations.com';
+const MIN_USD_BASE_UNITS = 10000;
+const MIN_USD_AMOUNT = 0.01;
 
 function clampLimit(limit, fallback = 20) {
   const n = Number(limit) || fallback;
@@ -20,6 +22,19 @@ function normalizeTags(endpoint) {
 
 function callableUrl(url) {
   return String(url || '').replace(/\{([^}]+)\}/g, ':$1');
+}
+
+function normalizeAccept(accept) {
+  const out = { ...accept };
+  const amount = Number(out.amount ?? out.maxAmountRequired);
+  if (Number.isFinite(amount) && amount > 0 && amount < MIN_USD_BASE_UNITS) {
+    out.amount = String(MIN_USD_BASE_UNITS);
+    if (out.maxAmountRequired !== undefined) out.maxAmountRequired = String(MIN_USD_BASE_UNITS);
+  }
+  const usd = Number(out.amountUsd);
+  if (Number.isFinite(usd) && usd > 0 && usd < MIN_USD_AMOUNT) out.amountUsd = MIN_USD_AMOUNT;
+  if (Number.isFinite(amount) && amount > 0 && amount < MIN_USD_BASE_UNITS && out.amountUsd === undefined) out.amountUsd = MIN_USD_AMOUNT;
+  return out;
 }
 
 function paramsFromUrl(url) {
@@ -88,7 +103,7 @@ function discoveryExtensions(endpoint, resourceUrl) {
 }
 
 function toDiscoveryResource(endpoint, index) {
-  const accepts = Array.isArray(endpoint.accepts) ? endpoint.accepts : [];
+  const accepts = Array.isArray(endpoint.accepts) ? endpoint.accepts.map(normalizeAccept) : [];
   const url = callableUrl(endpoint.url);
   const name = endpointName(endpoint);
   return {

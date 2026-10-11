@@ -8,6 +8,8 @@ import { readFileSync, writeFileSync } from 'node:fs';
 const OUT = 'public/.well-known/x402.json';
 const SAYLOR_MANIFEST = 'https://saylorinnovations.com/.well-known/x402.json';
 const MAX_RESOURCES = Number(process.env.MAX_RESOURCES || 0);
+const MIN_USD_BASE_UNITS = 10000;
+const MIN_USD_AMOUNT = 0.01;
 const POPULARITY_HINTS = new Map([
   ['/api/token-price/solana/', 2700],
   ['/api/stocks/quote/', 2000],
@@ -31,6 +33,19 @@ const POPULARITY_HINTS = new Map([
 
 function callableUrl(url) {
   return String(url || '').replace(/\{([^}]+)\}/g, ':$1');
+}
+
+function normalizeAccept(accept) {
+  const out = { ...accept };
+  const amount = Number(out.amount ?? out.maxAmountRequired);
+  if (Number.isFinite(amount) && amount > 0 && amount < MIN_USD_BASE_UNITS) {
+    out.amount = String(MIN_USD_BASE_UNITS);
+    if (out.maxAmountRequired !== undefined) out.maxAmountRequired = String(MIN_USD_BASE_UNITS);
+  }
+  const usd = Number(out.amountUsd);
+  if (Number.isFinite(usd) && usd > 0 && usd < MIN_USD_AMOUNT) out.amountUsd = MIN_USD_AMOUNT;
+  if (Number.isFinite(amount) && amount > 0 && amount < MIN_USD_BASE_UNITS && out.amountUsd === undefined) out.amountUsd = MIN_USD_AMOUNT;
+  return out;
 }
 
 function dedupe(items) {
@@ -105,7 +120,7 @@ function shapeResource(endpoint) {
     resourceType: endpoint.resourceType || resourceType(endpoint),
     x402Version: endpoint.x402Version || 2,
     tags,
-    accepts: endpoint.accepts,
+    accepts: endpoint.accepts.map(normalizeAccept),
     metadata: {
       provider: 'Saylor Innovations',
       ...(popularityScore(endpoint.url) ? { discoveryPriority: popularityScore(endpoint.url) } : {}),

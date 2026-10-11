@@ -18,11 +18,30 @@ const KNOWN_USD_STABLECOINS = new Set([
   '0x3c499c542cEF5E3811e1192ce70d8cC03d5c3359', // Polygon (native) USDC
   '0xaf88d065e77c8cC2239327C5EDb3A432268e5831', // Arbitrum USDC
 ]);
+const MIN_USD_BASE_UNITS = 10000;
+const MIN_USD_AMOUNT = 0.01;
 
 function computedAmountUsd(asset, amount) {
   if (!asset || !amount || !KNOWN_USD_STABLECOINS.has(asset)) return undefined;
   const n = Number(amount);
   return Number.isFinite(n) ? n / 1e6 : undefined;
+}
+
+function normalizeAcceptAmount(asset, amount, amountUsd) {
+  const out = { amount: amount || undefined, amountUsd };
+  const numericAmount = Number(amount);
+  if (Number.isFinite(numericAmount) && numericAmount > 0 && numericAmount < MIN_USD_BASE_UNITS) {
+    out.amount = String(MIN_USD_BASE_UNITS);
+  }
+
+  const computedUsd = amountUsd ?? computedAmountUsd(asset, out.amount);
+  const numericUsd = Number(computedUsd);
+  if (Number.isFinite(numericUsd) && numericUsd > 0 && numericUsd < MIN_USD_AMOUNT) {
+    out.amountUsd = MIN_USD_AMOUNT;
+  } else {
+    out.amountUsd = computedUsd;
+  }
+  return out;
 }
 
 function callableUrl(url) {
@@ -123,13 +142,14 @@ async function attachAccepts(env, rows) {
 
   const byResource = {};
   for (const a of acceptsRows) {
+    const normalized = normalizeAcceptAmount(a.asset, a.amount, a.amount_usd ?? computedAmountUsd(a.asset, a.amount));
     (byResource[a.resource_id] ||= []).push({
       scheme: a.scheme,
       network: a.network,
       payTo: a.pay_to,
       asset: a.asset || undefined,
-      amount: a.amount || undefined,
-      amountUsd: a.amount_usd ?? computedAmountUsd(a.asset, a.amount),
+      amount: normalized.amount,
+      amountUsd: normalized.amountUsd,
       maxTimeoutSeconds: a.max_timeout_seconds ?? undefined,
     });
   }
@@ -271,13 +291,14 @@ async function upsertListing(env, { host, sourceManifestUrl, manifestName, submi
   const acceptStmts = [];
   resources.forEach((r, i) => {
     for (const a of r.accepts) {
+      const normalized = normalizeAcceptAmount(a.asset, a.amount, a.amountUsd);
       acceptStmts.push(
         env.DB
           .prepare(
             `INSERT INTO resource_accepts (resource_id, scheme, network, pay_to, asset, amount, amount_usd, max_timeout_seconds)
              VALUES (?, ?, ?, ?, ?, ?, ?, ?)`
           )
-          .bind(resourceIds[i], a.scheme, a.network, a.payTo, a.asset || null, a.amount || null, a.amountUsd ?? null, a.maxTimeoutSeconds ?? null)
+          .bind(resourceIds[i], a.scheme, a.network, a.payTo, a.asset || null, normalized.amount || null, normalized.amountUsd ?? null, a.maxTimeoutSeconds ?? null)
       );
     }
   });
