@@ -8,6 +8,7 @@ import { readFileSync, writeFileSync } from 'node:fs';
 const OUT = 'public/.well-known/x402.json';
 const SAYLOR_MANIFEST = 'https://saylorinnovations.com/.well-known/x402.json';
 const MAX_RESOURCES = Number(process.env.MAX_RESOURCES || 0);
+const MAX_ACCEPTS = Number(process.env.MAX_ACCEPTS || 3);
 const MIN_USD_BASE_UNITS = 10000;
 const MIN_USD_AMOUNT = 0.01;
 const POPULARITY_HINTS = new Map([
@@ -36,7 +37,11 @@ function callableUrl(url) {
 }
 
 function cleanTag(tag) {
-  return String(tag || '')
+  let value = String(tag || '');
+  try {
+    value = decodeURIComponent(value);
+  } catch {}
+  return value
     .toLowerCase()
     .replace(/[{}:]/g, '')
     .replace(/[_\s]+/g, '-')
@@ -54,6 +59,24 @@ function normalizeAccept(accept) {
   if (Number.isFinite(usd) && usd > 0 && usd < MIN_USD_AMOUNT) out.amountUsd = MIN_USD_AMOUNT;
   if (Number.isFinite(amount) && amount > 0 && amount < MIN_USD_BASE_UNITS && out.amountUsd === undefined) out.amountUsd = MIN_USD_AMOUNT;
   return out;
+}
+
+function acceptRank(accept) {
+  const network = String(accept.network || '');
+  const asset = String(accept.asset || '');
+  if (network === 'eip155:8453') return 0;
+  if (network.startsWith('solana:') && asset === 'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v') return 1;
+  if (network.startsWith('solana:')) return 2;
+  if (network === 'eip155:137') return 3;
+  if (network === 'eip155:42161') return 4;
+  return 5;
+}
+
+function shapeAccepts(accepts) {
+  return accepts
+    .map(normalizeAccept)
+    .sort((a, b) => acceptRank(a) - acceptRank(b))
+    .slice(0, MAX_ACCEPTS);
 }
 
 function dedupe(items) {
@@ -98,27 +121,60 @@ const PARAM_HINTS = {
   symbol: 'Ticker or asset symbol.',
 };
 
-function paramHint(name, required, kind) {
-  const base = PARAM_HINTS[name] || `${kind === 'query' ? 'Query' : 'Path'} parameter.`;
-  return `${required ? 'Required' : 'Optional'} ${name}: ${base}`;
-}
-
-function paramsFromUrl(url, exampleUrl) {
-  const params = {};
+function splitParams(url, exampleUrl) {
+  const pathParams = {};
+  const queryParams = {};
   for (const name of String(url).matchAll(/\{([^}]+)\}/g)) {
-    params[name[1]] = paramHint(name[1], true, 'path');
+    pathParams[name[1]] = sampleForParam(name[1]);
   }
   for (const name of String(url).matchAll(/[?&]([^=&#]+)=\{([^}]+)\}/g)) {
-    params[name[1]] = paramHint(name[1], true, 'query');
+    queryParams[name[1]] = sampleForParam(name[1]);
   }
   if (exampleUrl) {
     try {
-      for (const [key] of new URL(exampleUrl).searchParams) {
-        if (!params[key]) params[key] = paramHint(key, false, 'query');
+      for (const [key, value] of new URL(exampleUrl).searchParams) {
+        if (!queryParams[key]) queryParams[key] = value || sampleForParam(key);
       }
     } catch {}
   }
-  return params;
+  return { pathParams, queryParams };
+}
+
+function sampleForParam(name) {
+  const samples = {
+    address: '0x0000000000000000000000000000000000000000',
+    base: 'USD',
+    chain: 'ethereum',
+    country: 'US',
+    cve: 'CVE-2021-44228',
+    doi: '10.1038/nphys1170',
+    mint: 'So11111111111111111111111111111111111111112',
+    name: 'typescript',
+    number: 'latest',
+    package: 'fastapi',
+    q: 'machine learning',
+    query: 'machine learning',
+    slug: 'example',
+    symbol: 'AAPL',
+  };
+  return samples[name] || `example_${name}`;
+}
+
+function schemaForParam(name) {
+  return {
+    type: 'string',
+    description: PARAM_HINTS[name] || 'Request parameter.',
+  };
+}
+
+function objectSchemaForParams(params) {
+  const keys = Object.keys(params);
+  return {
+    type: 'object',
+    additionalProperties: false,
+    properties: Object.fromEntries(keys.map((key) => [key, schemaForParam(key)])),
+    required: keys,
+  };
 }
 
 function resourceType(endpoint) {
@@ -159,15 +215,17 @@ function inferredOutputSchema(endpoint, type) {
   };
 }
 
-function useWhen(endpoint) {
-  if (endpoint.__source === 'guide') return 'Use when an agent needs a focused technical guide, playbook or implementation reference before acting.';
-  const tags = (endpoint.tags || []).map((t) => String(t).toLowerCase());
-  if (tags.includes('token-price')) return 'Use when an agent needs live token price, liquidity or market context before ranking, quoting or alerting.';
-  if (tags.includes('security') || tags.includes('cve')) return 'Use when an agent needs a machine-readable security, risk or vulnerability lookup.';
-  if (tags.includes('docs') || tags.includes('documentation')) return 'Use when an agent needs current package or repository documentation without scraping pages.';
-  if (tags.includes('research') || tags.includes('doi')) return 'Use when an agent needs publication metadata, DOI resolution or research discovery.';
-  if (tags.includes('stocks') || tags.includes('market-data')) return 'Use when an agent needs live market data for a ticker, asset or macro data point.';
-  return 'Use when an agent needs fresh external data that should be fetched from the source instead of guessed by a language model.';
+function exampleFromSchema(schema) {
+  const props = schema?.properties || {};
+  const out = {};
+  for (const [key, value] of Object.entries(props).slice(0, 5)) {
+    if (value?.type === 'boolean') out[key] = true;
+    else if (value?.type === 'number' || value?.type === 'integer') out[key] = 1;
+    else if (value?.type === 'array') out[key] = [];
+    else if (value?.type === 'object') out[key] = {};
+    else out[key] = key === 'error' ? null : `example_${key}`;
+  }
+  return out;
 }
 
 function shapeResource(endpoint) {
@@ -179,64 +237,82 @@ function shapeResource(endpoint) {
   const outputSchema = inferredOutputSchema(endpoint, type);
   const pathTags = (() => {
     try {
-      return new URL(canonical).pathname.split('/').filter(Boolean).slice(1);
+      return decodeURIComponent(new URL(canonical).pathname).split('/').filter(Boolean).slice(1);
     } catch {
       return [];
     }
   })();
   const exampleUrl = endpoint.exampleUrl || endpoint.freeSample || (!canonical.includes('{') ? canonical : undefined);
-  const tags = dedupe([familyOf(canonical), ...pathTags, ...(endpoint.tags || []), 'x402', 'paid-api', 'pay-per-request', 'agent-ready', type]);
-  const parameters = paramsFromUrl(canonical, exampleUrl);
+  const tags = dedupe([familyOf(canonical), ...pathTags, ...(endpoint.tags || [])]).slice(0, 5);
+  const { pathParams, queryParams } = splitParams(canonical, exampleUrl);
+  const method = String(endpoint.method || 'GET').toUpperCase();
+  const inputInfo = {
+    type: 'http',
+    method,
+    discoverable: true,
+    ...(Object.keys(pathParams).length ? { pathParams } : {}),
+    ...(Object.keys(queryParams).length ? { queryParams } : {}),
+  };
+  const inputSchema = {
+    type: 'object',
+    additionalProperties: false,
+    properties: {
+      type: { const: 'http', type: 'string' },
+      method: { enum: [method], type: 'string' },
+      ...(Object.keys(pathParams).length ? { pathParams: objectSchemaForParams(pathParams) } : {}),
+      ...(Object.keys(queryParams).length ? { queryParams: objectSchemaForParams(queryParams) } : {}),
+    },
+    required: ['type', 'method'],
+  };
+  if (Object.keys(pathParams).length) inputSchema.required.push('pathParams');
+  if (Object.keys(queryParams).length) inputSchema.required.push('queryParams');
+  const outputExample = endpoint.outputExample || exampleFromSchema(outputSchema);
   const shaped = {
-    url,
+    resource: url,
     serviceName,
     description,
     type: 'http',
-    resourceType: type,
     x402Version: endpoint.x402Version || 2,
     tags,
-    accepts: endpoint.accepts.map(normalizeAccept),
-    outputSchema,
-    metadata: {
-      provider: 'Saylor Innovations',
-      ...(popularityScore(endpoint.url) ? { discoveryPriority: popularityScore(endpoint.url) } : {}),
-      ...(endpoint.category ? { category: endpoint.category } : {}),
-      ...(endpoint.difficulty ? { difficulty: endpoint.difficulty } : {}),
-      ...(endpoint.readMins ? { readMins: endpoint.readMins } : {}),
-      capabilities: endpoint.capabilities || [description],
-      useWhen: endpoint.useWhen || useWhen(endpoint),
-      doNotUseWhen: endpoint.doNotUseWhen || 'Do not use as sole authority for regulated professional advice, safety-critical action, trade execution, or irreversible decisions without independent verification.',
-      sideEffects: 'none',
-      permissions: ['Read-only endpoint. No account or API key; send an x402 payment proof for paid calls.'],
-      documentation: 'https://x402.saylorinnovations.com',
-      license: endpoint.license || 'Commercial - pay-per-request via x402',
-      canonicalResource: canonical,
-      ...(exampleUrl ? { exampleUrl } : {}),
-    },
+    accepts: shapeAccepts(endpoint.accepts),
+    lastUpdated: new Date().toISOString(),
+    _discoveryPriority: popularityScore(endpoint.url),
     extensions: {
       bazaar: {
         info: {
-          input: {
-            type: 'http',
-            method: String(endpoint.method || 'GET').toUpperCase(),
-            discoverable: true,
-            ...(Object.keys(parameters).length ? { parameters } : {}),
-            ...(exampleUrl ? { exampleUrl } : {}),
-          },
+          input: inputInfo,
           output: {
             type: 'json',
-            schema: outputSchema,
-            ...(endpoint.outputExample ? { example: endpoint.outputExample } : {}),
+            example: outputExample,
           },
         },
+        routeTemplate: (() => {
+          try {
+            return new URL(url).pathname;
+          } catch {
+            return undefined;
+          }
+        })(),
         canonicalResource: canonical,
         callableResource: url,
       },
     },
   };
   shaped.extensions.bazaar.schema = {
+    $schema: 'https://json-schema.org/draft/2020-12/schema',
     type: 'object',
-    properties: { output: outputSchema },
+    properties: {
+      input: inputSchema,
+      output: {
+        type: 'object',
+        properties: {
+          type: { const: 'json', type: 'string' },
+          example: outputSchema,
+        },
+        required: ['type'],
+      },
+    },
+    required: ['input'],
   };
   return shaped;
 }
@@ -269,7 +345,8 @@ async function main() {
     seen.add(key);
     resources.push(shapeResource(endpoint));
   }
-  resources.sort((a, b) => (b.metadata?.discoveryPriority || 0) - (a.metadata?.discoveryPriority || 0) || a.url.localeCompare(b.url));
+  resources.sort((a, b) => (b._discoveryPriority || 0) - (a._discoveryPriority || 0) || a.resource.localeCompare(b.resource));
+  for (const resource of resources) delete resource._discoveryPriority;
 
   bazaar.updated = new Date().toISOString().slice(0, 10);
   bazaar.resources = MAX_RESOURCES > 0 ? resources.slice(0, MAX_RESOURCES) : resources;
