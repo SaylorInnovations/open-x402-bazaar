@@ -35,6 +35,14 @@ function callableUrl(url) {
   return String(url || '').replace(/\{([^}]+)\}/g, ':$1');
 }
 
+function cleanTag(tag) {
+  return String(tag || '')
+    .toLowerCase()
+    .replace(/[{}:]/g, '')
+    .replace(/[_\s]+/g, '-')
+    .trim();
+}
+
 function normalizeAccept(accept) {
   const out = { ...accept };
   const amount = Number(out.amount ?? out.maxAmountRequired);
@@ -49,7 +57,7 @@ function normalizeAccept(accept) {
 }
 
 function dedupe(items) {
-  return Array.from(new Set(items.filter(Boolean).map((t) => String(t).trim()).filter(Boolean)));
+  return Array.from(new Set(items.map(cleanTag).filter(Boolean)));
 }
 
 function familyOf(url) {
@@ -73,13 +81,42 @@ function titleFromUrl(url) {
   }
 }
 
-function paramsFromUrl(url) {
+const PARAM_HINTS = {
+  address: 'Blockchain wallet or account address.',
+  base: 'Base currency or asset code, for example USD.',
+  chain: 'Blockchain network name or chain identifier.',
+  country: 'Country name or ISO country code.',
+  cve: 'CVE identifier, for example CVE-2021-44228.',
+  doi: 'Digital Object Identifier.',
+  mint: 'Solana SPL token mint address.',
+  name: 'Package, project, or entity name.',
+  number: 'Block number or the literal latest when supported.',
+  package: 'Package name.',
+  q: 'Search query.',
+  query: 'Search query.',
+  slug: 'Resource or content slug.',
+  symbol: 'Ticker or asset symbol.',
+};
+
+function paramHint(name, required, kind) {
+  const base = PARAM_HINTS[name] || `${kind === 'query' ? 'Query' : 'Path'} parameter.`;
+  return `${required ? 'Required' : 'Optional'} ${name}: ${base}`;
+}
+
+function paramsFromUrl(url, exampleUrl) {
   const params = {};
   for (const name of String(url).matchAll(/\{([^}]+)\}/g)) {
-    params[name[1]] = `Required ${name[1]} parameter.`;
+    params[name[1]] = paramHint(name[1], true, 'path');
   }
   for (const name of String(url).matchAll(/[?&]([^=&#]+)=\{([^}]+)\}/g)) {
-    params[name[1]] = `Required ${name[1]} query parameter.`;
+    params[name[1]] = paramHint(name[1], true, 'query');
+  }
+  if (exampleUrl) {
+    try {
+      for (const [key] of new URL(exampleUrl).searchParams) {
+        if (!params[key]) params[key] = paramHint(key, false, 'query');
+      }
+    } catch {}
   }
   return params;
 }
@@ -92,6 +129,34 @@ function resourceType(endpoint) {
   if (tags.some((t) => ['research', 'papers', 'doi', 'citations'].includes(t))) return 'Research Data';
   if (tags.some((t) => ['security', 'cve', 'vulnerabilities', 'sanctions'].includes(t))) return 'Security Data';
   return 'API';
+}
+
+function inferredOutputSchema(endpoint, type) {
+  if (endpoint.outputSchema) return endpoint.outputSchema;
+  if (type === 'Guide') {
+    return {
+      type: 'object',
+      additionalProperties: true,
+      properties: {
+        title: { type: 'string' },
+        summary: { type: 'string' },
+        content: { type: 'string' },
+        sections: { type: 'array', items: { type: 'object' } },
+        updatedAt: { type: 'string' },
+      },
+    };
+  }
+  return {
+    type: 'object',
+    additionalProperties: true,
+    properties: {
+      ok: { type: 'boolean' },
+      data: { description: 'Primary JSON payload for this endpoint.' },
+      source: { type: 'string' },
+      updatedAt: { type: 'string' },
+      error: { type: 'string' },
+    },
+  };
 }
 
 function useWhen(endpoint) {
@@ -110,28 +175,43 @@ function shapeResource(endpoint) {
   const url = callableUrl(canonical);
   const serviceName = endpoint.serviceName || endpoint.title || endpoint.name || titleFromUrl(canonical);
   const description = endpoint.description || endpoint.summary || endpoint.title || serviceName;
-  const tags = dedupe([familyOf(canonical), ...(endpoint.tags || []), 'x402', 'pay-per-request', 'agent-ready']).map((t) => t.toLowerCase());
-  const parameters = paramsFromUrl(canonical);
+  const type = endpoint.resourceType || resourceType(endpoint);
+  const outputSchema = inferredOutputSchema(endpoint, type);
+  const pathTags = (() => {
+    try {
+      return new URL(canonical).pathname.split('/').filter(Boolean).slice(1);
+    } catch {
+      return [];
+    }
+  })();
+  const exampleUrl = endpoint.exampleUrl || endpoint.freeSample || (!canonical.includes('{') ? canonical : undefined);
+  const tags = dedupe([familyOf(canonical), ...pathTags, ...(endpoint.tags || []), 'x402', 'paid-api', 'pay-per-request', 'agent-ready', type]);
+  const parameters = paramsFromUrl(canonical, exampleUrl);
   const shaped = {
     url,
     serviceName,
     description,
     type: 'http',
-    resourceType: endpoint.resourceType || resourceType(endpoint),
+    resourceType: type,
     x402Version: endpoint.x402Version || 2,
     tags,
     accepts: endpoint.accepts.map(normalizeAccept),
+    outputSchema,
     metadata: {
       provider: 'Saylor Innovations',
       ...(popularityScore(endpoint.url) ? { discoveryPriority: popularityScore(endpoint.url) } : {}),
       ...(endpoint.category ? { category: endpoint.category } : {}),
       ...(endpoint.difficulty ? { difficulty: endpoint.difficulty } : {}),
       ...(endpoint.readMins ? { readMins: endpoint.readMins } : {}),
+      capabilities: endpoint.capabilities || [description],
       useWhen: endpoint.useWhen || useWhen(endpoint),
+      doNotUseWhen: endpoint.doNotUseWhen || 'Do not use as sole authority for regulated professional advice, safety-critical action, trade execution, or irreversible decisions without independent verification.',
       sideEffects: 'none',
       permissions: ['Read-only endpoint. No account or API key; send an x402 payment proof for paid calls.'],
+      documentation: 'https://x402.saylorinnovations.com',
+      license: endpoint.license || 'Commercial - pay-per-request via x402',
       canonicalResource: canonical,
-      ...(endpoint.exampleUrl || endpoint.freeSample ? { exampleUrl: endpoint.exampleUrl || endpoint.freeSample } : {}),
+      ...(exampleUrl ? { exampleUrl } : {}),
     },
     extensions: {
       bazaar: {
@@ -141,10 +221,11 @@ function shapeResource(endpoint) {
             method: String(endpoint.method || 'GET').toUpperCase(),
             discoverable: true,
             ...(Object.keys(parameters).length ? { parameters } : {}),
-            ...(endpoint.exampleUrl || endpoint.freeSample ? { exampleUrl: endpoint.exampleUrl || endpoint.freeSample } : {}),
+            ...(exampleUrl ? { exampleUrl } : {}),
           },
           output: {
             type: 'json',
+            schema: outputSchema,
             ...(endpoint.outputExample ? { example: endpoint.outputExample } : {}),
           },
         },
@@ -153,13 +234,10 @@ function shapeResource(endpoint) {
       },
     },
   };
-  if (endpoint.outputSchema) {
-    shaped.outputSchema = endpoint.outputSchema;
-    shaped.extensions.bazaar.schema = {
-      type: 'object',
-      properties: { output: endpoint.outputSchema },
-    };
-  }
+  shaped.extensions.bazaar.schema = {
+    type: 'object',
+    properties: { output: outputSchema },
+  };
   return shaped;
 }
 

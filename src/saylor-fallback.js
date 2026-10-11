@@ -17,7 +17,21 @@ function normalizeTags(endpoint) {
       return null;
     }
   })();
-  return [...new Set([family, ...tags].filter(Boolean).map((t) => String(t).toLowerCase()))];
+  const pathTags = (() => {
+    try {
+      return new URL(endpoint.url).pathname.split('/').filter(Boolean).slice(1);
+    } catch {
+      return [];
+    }
+  })();
+  return [
+    ...new Set(
+      [family, ...pathTags, ...tags, 'x402', 'paid-api', 'pay-per-request', 'agent-ready']
+        .filter(Boolean)
+        .map((t) => String(t).toLowerCase().replace(/[{}:]/g, '').replace(/[_\s]+/g, '-').trim())
+        .filter(Boolean)
+    ),
+  ];
 }
 
 function callableUrl(url) {
@@ -37,15 +51,59 @@ function normalizeAccept(accept) {
   return out;
 }
 
-function paramsFromUrl(url) {
+const PARAM_HINTS = {
+  address: 'Blockchain wallet or account address.',
+  base: 'Base currency or asset code, for example USD.',
+  chain: 'Blockchain network name or chain identifier.',
+  country: 'Country name or ISO country code.',
+  cve: 'CVE identifier, for example CVE-2021-44228.',
+  doi: 'Digital Object Identifier.',
+  mint: 'Solana SPL token mint address.',
+  name: 'Package, project, or entity name.',
+  number: 'Block number or the literal latest when supported.',
+  package: 'Package name.',
+  q: 'Search query.',
+  query: 'Search query.',
+  slug: 'Resource or content slug.',
+  symbol: 'Ticker or asset symbol.',
+};
+
+function paramHint(name, required, kind) {
+  const base = PARAM_HINTS[name] || `${kind === 'query' ? 'Query' : 'Path'} parameter.`;
+  return `${required ? 'Required' : 'Optional'} ${name}: ${base}`;
+}
+
+function paramsFromUrl(url, exampleUrl) {
   const params = {};
   for (const name of String(url).matchAll(/\{([^}]+)\}/g)) {
-    params[name[1]] = `Required ${name[1]} parameter.`;
+    params[name[1]] = paramHint(name[1], true, 'path');
   }
   for (const name of String(url).matchAll(/[?&]([^=&#]+)=\{([^}]+)\}/g)) {
-    params[name[1]] = `Required ${name[1]} query parameter.`;
+    params[name[1]] = paramHint(name[1], true, 'query');
+  }
+  if (exampleUrl) {
+    try {
+      for (const [key] of new URL(exampleUrl).searchParams) {
+        if (!params[key]) params[key] = paramHint(key, false, 'query');
+      }
+    } catch {}
   }
   return params;
+}
+
+function inferredOutputSchema(endpoint) {
+  if (endpoint.outputSchema) return endpoint.outputSchema;
+  return {
+    type: 'object',
+    additionalProperties: true,
+    properties: {
+      ok: { type: 'boolean' },
+      data: { description: 'Primary JSON payload for this endpoint.' },
+      source: { type: 'string' },
+      updatedAt: { type: 'string' },
+      error: { type: 'string' },
+    },
+  };
 }
 
 function slugify(value) {
@@ -66,9 +124,10 @@ function endpointName(endpoint) {
   }
 }
 
-function discoveryExtensions(endpoint, resourceUrl) {
+function discoveryExtensions(endpoint, resourceUrl, outputSchema) {
   const method = String(endpoint.method || 'GET').toUpperCase();
-  const parameters = paramsFromUrl(endpoint.url);
+  const exampleUrl = endpoint.exampleUrl || endpoint.freeSample || (!String(endpoint.url || '').includes('{') ? endpoint.url : undefined);
+  const parameters = paramsFromUrl(endpoint.url, exampleUrl);
   const info = {
     input: {
       type: 'http',
@@ -78,24 +137,21 @@ function discoveryExtensions(endpoint, resourceUrl) {
     },
     output: {
       type: 'json',
+      schema: outputSchema,
     },
   };
-  if (endpoint.exampleUrl || endpoint.freeSample) info.input.exampleUrl = endpoint.exampleUrl || endpoint.freeSample;
+  if (exampleUrl) info.input.exampleUrl = exampleUrl;
   if (endpoint.outputExample) info.output.example = endpoint.outputExample;
-
-  const schema = endpoint.outputSchema
-    ? {
-        type: 'object',
-        properties: {
-          output: endpoint.outputSchema,
-        },
-      }
-    : undefined;
 
   return {
     bazaar: {
       info,
-      ...(schema ? { schema } : {}),
+      schema: {
+        type: 'object',
+        properties: {
+          output: outputSchema,
+        },
+      },
       canonicalResource: endpoint.url,
       callableResource: resourceUrl,
     },
@@ -106,6 +162,8 @@ function toDiscoveryResource(endpoint, index) {
   const accepts = Array.isArray(endpoint.accepts) ? endpoint.accepts.map(normalizeAccept) : [];
   const url = callableUrl(endpoint.url);
   const name = endpointName(endpoint);
+  const outputSchema = inferredOutputSchema(endpoint);
+  const exampleUrl = endpoint.exampleUrl || endpoint.freeSample || (!String(endpoint.url || '').includes('{') ? endpoint.url : null);
   return {
     id: `saylor-fallback-${index + 1}`,
     slug: slugify(name || url) || `saylor-${index + 1}`,
@@ -116,18 +174,22 @@ function toDiscoveryResource(endpoint, index) {
     resourceType: 'api',
     x402Version: 2,
     accepts,
-    outputSchema: endpoint.outputSchema,
+    outputSchema,
     tags: normalizeTags(endpoint),
     sourceHost: SAYLOR_HOST,
     lastUpdated: endpoint.updated || new Date().toISOString(),
-    extensions: discoveryExtensions(endpoint, url),
+    extensions: discoveryExtensions(endpoint, url, outputSchema),
     metadata: {
       name,
       provider: 'Saylor Innovations',
+      capabilities: [endpoint.description || name],
       useWhen: endpoint.useWhen || 'Use when an agent needs fresh external data that should be fetched from the source instead of guessed by a language model.',
+      doNotUseWhen: endpoint.doNotUseWhen || 'Do not use as sole authority for regulated professional advice, safety-critical action, trade execution, or irreversible decisions without independent verification.',
       sideEffects: 'none',
       permissions: ['Read-only endpoint. No account or API key; send an x402 payment proof for paid calls.'],
-      exampleUrl: endpoint.exampleUrl || endpoint.freeSample || null,
+      exampleUrl,
+      documentation: 'https://x402.saylorinnovations.com',
+      license: endpoint.license || 'Commercial - pay-per-request via x402',
       canonicalResource: endpoint.url,
       callableResource: url,
       fallback: true,

@@ -48,15 +48,72 @@ function callableUrl(url) {
   return String(url || '').replace(/\{([^}]+)\}/g, ':$1');
 }
 
-function paramsFromUrl(url) {
+const PARAM_HINTS = {
+  address: 'Blockchain wallet or account address.',
+  base: 'Base currency or asset code, for example USD.',
+  chain: 'Blockchain network name or chain identifier.',
+  country: 'Country name or ISO country code.',
+  cve: 'CVE identifier, for example CVE-2021-44228.',
+  doi: 'Digital Object Identifier.',
+  mint: 'Solana SPL token mint address.',
+  name: 'Package, project, or entity name.',
+  number: 'Block number or the literal latest when supported.',
+  package: 'Package name.',
+  q: 'Search query.',
+  query: 'Search query.',
+  slug: 'Resource or content slug.',
+  symbol: 'Ticker or asset symbol.',
+};
+
+function paramHint(name, required, kind) {
+  const base = PARAM_HINTS[name] || `${kind === 'query' ? 'Query' : 'Path'} parameter.`;
+  return `${required ? 'Required' : 'Optional'} ${name}: ${base}`;
+}
+
+function paramsFromUrl(url, exampleUrl) {
   const params = {};
   for (const name of String(url).matchAll(/\{([^}]+)\}/g)) {
-    params[name[1]] = `Required ${name[1]} parameter.`;
+    params[name[1]] = paramHint(name[1], true, 'path');
   }
   for (const name of String(url).matchAll(/[?&]([^=&#]+)=\{([^}]+)\}/g)) {
-    params[name[1]] = `Required ${name[1]} query parameter.`;
+    params[name[1]] = paramHint(name[1], true, 'query');
+  }
+  if (exampleUrl) {
+    try {
+      for (const [key] of new URL(exampleUrl).searchParams) {
+        if (!params[key]) params[key] = paramHint(key, false, 'query');
+      }
+    } catch {}
   }
   return params;
+}
+
+function inferredOutputSchema(row, metadata) {
+  const type = String(row.resource_type || '').toLowerCase();
+  if (type === 'guide') {
+    return {
+      type: 'object',
+      additionalProperties: true,
+      properties: {
+        title: { type: 'string' },
+        summary: { type: 'string' },
+        content: { type: 'string' },
+        sections: { type: 'array', items: { type: 'object' } },
+        updatedAt: { type: 'string' },
+      },
+    };
+  }
+  return {
+    type: 'object',
+    additionalProperties: true,
+    properties: {
+      ok: { type: 'boolean' },
+      data: { description: 'Primary JSON payload for this endpoint.' },
+      source: { type: 'string' },
+      updatedAt: { type: 'string' },
+      error: { type: 'string' },
+    },
+  };
 }
 
 function serviceNameFor(row, metadata) {
@@ -73,7 +130,7 @@ function serviceNameFor(row, metadata) {
 
 function discoveryExtensions(row, resourceUrl, metadata, outputSchema) {
   const method = String(metadata?.method || 'GET').toUpperCase();
-  const parameters = paramsFromUrl(row.resource_url);
+  const parameters = paramsFromUrl(row.resource_url, metadata?.exampleUrl);
   const info = {
     input: {
       type: 'http',
@@ -83,24 +140,21 @@ function discoveryExtensions(row, resourceUrl, metadata, outputSchema) {
     },
     output: {
       type: 'json',
+      schema: outputSchema,
     },
   };
   if (metadata?.exampleUrl) info.input.exampleUrl = metadata.exampleUrl;
   if (metadata?.outputExample) info.output.example = metadata.outputExample;
 
-  const schema = outputSchema
-    ? {
+  return {
+    bazaar: {
+      info,
+      schema: {
         type: 'object',
         properties: {
           output: outputSchema,
         },
-      }
-    : undefined;
-
-  return {
-    bazaar: {
-      info,
-      ...(schema ? { schema } : {}),
+      },
       canonicalResource: row.resource_url,
       callableResource: resourceUrl,
     },
@@ -155,8 +209,8 @@ async function attachAccepts(env, rows) {
   }
 
   return rows.map((r) => {
-    const outputSchema = r.output_schema ? JSON.parse(r.output_schema) : undefined;
     const metadata = r.metadata ? JSON.parse(r.metadata) : undefined;
+    const outputSchema = r.output_schema ? JSON.parse(r.output_schema) : inferredOutputSchema(r, metadata);
     const resource = callableUrl(r.resource_url);
     const serviceName = serviceNameFor(r, metadata);
     return {
@@ -184,10 +238,18 @@ async function attachAccepts(env, rows) {
         l30DaysTotalCalls: r.calls_30d ?? undefined,
         l30DaysUniquePayers: r.unique_payers_30d ?? undefined,
       },
-    // Agent-first fields (capabilities/useWhen/doNotUseWhen/sideEffects/permissions/
-    // license/repository/documentation/examples), only present when a provider
-    // actually supplied them — never fabricated for mirrored resources.
-      metadata: metadata ? { ...metadata, canonicalResource: r.resource_url, callableResource: resource } : { canonicalResource: r.resource_url, callableResource: resource },
+    // Agent-first fields. Preserve provider-supplied metadata, then fill conservative
+    // read-only defaults so discovery clients can still reason about sparse records.
+      metadata: {
+        ...(metadata || {}),
+        capabilities: metadata?.capabilities || [r.description || serviceName],
+        useWhen: metadata?.useWhen || 'Use when an agent needs fresh external data that should be fetched from the source instead of guessed by a language model.',
+        doNotUseWhen: metadata?.doNotUseWhen || 'Do not use as sole authority for regulated professional advice, safety-critical action, trade execution, or irreversible decisions without independent verification.',
+        sideEffects: metadata?.sideEffects || 'none',
+        permissions: metadata?.permissions || ['Read-only endpoint. No account or API key; send an x402 payment proof for paid calls.'],
+        canonicalResource: r.resource_url,
+        callableResource: resource,
+      },
     // Liveness: null/undefined = never checked (not the same as "down"). Only
     // owner-submitted resources are probed — see scripts/check-liveness.mjs.
       liveness: {
