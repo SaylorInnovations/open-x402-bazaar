@@ -62,7 +62,7 @@
           { "name": "payTo", "in": "query", "schema": { "type": "string" } },
           { "name": "urlSubstring", "in": "query", "schema": { "type": "string" } },
           { "name": "maxUsdPrice", "in": "query", "schema": { "type": "number" } },
-          { "name": "limit", "in": "query", "schema": { "type": "integer", "default": 20, "maximum": 100 } }
+          { "name": "limit", "in": "query", "schema": { "type": "integer", "default": 20, "maximum": 1000 } }
         ],
         "responses": {
           "200": {
@@ -77,7 +77,7 @@
         "operationId": "listResources",
         "summary": "Paginated listing of every indexed resource, ranked by 30-day call volume (or recency)",
         "parameters": [
-          { "name": "limit", "in": "query", "schema": { "type": "integer", "default": 20, "maximum": 100 } },
+          { "name": "limit", "in": "query", "schema": { "type": "integer", "default": 20, "maximum": 1000 } },
           { "name": "offset", "in": "query", "schema": { "type": "integer", "default": 0 } },
           { "name": "sort", "in": "query", "schema": { "type": "string", "enum": ["popular", "recent"], "default": "popular" }, "description": "'recent' orders by newest listing first; default ranks by 30-day call volume." }
         ],
@@ -320,6 +320,8 @@
         "properties": {
           "x402Version": { "type": "integer" },
           "resources": { "type": "array", "items": { "$ref": "#/components/schemas/Resource" } },
+          "items": { "type": "array", "items": { "$ref": "#/components/schemas/Resource" }, "description": "Coinbase Bazaar-compatible alias for resources." },
+          "pagination": { "type": "object", "properties": { "total": { "type": "integer" }, "limit": { "type": "integer" }, "offset": { "type": "integer" } } },
           "partialResults": { "type": "boolean" },
           "searchMethod": { "type": "string" }
         }
@@ -329,9 +331,11 @@
         "properties": {
           "x402Version": { "type": "integer" },
           "resources": { "type": "array", "items": { "$ref": "#/components/schemas/Resource" } },
+          "items": { "type": "array", "items": { "$ref": "#/components/schemas/Resource" }, "description": "Coinbase Bazaar-compatible alias for resources." },
           "total": { "type": "integer" },
           "limit": { "type": "integer" },
-          "offset": { "type": "integer" }
+          "offset": { "type": "integer" },
+          "pagination": { "type": "object", "properties": { "total": { "type": "integer" }, "limit": { "type": "integer" }, "offset": { "type": "integer" } } }
         }
       },
       "FacetValue": {

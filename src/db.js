@@ -1,6 +1,6 @@
-function clampLimit(limit, fallback = 20) {
+function clampLimit(limit, fallback = 20, max = 1000) {
   const n = Number(limit) || fallback;
-  return Math.min(Math.max(n, 1), 100);
+  return Math.min(Math.max(n, 1), max);
 }
 
 // Coinbase's own Bazaar API doesn't include amountUsd on accepts[] entries at all
@@ -563,7 +563,7 @@ async function getFeaturedResources(env, { limit = 6 } = {}) {
        WHERE r.featured_until IS NOT NULL AND r.featured_until > ?
        ORDER BY r.featured_until DESC LIMIT ?`
     )
-    .bind(new Date().toISOString(), clampLimit(limit))
+    .bind(new Date().toISOString(), clampLimit(limit, 6, 100))
     .all();
   return attachAccepts(env, results);
 }

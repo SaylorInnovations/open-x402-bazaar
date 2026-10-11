@@ -12,9 +12,11 @@
 
 - `GET /discovery/search?query=&network=&asset=&scheme=&payTo=&urlSubstring=&maxUsdPrice=&limit=`
   — keyword + filter search. Text queries rank by relevance; filter-only queries rank
-  by 30-day call volume (busiest/most-trustworthy resources first).
+  by 30-day call volume (busiest/most-trustworthy resources first). `limit` caps at
+  1000, matching Coinbase Bazaar's public discovery page size.
 - `GET /discovery/resources?limit=&offset=&sort=` — paginated listing (`sort=recent`
-  for newest first, default is call-volume ranked).
+  for newest first, default is call-volume ranked). Response includes both `resources`
+  and Coinbase-style `items`.
 - `GET /discovery/merchant?payTo=<address>` — every resource that pays a specific address.
 - `GET /discovery/facets?limit=` — compact filter-planning counts for networks,
   assets, schemes, resource types, providers, price bands, liveness and trust states.

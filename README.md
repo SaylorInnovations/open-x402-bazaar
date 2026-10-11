@@ -72,8 +72,8 @@ Mirrors the field names and shape of Coinbase's CDP Bazaar API, plus an additive
 
 | Endpoint | Purpose |
 |---|---|
-| `GET /discovery/search?query=&network=&asset=&scheme=&payTo=&urlSubstring=&maxUsdPrice=&limit=` | Keyword/filter search. Text queries rank by relevance (FTS5 bm25); filter-only queries rank by 30-day call volume |
-| `GET /discovery/resources?limit=&offset=&sort=` | Paginated listing of every indexed resource. `sort=recent` for newest-first, default ranks by 30-day call volume |
+| `GET /discovery/search?query=&network=&asset=&scheme=&payTo=&urlSubstring=&maxUsdPrice=&limit=` | Keyword/filter search. Text queries rank by relevance (FTS5 bm25); filter-only queries rank by 30-day call volume. `limit` caps at 1000, matching Coinbase Bazaar's public discovery page size |
+| `GET /discovery/resources?limit=&offset=&sort=` | Paginated listing of every indexed resource. `sort=recent` for newest-first, default ranks by 30-day call volume. Returns both `resources` and Coinbase-style `items` aliases |
 | `GET /discovery/merchant?payTo=<address>` | All resources that pay a specific address |
 | `GET /discovery/facets?limit=` | Compact counts for available networks, assets, schemes, resource types, providers, price bands, liveness and trust states — useful before choosing search filters |
 | `GET /discovery/stats?full=` | Catalog totals: listings, resources, accepts, merchants, network count, calls. `full=1` adds the per-network/per-source breakdown — a full table scan, so it's opt-in, not computed by default |
