@@ -22,6 +22,17 @@ function callableUrl(url) {
   return String(url || '').replace(/\{([^}]+)\}/g, ':$1');
 }
 
+function paramsFromUrl(url) {
+  const params = {};
+  for (const name of String(url).matchAll(/\{([^}]+)\}/g)) {
+    params[name[1]] = `Required ${name[1]} parameter.`;
+  }
+  for (const name of String(url).matchAll(/[?&]([^=&#]+)=\{([^}]+)\}/g)) {
+    params[name[1]] = `Required ${name[1]} query parameter.`;
+  }
+  return params;
+}
+
 function slugify(value) {
   return String(value || '')
     .toLowerCase()
@@ -42,11 +53,13 @@ function endpointName(endpoint) {
 
 function discoveryExtensions(endpoint, resourceUrl) {
   const method = String(endpoint.method || 'GET').toUpperCase();
+  const parameters = paramsFromUrl(endpoint.url);
   const info = {
     input: {
       type: 'http',
       method,
       discoverable: true,
+      ...(Object.keys(parameters).length ? { parameters } : {}),
     },
     output: {
       type: 'json',
@@ -96,6 +109,9 @@ function toDiscoveryResource(endpoint, index) {
     metadata: {
       name,
       provider: 'Saylor Innovations',
+      useWhen: endpoint.useWhen || 'Use when an agent needs fresh external data that should be fetched from the source instead of guessed by a language model.',
+      sideEffects: 'none',
+      permissions: ['Read-only endpoint. No account or API key; send an x402 payment proof for paid calls.'],
       exampleUrl: endpoint.exampleUrl || endpoint.freeSample || null,
       canonicalResource: endpoint.url,
       callableResource: url,

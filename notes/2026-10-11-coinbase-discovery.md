@@ -84,4 +84,6 @@ These are now present in `public/.well-known/x402.json` as payable resources:
   - `https://bazaar.saylorinnovations.com/discovery/search?query=solana&limit=3`
   - `https://bazaar.saylorinnovations.com/.well-known/x402.json`
 - When D1 row reads reset or the plan is upgraded, import Coinbase quality back into local catalog fields so `calls_30d` is populated for Saylor-owned rows.
-- Consider adding more seeded top endpoints to `/.well-known/x402.json` if crawlers respond well to the three-resource seed.
+- 2026-10-11 follow-up: `scripts/sync-agent-bazaar-manifest.mjs` now rebuilds Agent Bazaar's public manifest from the live Saylor manifest. Current generated count: 408 payable API endpoints.
+- Each generated endpoint keeps real `accepts[]`, has a callable `:param` URL, top-level `serviceName`, focused tags, canonical URL metadata, and `extensions.bazaar.info.input`.
+- `/discovery/resources` fallback and DB-backed records also include extracted parameter hints for `{path}` and `{query}` variables.

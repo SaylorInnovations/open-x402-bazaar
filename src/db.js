@@ -29,6 +29,17 @@ function callableUrl(url) {
   return String(url || '').replace(/\{([^}]+)\}/g, ':$1');
 }
 
+function paramsFromUrl(url) {
+  const params = {};
+  for (const name of String(url).matchAll(/\{([^}]+)\}/g)) {
+    params[name[1]] = `Required ${name[1]} parameter.`;
+  }
+  for (const name of String(url).matchAll(/[?&]([^=&#]+)=\{([^}]+)\}/g)) {
+    params[name[1]] = `Required ${name[1]} query parameter.`;
+  }
+  return params;
+}
+
 function serviceNameFor(row, metadata) {
   if (metadata?.name) return metadata.name;
   if (metadata?.serviceName) return metadata.serviceName;
@@ -43,11 +54,13 @@ function serviceNameFor(row, metadata) {
 
 function discoveryExtensions(row, resourceUrl, metadata, outputSchema) {
   const method = String(metadata?.method || 'GET').toUpperCase();
+  const parameters = paramsFromUrl(row.resource_url);
   const info = {
     input: {
       type: 'http',
       method,
       discoverable: true,
+      ...(Object.keys(parameters).length ? { parameters } : {}),
     },
     output: {
       type: 'json',
