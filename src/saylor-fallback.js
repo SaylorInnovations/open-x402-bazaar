@@ -18,6 +18,10 @@ function normalizeTags(endpoint) {
   return [...new Set([family, ...tags].filter(Boolean).map((t) => String(t).toLowerCase()))];
 }
 
+function callableUrl(url) {
+  return String(url || '').replace(/\{([^}]+)\}/g, ':$1');
+}
+
 function slugify(value) {
   return String(value || '')
     .toLowerCase()
@@ -29,21 +33,57 @@ function slugify(value) {
 function endpointName(endpoint) {
   if (endpoint.serviceName) return endpoint.serviceName;
   try {
-    const path = new URL(endpoint.url).pathname.replace(/^\/api\//, '').replace(/[{}]/g, '');
+    const path = decodeURIComponent(new URL(endpoint.url).pathname).replace(/^\/api\//, '').replace(/[{}]/g, '');
     return `Saylor ${path.split('/').filter(Boolean).join(' ')}`;
   } catch {
     return 'Saylor x402 API';
   }
 }
 
+function discoveryExtensions(endpoint, resourceUrl) {
+  const method = String(endpoint.method || 'GET').toUpperCase();
+  const info = {
+    input: {
+      type: 'http',
+      method,
+      discoverable: true,
+    },
+    output: {
+      type: 'json',
+    },
+  };
+  if (endpoint.exampleUrl || endpoint.freeSample) info.input.exampleUrl = endpoint.exampleUrl || endpoint.freeSample;
+  if (endpoint.outputExample) info.output.example = endpoint.outputExample;
+
+  const schema = endpoint.outputSchema
+    ? {
+        type: 'object',
+        properties: {
+          output: endpoint.outputSchema,
+        },
+      }
+    : undefined;
+
+  return {
+    bazaar: {
+      info,
+      ...(schema ? { schema } : {}),
+      canonicalResource: endpoint.url,
+      callableResource: resourceUrl,
+    },
+  };
+}
+
 function toDiscoveryResource(endpoint, index) {
   const accepts = Array.isArray(endpoint.accepts) ? endpoint.accepts : [];
-  const url = endpoint.url;
+  const url = callableUrl(endpoint.url);
+  const name = endpointName(endpoint);
   return {
     id: `saylor-fallback-${index + 1}`,
-    slug: slugify(endpointName(endpoint) || url) || `saylor-${index + 1}`,
+    slug: slugify(name || url) || `saylor-${index + 1}`,
     resource: url,
-    description: endpoint.description || endpointName(endpoint),
+    serviceName: name,
+    description: endpoint.description || name,
     type: 'http',
     resourceType: 'api',
     x402Version: 2,
@@ -52,10 +92,13 @@ function toDiscoveryResource(endpoint, index) {
     tags: normalizeTags(endpoint),
     sourceHost: SAYLOR_HOST,
     lastUpdated: endpoint.updated || new Date().toISOString(),
+    extensions: discoveryExtensions(endpoint, url),
     metadata: {
-      name: endpointName(endpoint),
+      name,
       provider: 'Saylor Innovations',
       exampleUrl: endpoint.exampleUrl || endpoint.freeSample || null,
+      canonicalResource: endpoint.url,
+      callableResource: url,
       fallback: true,
       sourceManifest: SAYLOR_MANIFEST,
     },
@@ -77,10 +120,12 @@ async function fetchSaylorResources() {
 }
 
 function matches(resource, filters) {
-  if (filters.urlSubstring && !resource.resource.includes(filters.urlSubstring)) return false;
+  if (filters.urlSubstring && !resource.resource.includes(filters.urlSubstring) && !resource.metadata?.canonicalResource?.includes(filters.urlSubstring)) return false;
   if (filters.query) {
     const haystack = [
       resource.resource,
+      resource.metadata?.canonicalResource,
+      resource.serviceName,
       resource.description,
       resource.metadata?.name,
       ...(resource.tags || []),

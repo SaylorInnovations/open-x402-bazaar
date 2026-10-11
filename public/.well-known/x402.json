@@ -160,5 +160,69 @@
       "output": { "type": "object", "fields": ["jsonrpc", "result", "error"] }
     }
   },
-  "resources": []
+  "resources": [
+    {
+      "url": "https://saylorinnovations.com/api/token-price/solana/:solana_address",
+      "serviceName": "Saylor Innovations Token Prices",
+      "description": "Token price by Solana mint: USD and native price, changes, liquidity, volume, FDV, market cap, best pair and thin-liquidity flag.",
+      "type": "http",
+      "x402Version": 2,
+      "tags": ["token-price", "dexscreener", "multichain", "defi", "solana"],
+      "accepts": [
+        { "network": "solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp", "scheme": "exact", "amount": "10000", "asset": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v", "payTo": "7LSjfrJf8fNsB8VA9u7N3WEn25smQLpob3SvyUvXacy7", "maxTimeoutSeconds": 120 },
+        { "network": "solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp", "scheme": "exact", "amount": "10000", "asset": "Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB", "payTo": "7LSjfrJf8fNsB8VA9u7N3WEn25smQLpob3SvyUvXacy7", "maxTimeoutSeconds": 120 },
+        { "network": "eip155:8453", "scheme": "exact", "amount": "10000", "asset": "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913", "payTo": "0xA2A8dF0f7CaaBEa4e120a2568118f141569fc8aa", "maxTimeoutSeconds": 120, "extra": { "assetTransferMethod": "eip3009", "name": "USD Coin", "version": "2", "facilitatorOnly": true } },
+        { "network": "eip155:137", "scheme": "exact", "amount": "10000", "asset": "0x3c499c542cEF5E3811e1192ce70d8cC03d5c3359", "payTo": "0xA2A8dF0f7CaaBEa4e120a2568118f141569fc8aa", "maxTimeoutSeconds": 120, "extra": { "assetTransferMethod": "eip3009", "name": "USD Coin", "version": "2", "facilitatorOnly": true } },
+        { "network": "eip155:42161", "scheme": "exact", "amount": "10000", "asset": "0xaf88d065e77c8cC2239327C5EDb3A432268e5831", "payTo": "0xA2A8dF0f7CaaBEa4e120a2568118f141569fc8aa", "maxTimeoutSeconds": 120, "extra": { "assetTransferMethod": "eip3009", "name": "USD Coin", "version": "2", "facilitatorOnly": true } }
+      ],
+      "extensions": {
+        "bazaar": {
+          "info": { "input": { "type": "http", "method": "GET", "discoverable": true }, "output": { "type": "json" } },
+          "canonicalResource": "https://saylorinnovations.com/api/token-price/solana/{mint}"
+        }
+      }
+    },
+    {
+      "url": "https://saylorinnovations.com/api/stocks/quote/:symbol",
+      "serviceName": "Saylor Innovations Stock Data",
+      "description": "Stock quote for any ticker: price, change, day and 52-week range, volume, exchange and market time.",
+      "type": "http",
+      "x402Version": 2,
+      "tags": ["stocks", "equities", "market-data", "quote", "sec"],
+      "accepts": [
+        { "network": "solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp", "scheme": "exact", "amount": "10000", "asset": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v", "payTo": "7LSjfrJf8fNsB8VA9u7N3WEn25smQLpob3SvyUvXacy7", "maxTimeoutSeconds": 120 },
+        { "network": "solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp", "scheme": "exact", "amount": "10000", "asset": "Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB", "payTo": "7LSjfrJf8fNsB8VA9u7N3WEn25smQLpob3SvyUvXacy7", "maxTimeoutSeconds": 120 },
+        { "network": "eip155:8453", "scheme": "exact", "amount": "10000", "asset": "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913", "payTo": "0xA2A8dF0f7CaaBEa4e120a2568118f141569fc8aa", "maxTimeoutSeconds": 120, "extra": { "assetTransferMethod": "eip3009", "name": "USD Coin", "version": "2", "facilitatorOnly": true } },
+        { "network": "eip155:137", "scheme": "exact", "amount": "10000", "asset": "0x3c499c542cEF5E3811e1192ce70d8cC03d5c3359", "payTo": "0xA2A8dF0f7CaaBEa4e120a2568118f141569fc8aa", "maxTimeoutSeconds": 120, "extra": { "assetTransferMethod": "eip3009", "name": "USD Coin", "version": "2", "facilitatorOnly": true } },
+        { "network": "eip155:42161", "scheme": "exact", "amount": "10000", "asset": "0xaf88d065e77c8cC2239327C5EDb3A432268e5831", "payTo": "0xA2A8dF0f7CaaBEa4e120a2568118f141569fc8aa", "maxTimeoutSeconds": 120, "extra": { "assetTransferMethod": "eip3009", "name": "USD Coin", "version": "2", "facilitatorOnly": true } }
+      ],
+      "extensions": {
+        "bazaar": {
+          "info": { "input": { "type": "http", "method": "GET", "discoverable": true }, "output": { "type": "json" } },
+          "canonicalResource": "https://saylorinnovations.com/api/stocks/quote/{symbol}"
+        }
+      }
+    },
+    {
+      "url": "https://saylorinnovations.com/api/python/report?name=:name",
+      "serviceName": "Saylor Innovations Python Package Report",
+      "description": "Inspect a Python package's latest release, Python compatibility, declared dependencies, license metadata and PyPI-reported advisories. No code execution.",
+      "type": "http",
+      "x402Version": 2,
+      "tags": ["python", "pypi", "dependencies", "package-security"],
+      "accepts": [
+        { "network": "solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp", "scheme": "exact", "amount": "10000", "asset": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v", "payTo": "7LSjfrJf8fNsB8VA9u7N3WEn25smQLpob3SvyUvXacy7", "maxTimeoutSeconds": 120 },
+        { "network": "solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp", "scheme": "exact", "amount": "10000", "asset": "Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB", "payTo": "7LSjfrJf8fNsB8VA9u7N3WEn25smQLpob3SvyUvXacy7", "maxTimeoutSeconds": 120 },
+        { "network": "eip155:8453", "scheme": "exact", "amount": "10000", "asset": "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913", "payTo": "0xA2A8dF0f7CaaBEa4e120a2568118f141569fc8aa", "maxTimeoutSeconds": 120, "extra": { "assetTransferMethod": "eip3009", "name": "USD Coin", "version": "2", "facilitatorOnly": true } },
+        { "network": "eip155:137", "scheme": "exact", "amount": "10000", "asset": "0x3c499c542cEF5E3811e1192ce70d8cC03d5c3359", "payTo": "0xA2A8dF0f7CaaBEa4e120a2568118f141569fc8aa", "maxTimeoutSeconds": 120, "extra": { "assetTransferMethod": "eip3009", "name": "USD Coin", "version": "2", "facilitatorOnly": true } },
+        { "network": "eip155:42161", "scheme": "exact", "amount": "10000", "asset": "0xaf88d065e77c8cC2239327C5EDb3A432268e5831", "payTo": "0xA2A8dF0f7CaaBEa4e120a2568118f141569fc8aa", "maxTimeoutSeconds": 120, "extra": { "assetTransferMethod": "eip3009", "name": "USD Coin", "version": "2", "facilitatorOnly": true } }
+      ],
+      "extensions": {
+        "bazaar": {
+          "info": { "input": { "type": "http", "method": "GET", "discoverable": true }, "output": { "type": "json" } },
+          "canonicalResource": "https://saylorinnovations.com/api/python/report?name={name}"
+        }
+      }
+    }
+  ]
 }

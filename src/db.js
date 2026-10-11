@@ -25,6 +25,56 @@ function computedAmountUsd(asset, amount) {
   return Number.isFinite(n) ? n / 1e6 : undefined;
 }
 
+function callableUrl(url) {
+  return String(url || '').replace(/\{([^}]+)\}/g, ':$1');
+}
+
+function serviceNameFor(row, metadata) {
+  if (metadata?.name) return metadata.name;
+  if (metadata?.serviceName) return metadata.serviceName;
+  if (row.listing_host !== 'saylorinnovations.com') return row.listing_host;
+  try {
+    const path = decodeURIComponent(new URL(row.resource_url).pathname).replace(/^\/api\//, '').replace(/[{}]/g, '');
+    return path ? `Saylor ${path.split('/').filter(Boolean).join(' ')}` : row.listing_host;
+  } catch {
+    return row.listing_host;
+  }
+}
+
+function discoveryExtensions(row, resourceUrl, metadata, outputSchema) {
+  const method = String(metadata?.method || 'GET').toUpperCase();
+  const info = {
+    input: {
+      type: 'http',
+      method,
+      discoverable: true,
+    },
+    output: {
+      type: 'json',
+    },
+  };
+  if (metadata?.exampleUrl) info.input.exampleUrl = metadata.exampleUrl;
+  if (metadata?.outputExample) info.output.example = metadata.outputExample;
+
+  const schema = outputSchema
+    ? {
+        type: 'object',
+        properties: {
+          output: outputSchema,
+        },
+      }
+    : undefined;
+
+  return {
+    bazaar: {
+      info,
+      ...(schema ? { schema } : {}),
+      canonicalResource: row.resource_url,
+      callableResource: resourceUrl,
+    },
+  };
+}
+
 // FTS5 gives special meaning to quotes, *, -, NEAR, AND/OR/NOT etc. Wrapping every
 // token in its own quoted phrase (space-joined, implicit AND) makes arbitrary user
 // input safe to MATCH against without it ever being parsed as an FTS5 operator.
@@ -71,46 +121,56 @@ async function attachAccepts(env, rows) {
     });
   }
 
-  return rows.map((r) => ({
-    id: r.id,
-    slug: r.slug || String(r.id),
-    resource: r.resource_url,
-    description: r.description,
-    type: 'http',
-    resourceType: r.resource_type || undefined,
-    x402Version: r.x402_version,
-    accepts: byResource[r.id] || [],
-    outputSchema: r.output_schema ? JSON.parse(r.output_schema) : undefined,
-    tags: JSON.parse(r.tags || '[]'),
-    sourceHost: r.listing_host,
-    lastUpdated: r.last_updated,
+  return rows.map((r) => {
+    const outputSchema = r.output_schema ? JSON.parse(r.output_schema) : undefined;
+    const metadata = r.metadata ? JSON.parse(r.metadata) : undefined;
+    const resource = callableUrl(r.resource_url);
+    const serviceName = serviceNameFor(r, metadata);
+    return {
+      id: r.id,
+      slug: r.slug || String(r.id),
+      resource,
+      serviceName,
+      description: r.description,
+      type: 'http',
+      resourceType: r.resource_type || undefined,
+      x402Version: r.x402_version,
+      accepts: byResource[r.id] || [],
+      outputSchema,
+      tags: JSON.parse(r.tags || '[]'),
+      sourceHost: r.listing_host,
+      lastUpdated: r.last_updated,
+      extensions: discoveryExtensions(r, resource, metadata, outputSchema),
     // Extra fields beyond CDP's wire shape — additive, so existing clients that only
     // read the standard fields are unaffected. Trust/popularity signal for agents
     // choosing between many permissionless (unverified) listings.
-    quality: {
-      calls30d: r.calls_30d ?? undefined,
-      uniquePayers30d: r.unique_payers_30d ?? undefined,
-      lastCalledAt: r.last_called_at ?? undefined,
-    },
+      quality: {
+        calls30d: r.calls_30d ?? undefined,
+        uniquePayers30d: r.unique_payers_30d ?? undefined,
+        lastCalledAt: r.last_called_at ?? undefined,
+        l30DaysTotalCalls: r.calls_30d ?? undefined,
+        l30DaysUniquePayers: r.unique_payers_30d ?? undefined,
+      },
     // Agent-first fields (capabilities/useWhen/doNotUseWhen/sideEffects/permissions/
     // license/repository/documentation/examples), only present when a provider
     // actually supplied them — never fabricated for mirrored resources.
-    metadata: r.metadata ? JSON.parse(r.metadata) : undefined,
+      metadata: metadata ? { ...metadata, canonicalResource: r.resource_url, callableResource: resource } : { canonicalResource: r.resource_url, callableResource: resource },
     // Liveness: null/undefined = never checked (not the same as "down"). Only
     // owner-submitted resources are probed — see scripts/check-liveness.mjs.
-    liveness: {
-      isLive: r.is_live === null || r.is_live === undefined ? undefined : Boolean(r.is_live),
-      lastCheckedAt: r.last_checked_at ?? undefined,
+      liveness: {
+        isLive: r.is_live === null || r.is_live === undefined ? undefined : Boolean(r.is_live),
+        lastCheckedAt: r.last_checked_at ?? undefined,
       // Rolling reliability over the last N liveness checks (N capped at 10 by
       // scripts/check-liveness.mjs) — null when never checked, not the same as 0/10.
-      reliability: r.reliability_checks ? { checks: r.reliability_checks, live: r.reliability_live } : null,
-    },
+        reliability: r.reliability_checks ? { checks: r.reliability_checks, live: r.reliability_live } : null,
+      },
     // true only when the provider proved control via POST /submit — never inferred
     // from hostname or any other heuristic.
-    verified: r.listing_source === 'submitted',
+      verified: r.listing_source === 'submitted',
     // Paid placement, not a quality signal — see functions/feature.js.
-    featured: Boolean(r.featured_until && r.featured_until > new Date().toISOString()),
-  }));
+      featured: Boolean(r.featured_until && r.featured_until > new Date().toISOString()),
+    };
+  });
 }
 
 // Recomputes the catalog_stats cache row from a real (expensive) full scan. Only

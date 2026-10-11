@@ -1,0 +1,64 @@
+# Coinbase Bazaar Discovery Pass - 2026-10-11
+
+Tags: #x402 #coinbase-bazaar #agent-bazaar #discovery #saylor-endpoints
+
+## Snapshot
+
+Scanned Coinbase Bazaar public discovery on 2026-10-11:
+
+- Total Coinbase resources scanned: 32,058
+- Saylor-matching resources found: 175
+- Coinbase usage field: `quality.l30DaysTotalCalls`
+- D1 note: Agent Bazaar remote D1 hit the free daily row-read cap during investigation, so production served the Saylor manifest fallback.
+
+## Most-Pinged Saylor Endpoints
+
+| Rank | Calls 30d | Unique payers | Endpoint |
+|---:|---:|---:|---|
+| 1 | 27 | 2 | `https://saylorinnovations.com/api/token-price/solana/:solana_address` |
+| 2 | 20 | 2 | `https://saylorinnovations.com/api/stocks/quote/:symbol` |
+| 3 | 8 | 3 | `https://saylorinnovations.com/api/python/report` |
+| 4 | 6 | 4 | `https://saylorinnovations.com/api/kb/cuda-driver-ollama` |
+| 5 | 6 | 3 | `https://saylorinnovations.com/api/data/country` |
+| 6 | 6 | 3 | `https://saylorinnovations.com/api/data/economy` |
+| 7 | 6 | 3 | `https://saylorinnovations.com/api/data/exchange-rates` |
+| 8 | 6 | 3 | `https://saylorinnovations.com/api/docs/pypi/fastapi` |
+| 9 | 6 | 3 | `https://saylorinnovations.com/api/evm/ethereum/block/latest` |
+| 10 | 6 | 3 | `https://saylorinnovations.com/api/package/report` |
+| 11 | 6 | 3 | `https://saylorinnovations.com/api/package/search` |
+| 12 | 6 | 3 | `https://saylorinnovations.com/api/research/doi` |
+| 13 | 6 | 3 | `https://saylorinnovations.com/api/research/search` |
+| 14 | 6 | 3 | `https://saylorinnovations.com/api/security/cve` |
+| 15 | 5 | 4 | `https://saylorinnovations.com/api/games/deals` |
+| 16 | 5 | 3 | `https://saylorinnovations.com/api/aircraft/military` |
+| 17 | 5 | 3 | `https://saylorinnovations.com/api/market/bestsellers` |
+| 18 | 5 | 1 | `https://saylorinnovations.com/api/security/:mint` |
+
+## What Worked
+
+The endpoints that got real Coinbase activity had these traits:
+
+- Callable-looking URLs with `:param` placeholders or concrete examples.
+- Top-level `serviceName`.
+- Focused tags that match agent intent.
+- `quality` populated by Coinbase after paid calls.
+- Multiple payment options in `accepts[]`.
+- Practical utility categories: token price, stock quote, package/security reports, docs lookup, research, CVE, economic data.
+
+## Changes Made
+
+- Fallback discovery now returns Coinbase-compatible `items` and `pagination`.
+- Fallback Saylor records now normalize `{param}` into `:param` in returned `resource` URLs.
+- Fallback Saylor records now include top-level `serviceName`.
+- Fallback Saylor records now include `extensions.bazaar.info.input` with `type`, `method`, and `discoverable`.
+- DB-backed records now include the same callable URL normalization, `serviceName`, and `extensions.bazaar` shape.
+- Agent Bazaar's own `/.well-known/x402.json` now seeds three high-performing payable resources instead of advertising an empty `resources[]`.
+
+## Follow-Ups
+
+- After deploy, recheck:
+  - `https://bazaar.saylorinnovations.com/discovery/resources?limit=3`
+  - `https://bazaar.saylorinnovations.com/discovery/search?query=solana&limit=3`
+  - `https://bazaar.saylorinnovations.com/.well-known/x402.json`
+- When D1 row reads reset or the plan is upgraded, import Coinbase quality back into local catalog fields so `calls_30d` is populated for Saylor-owned rows.
+- Consider adding more seeded top endpoints to `/.well-known/x402.json` if crawlers respond well to the three-resource seed.
