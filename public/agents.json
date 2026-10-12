@@ -8,13 +8,9 @@
     "search": "https://bazaar.saylorinnovations.com/discovery/search",
     "list": "https://bazaar.saylorinnovations.com/discovery/resources",
     "byMerchant": "https://bazaar.saylorinnovations.com/discovery/merchant",
-    "facets": "https://bazaar.saylorinnovations.com/discovery/facets",
-    "featured": "https://bazaar.saylorinnovations.com/discovery/featured",
     "stats": "https://bazaar.saylorinnovations.com/discovery/stats"
   },
   "resourceRecord": "https://bazaar.saylorinnovations.com/resources/{slug}.json",
-  "agentRecord": "https://bazaar.saylorinnovations.com/agents/{slug}.json",
-  "guides": "https://bazaar.saylorinnovations.com/guides.json",
   "submit": {
     "url": "https://bazaar.saylorinnovations.com/submit",
     "method": "POST",

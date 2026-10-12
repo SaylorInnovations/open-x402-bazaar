@@ -1,6 +1,6 @@
-function clampLimit(limit, fallback = 20, max = 1000) {
+function clampLimit(limit, fallback = 20) {
   const n = Number(limit) || fallback;
-  return Math.min(Math.max(n, 1), max);
+  return Math.min(Math.max(n, 1), 100);
 }
 
 // Coinbase's own Bazaar API doesn't include amountUsd on accepts[] entries at all
@@ -44,6 +44,15 @@ function toFtsQuery(query) {
 // list/search paths). Chunking keeps this correct at any provider size.
 const ACCEPTS_ID_CHUNK = 100;
 
+function parseJson(value, fallback) {
+  if (!value) return fallback;
+  try {
+    return JSON.parse(value);
+  } catch {
+    return fallback;
+  }
+}
+
 async function attachAccepts(env, rows) {
   if (rows.length === 0) return [];
   const ids = rows.map((r) => r.id);
@@ -71,54 +80,46 @@ async function attachAccepts(env, rows) {
     });
   }
 
-  return rows.map((r) => {
-    const storedSchema = r.output_schema ? JSON.parse(r.output_schema) : undefined;
-    const metadata = r.metadata ? JSON.parse(r.metadata) : undefined;
-    const extensions = storedSchema && typeof storedSchema === 'object' && storedSchema.bazaar ? storedSchema : undefined;
-    const outputSchema = extensions?.bazaar?.schema || storedSchema;
-    return {
-      id: r.id,
-      slug: r.slug || String(r.id),
-      resource: r.resource_url,
-      description: r.description,
-      type: 'http',
-      resourceType: r.resource_type || undefined,
-      x402Version: r.x402_version,
-      accepts: byResource[r.id] || [],
-      serviceName: metadata?.serviceName || metadata?.name || r.listing_host,
-      extensions,
-      outputSchema,
-      tags: JSON.parse(r.tags || '[]'),
-      sourceHost: r.listing_host,
-      lastUpdated: r.last_updated,
-      // Extra fields beyond CDP's wire shape — additive, so existing clients that only
-      // read the standard fields are unaffected. Trust/popularity signal for agents
-      // choosing between many permissionless (unverified) listings.
-      quality: {
-        calls30d: r.calls_30d ?? undefined,
-        uniquePayers30d: r.unique_payers_30d ?? undefined,
-        lastCalledAt: r.last_called_at ?? undefined,
-      },
-      // Agent-first fields (capabilities/useWhen/doNotUseWhen/sideEffects/permissions/
-      // license/repository/documentation/examples), only present when a provider
-      // actually supplied them — never fabricated for mirrored resources.
-      metadata,
-      // Liveness: null/undefined = never checked (not the same as "down"). Only
-      // owner-submitted resources are probed — see scripts/check-liveness.mjs.
-      liveness: {
-        isLive: r.is_live === null || r.is_live === undefined ? undefined : Boolean(r.is_live),
-        lastCheckedAt: r.last_checked_at ?? undefined,
-        // Rolling reliability over the last N liveness checks (N capped at 10 by
-        // scripts/check-liveness.mjs) — null when never checked, not the same as 0/10.
-        reliability: r.reliability_checks ? { checks: r.reliability_checks, live: r.reliability_live } : null,
-      },
-      // true only when the provider proved control via POST /submit — never inferred
-      // from hostname or any other heuristic.
-      verified: r.listing_source === 'submitted',
-      // Paid placement, not a quality signal — see functions/feature.js.
-      featured: Boolean(r.featured_until && r.featured_until > new Date().toISOString()),
-    };
-  });
+  return rows.map((r) => ({
+    id: r.id,
+    slug: r.slug || String(r.id),
+    resource: r.resource_url,
+    description: r.description,
+    type: 'http',
+    resourceType: r.resource_type || undefined,
+    x402Version: r.x402_version,
+    accepts: byResource[r.id] || [],
+    outputSchema: parseJson(r.output_schema, undefined),
+    tags: parseJson(r.tags, []),
+    sourceHost: r.listing_host,
+    lastUpdated: r.last_updated,
+    // Extra fields beyond CDP's wire shape — additive, so existing clients that only
+    // read the standard fields are unaffected. Trust/popularity signal for agents
+    // choosing between many permissionless (unverified) listings.
+    quality: {
+      calls30d: r.calls_30d ?? undefined,
+      uniquePayers30d: r.unique_payers_30d ?? undefined,
+      lastCalledAt: r.last_called_at ?? undefined,
+    },
+    // Agent-first fields (capabilities/useWhen/doNotUseWhen/sideEffects/permissions/
+    // license/repository/documentation/examples), only present when a provider
+    // actually supplied them — never fabricated for mirrored resources.
+    metadata: parseJson(r.metadata, undefined),
+    // Liveness: null/undefined = never checked (not the same as "down"). Only
+    // owner-submitted resources are probed — see scripts/check-liveness.mjs.
+    liveness: {
+      isLive: r.is_live === null || r.is_live === undefined ? undefined : Boolean(r.is_live),
+      lastCheckedAt: r.last_checked_at ?? undefined,
+      // Rolling reliability over the last N liveness checks (N capped at 10 by
+      // scripts/check-liveness.mjs) — null when never checked, not the same as 0/10.
+      reliability: r.reliability_checks ? { checks: r.reliability_checks, live: r.reliability_live } : null,
+    },
+    // true only when the provider proved control via POST /submit — never inferred
+    // from hostname or any other heuristic.
+    verified: r.listing_source === 'submitted',
+    // Paid placement, not a quality signal — see functions/feature.js.
+    featured: Boolean(r.featured_until && r.featured_until > new Date().toISOString()),
+  }));
 }
 
 // Recomputes the catalog_stats cache row from a real (expensive) full scan. Only
@@ -263,7 +264,7 @@ async function searchResources(env, { query, network, asset, scheme, payTo, maxU
   // Text queries rank by FTS5 match quality (bm25) first; filter-only queries rank
   // by 30-day call volume (idx_resources_calls_id), so the busiest (most likely
   // still-live, least-likely-spam) resources surface first among otherwise-equal matches.
-  sql += query ? ' ORDER BY bm25(resources_fts)' : ' ORDER BY r.calls_30d DESC NULLS LAST, r.id';
+  sql += query ? ' ORDER BY bm25(resources_fts)' : ' ORDER BY r.calls_30d IS NULL, r.calls_30d DESC, r.id';
   sql += ' LIMIT ?';
   params.push(lim);
 
@@ -277,7 +278,7 @@ async function listResources(env, { limit, offset, sort }) {
   // 'recent' is genuinely recency (insertion order), not a fabricated trending score —
   // used for the homepage's "Recently Added" section when there isn't enough usage
   // data yet to justify a "Trending" claim.
-  const orderBy = sort === 'recent' ? 'r.id DESC' : 'r.calls_30d DESC NULLS LAST, r.id';
+  const orderBy = sort === 'recent' ? 'r.id DESC' : 'r.calls_30d IS NULL, r.calls_30d DESC, r.id';
 
   const { results } = await env.DB
     .prepare(`SELECT r.id, r.resource_url, r.description, r.x402_version, r.output_schema, r.tags, r.last_updated, r.listing_host, r.calls_30d, r.unique_payers_30d, r.last_called_at, r.slug, r.resource_type, r.metadata, r.is_live, r.last_checked_at, r.reliability_checks, r.reliability_live, l.source AS listing_source FROM resources r JOIN listings l ON l.host = r.listing_host ORDER BY ${orderBy} LIMIT ? OFFSET ?`)
@@ -296,7 +297,7 @@ async function merchantResources(env, payTo) {
     .prepare(
       `SELECT DISTINCT r.id, r.resource_url, r.description, r.x402_version, r.output_schema, r.tags, r.last_updated, r.listing_host, r.calls_30d, r.unique_payers_30d, r.last_called_at, r.slug, r.resource_type, r.metadata, r.is_live, r.last_checked_at, r.reliability_checks, r.reliability_live, l.source AS listing_source
        FROM resources r JOIN resource_accepts a ON a.resource_id = r.id JOIN listings l ON l.host = r.listing_host WHERE a.pay_to = ?
-       ORDER BY r.calls_30d DESC NULLS LAST, r.id`
+       ORDER BY r.calls_30d IS NULL, r.calls_30d DESC, r.id`
     )
     .bind(payTo)
     .all();
@@ -324,7 +325,7 @@ async function getProvider(env, host) {
   const { results } = await env.DB
     .prepare(
       `SELECT r.id, r.resource_url, r.description, r.x402_version, r.output_schema, r.tags, r.last_updated, r.listing_host, r.calls_30d, r.unique_payers_30d, r.last_called_at, r.slug, r.resource_type, r.metadata, r.is_live, r.last_checked_at, r.reliability_checks, r.reliability_live, r.featured_until, l.source AS listing_source
-       FROM resources r JOIN listings l ON l.host = r.listing_host WHERE r.listing_host = ? ORDER BY r.calls_30d DESC NULLS LAST, r.id`
+       FROM resources r JOIN listings l ON l.host = r.listing_host WHERE r.listing_host = ? ORDER BY r.calls_30d IS NULL, r.calls_30d DESC, r.id`
     )
     .bind(host)
     .all();
@@ -340,7 +341,7 @@ async function resourcesByNetwork(env, network, { limit, offset }) {
       `SELECT r.id, r.resource_url, r.description, r.x402_version, r.output_schema, r.tags, r.last_updated, r.listing_host, r.calls_30d, r.unique_payers_30d, r.last_called_at, r.slug, r.resource_type, r.metadata, r.is_live, r.last_checked_at, r.reliability_checks, r.reliability_live, l.source AS listing_source
        FROM resources r JOIN listings l ON l.host = r.listing_host
        WHERE EXISTS (SELECT 1 FROM resource_accepts a WHERE a.resource_id = r.id AND a.network = ?)
-       ORDER BY r.calls_30d DESC NULLS LAST, r.id LIMIT ? OFFSET ?`
+       ORDER BY r.calls_30d IS NULL, r.calls_30d DESC, r.id LIMIT ? OFFSET ?`
     )
     .bind(network, lim, off)
     .all();
@@ -357,7 +358,7 @@ async function resourcesByCategory(env, resourceType, { limit, offset }) {
     .prepare(
       `SELECT r.id, r.resource_url, r.description, r.x402_version, r.output_schema, r.tags, r.last_updated, r.listing_host, r.calls_30d, r.unique_payers_30d, r.last_called_at, r.slug, r.resource_type, r.metadata, r.is_live, r.last_checked_at, r.reliability_checks, r.reliability_live, l.source AS listing_source
        FROM resources r JOIN listings l ON l.host = r.listing_host
-       WHERE r.resource_type = ? COLLATE NOCASE ORDER BY r.calls_30d DESC NULLS LAST, r.id LIMIT ? OFFSET ?`
+       WHERE r.resource_type = ? COLLATE NOCASE ORDER BY r.calls_30d IS NULL, r.calls_30d DESC, r.id LIMIT ? OFFSET ?`
     )
     .bind(resourceType, lim, off)
     .all();
@@ -571,7 +572,7 @@ async function getFeaturedResources(env, { limit = 6 } = {}) {
        WHERE r.featured_until IS NOT NULL AND r.featured_until > ?
        ORDER BY r.featured_until DESC LIMIT ?`
     )
-    .bind(new Date().toISOString(), clampLimit(limit, 6, 100))
+    .bind(new Date().toISOString(), clampLimit(limit))
     .all();
   return attachAccepts(env, results);
 }

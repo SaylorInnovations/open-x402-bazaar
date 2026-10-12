@@ -1,5 +1,4 @@
 import { listResources } from '../../src/db.js';
-import { fallbackHeaders, fallbackListResources } from '../../src/saylor-fallback.js';
 
 const CORS = { 'access-control-allow-origin': '*' };
 
@@ -9,14 +8,15 @@ export async function onRequestGet({ request, env }) {
     const { resources, total, limit, offset } = await listResources(env, { limit: q.limit, offset: q.offset, sort: q.sort });
 
     return new Response(
-      JSON.stringify({ x402Version: 2, resources, items: resources, total, limit, offset, pagination: { total, limit, offset } }),
+      JSON.stringify({ x402Version: 2, resources, total, limit, offset }),
       { headers: { ...CORS, 'content-type': 'application/json' } }
     );
-  } catch (error) {
-    const { resources, total, limit, offset, fallback } = await fallbackListResources(q);
+  } catch {
+    const limit = Math.min(Math.max(Number(q.limit) || 20, 1), 100);
+    const offset = Math.max(Number(q.offset) || 0, 0);
     return new Response(
-      JSON.stringify({ x402Version: 2, resources, items: resources, total, limit, offset, pagination: { total, limit, offset }, fallback, warning: 'Primary catalog database is temporarily unavailable; serving verified Saylor Innovations manifest listings.' }),
-      { headers: fallbackHeaders() }
+      JSON.stringify({ x402Version: 2, resources: [], total: 0, limit, offset, partialResults: true, warning: 'catalog temporarily unavailable' }),
+      { status: 200, headers: { ...CORS, 'content-type': 'application/json', 'cache-control': 'no-store' } }
     );
   }
 }

@@ -41,9 +41,7 @@ GET /discovery/search?query=&network=&asset=&scheme=&payTo=&urlSubstring=&maxUsd
 
 GET /discovery/resources?limit=&offset=&sort=
   Paginated listing of every indexed resource. sort=recent for newest-first;
-  default ranks by 30-day call volume. limit caps at 1000, matching Coinbase
-  Bazaar's public discovery page size. Response includes both resources and the
-  Coinbase-style items alias.
+  default ranks by 30-day call volume.
 
 GET /discovery/merchant?payTo=<address>
   Every resource that settles to a given payment address.

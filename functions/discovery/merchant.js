@@ -1,5 +1,4 @@
 import { merchantResources } from '../../src/db.js';
-import { fallbackHeaders, fallbackSearchResources } from '../../src/saylor-fallback.js';
 
 const CORS = { 'access-control-allow-origin': '*' };
 
@@ -14,13 +13,13 @@ export async function onRequestGet({ request, env }) {
 
   try {
     const resources = await merchantResources(env, q.payTo);
-    return new Response(JSON.stringify({ x402Version: 2, payTo: q.payTo, resources, items: resources, pagination: { total: resources.length, limit: resources.length, offset: 0 } }), {
+    return new Response(JSON.stringify({ x402Version: 2, payTo: q.payTo, resources }), {
       headers: { ...CORS, 'content-type': 'application/json' },
     });
   } catch {
-    const resources = await fallbackSearchResources({ payTo: q.payTo, limit: q.limit || 100 });
-    return new Response(JSON.stringify({ x402Version: 2, payTo: q.payTo, resources, items: resources, pagination: { total: resources.length, limit: resources.length, offset: 0 }, fallback: 'saylor-manifest' }), {
-      headers: fallbackHeaders(),
+    return new Response(JSON.stringify({ x402Version: 2, payTo: q.payTo, resources: [], partialResults: true, warning: 'catalog temporarily unavailable' }), {
+      status: 200,
+      headers: { ...CORS, 'content-type': 'application/json', 'cache-control': 'no-store' },
     });
   }
 }
