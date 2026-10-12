@@ -36,18 +36,66 @@ function endpointName(endpoint) {
   }
 }
 
+function bazaarInput(endpoint) {
+  const input = { method: endpoint.method || 'GET', type: 'http' };
+  try {
+    const example = new URL(endpoint.exampleUrl || endpoint.freeSample || endpoint.url.replace(/\{[^}]+\}/g, 'example'));
+    const rawPath = String(endpoint.url).replace(/^https?:\/\/[^/]+/i, '').split('?')[0];
+    const templateParts = rawPath.split('/').filter(Boolean);
+    const exampleParts = example.pathname.split('/').filter(Boolean);
+    const pathParams = {};
+    templateParts.forEach((part, i) => {
+      const match = part.match(/^\{([^}]+)\}$/);
+      if (match) pathParams[match[1]] = decodeURIComponent(exampleParts[i] || 'example');
+    });
+    if (Object.keys(pathParams).length) input.pathParams = pathParams;
+    const queryParams = {};
+    for (const [key, value] of example.searchParams.entries()) queryParams[key] = value;
+    if (Object.keys(queryParams).length) input.queryParams = queryParams;
+  } catch {
+    // Keep the Coinbase-style minimum shape even if a provider URL template is odd.
+  }
+  return input;
+}
+
+function bazaarExtensions(endpoint) {
+  return {
+    bazaar: {
+      info: {
+        input: bazaarInput(endpoint),
+        output: {
+          type: 'json',
+          example: endpoint.exampleOutput || endpoint.sampleOutput || { ok: true, service: endpointName(endpoint) },
+        },
+      },
+      schema: {
+        $schema: 'https://json-schema.org/draft/2020-12/schema',
+        type: 'object',
+        required: ['input'],
+        properties: {
+          input: { type: 'object' },
+          output: { type: 'object' },
+        },
+      },
+    },
+  };
+}
+
 function toDiscoveryResource(endpoint, index) {
   const accepts = Array.isArray(endpoint.accepts) ? endpoint.accepts : [];
   const url = endpoint.url;
+  const serviceName = endpointName(endpoint);
   return {
     id: `saylor-fallback-${index + 1}`,
-    slug: slugify(endpointName(endpoint) || url) || `saylor-${index + 1}`,
+    slug: slugify(serviceName || url) || `saylor-${index + 1}`,
     resource: url,
-    description: endpoint.description || endpointName(endpoint),
+    description: endpoint.description || serviceName,
     type: 'http',
     resourceType: 'api',
     x402Version: 2,
     accepts,
+    serviceName,
+    extensions: bazaarExtensions(endpoint),
     outputSchema: endpoint.outputSchema,
     tags: normalizeTags(endpoint),
     sourceHost: SAYLOR_HOST,

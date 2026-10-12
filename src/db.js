@@ -71,46 +71,54 @@ async function attachAccepts(env, rows) {
     });
   }
 
-  return rows.map((r) => ({
-    id: r.id,
-    slug: r.slug || String(r.id),
-    resource: r.resource_url,
-    description: r.description,
-    type: 'http',
-    resourceType: r.resource_type || undefined,
-    x402Version: r.x402_version,
-    accepts: byResource[r.id] || [],
-    outputSchema: r.output_schema ? JSON.parse(r.output_schema) : undefined,
-    tags: JSON.parse(r.tags || '[]'),
-    sourceHost: r.listing_host,
-    lastUpdated: r.last_updated,
-    // Extra fields beyond CDP's wire shape — additive, so existing clients that only
-    // read the standard fields are unaffected. Trust/popularity signal for agents
-    // choosing between many permissionless (unverified) listings.
-    quality: {
-      calls30d: r.calls_30d ?? undefined,
-      uniquePayers30d: r.unique_payers_30d ?? undefined,
-      lastCalledAt: r.last_called_at ?? undefined,
-    },
-    // Agent-first fields (capabilities/useWhen/doNotUseWhen/sideEffects/permissions/
-    // license/repository/documentation/examples), only present when a provider
-    // actually supplied them — never fabricated for mirrored resources.
-    metadata: r.metadata ? JSON.parse(r.metadata) : undefined,
-    // Liveness: null/undefined = never checked (not the same as "down"). Only
-    // owner-submitted resources are probed — see scripts/check-liveness.mjs.
-    liveness: {
-      isLive: r.is_live === null || r.is_live === undefined ? undefined : Boolean(r.is_live),
-      lastCheckedAt: r.last_checked_at ?? undefined,
-      // Rolling reliability over the last N liveness checks (N capped at 10 by
-      // scripts/check-liveness.mjs) — null when never checked, not the same as 0/10.
-      reliability: r.reliability_checks ? { checks: r.reliability_checks, live: r.reliability_live } : null,
-    },
-    // true only when the provider proved control via POST /submit — never inferred
-    // from hostname or any other heuristic.
-    verified: r.listing_source === 'submitted',
-    // Paid placement, not a quality signal — see functions/feature.js.
-    featured: Boolean(r.featured_until && r.featured_until > new Date().toISOString()),
-  }));
+  return rows.map((r) => {
+    const storedSchema = r.output_schema ? JSON.parse(r.output_schema) : undefined;
+    const metadata = r.metadata ? JSON.parse(r.metadata) : undefined;
+    const extensions = storedSchema && typeof storedSchema === 'object' && storedSchema.bazaar ? storedSchema : undefined;
+    const outputSchema = extensions?.bazaar?.schema || storedSchema;
+    return {
+      id: r.id,
+      slug: r.slug || String(r.id),
+      resource: r.resource_url,
+      description: r.description,
+      type: 'http',
+      resourceType: r.resource_type || undefined,
+      x402Version: r.x402_version,
+      accepts: byResource[r.id] || [],
+      serviceName: metadata?.serviceName || metadata?.name || r.listing_host,
+      extensions,
+      outputSchema,
+      tags: JSON.parse(r.tags || '[]'),
+      sourceHost: r.listing_host,
+      lastUpdated: r.last_updated,
+      // Extra fields beyond CDP's wire shape — additive, so existing clients that only
+      // read the standard fields are unaffected. Trust/popularity signal for agents
+      // choosing between many permissionless (unverified) listings.
+      quality: {
+        calls30d: r.calls_30d ?? undefined,
+        uniquePayers30d: r.unique_payers_30d ?? undefined,
+        lastCalledAt: r.last_called_at ?? undefined,
+      },
+      // Agent-first fields (capabilities/useWhen/doNotUseWhen/sideEffects/permissions/
+      // license/repository/documentation/examples), only present when a provider
+      // actually supplied them — never fabricated for mirrored resources.
+      metadata,
+      // Liveness: null/undefined = never checked (not the same as "down"). Only
+      // owner-submitted resources are probed — see scripts/check-liveness.mjs.
+      liveness: {
+        isLive: r.is_live === null || r.is_live === undefined ? undefined : Boolean(r.is_live),
+        lastCheckedAt: r.last_checked_at ?? undefined,
+        // Rolling reliability over the last N liveness checks (N capped at 10 by
+        // scripts/check-liveness.mjs) — null when never checked, not the same as 0/10.
+        reliability: r.reliability_checks ? { checks: r.reliability_checks, live: r.reliability_live } : null,
+      },
+      // true only when the provider proved control via POST /submit — never inferred
+      // from hostname or any other heuristic.
+      verified: r.listing_source === 'submitted',
+      // Paid placement, not a quality signal — see functions/feature.js.
+      featured: Boolean(r.featured_until && r.featured_until > new Date().toISOString()),
+    };
+  });
 }
 
 // Recomputes the catalog_stats cache row from a real (expensive) full scan. Only
