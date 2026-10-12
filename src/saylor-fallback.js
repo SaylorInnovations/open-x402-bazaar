@@ -5,6 +5,8 @@ const SOLANA_PAYTO = '7LSjfrJf8fNsB8VA9u7N3WEn25smQLpob3SvyUvXacy7';
 const USDC_MINT = 'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v';
 const USDT_MINT = 'Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB';
 const MIN_LISTING_PRICE_USD = 0.01;
+const SAYLOR_SERVICE_NAME = 'Saylor Innovations';
+const SAYLOR_ICON_URL = 'https://bazaar.saylorinnovations.com/assets/saylor-logo.jpg';
 const USD_STABLECOINS_6DP = new Set([
   USDC_MINT,
   USDT_MINT,
@@ -62,6 +64,98 @@ function routeParameters(url) {
   return [...pathParams, ...queryParams];
 }
 
+function exampleValue(name) {
+  const n = String(name || '').toLowerCase();
+  if (n.includes('wallet') || n === 'address') return n.includes('sol') ? '7LSjfrJf8fNsB8VA9u7N3WEn25smQLpob3SvyUvXacy7' : '0x0000000000000000000000000000000000000000';
+  if (n.includes('mint')) return USDC_MINT;
+  if (n.includes('chain')) return 'base';
+  if (n.includes('block')) return '12345678';
+  if (n.includes('hash') || n.includes('tx')) return '0x1234';
+  if (n.includes('symbol')) return 'USDC';
+  if (n.includes('query') || n === 'q') return 'base wallet balance';
+  if (n.includes('mints')) return USDC_MINT;
+  return 'string';
+}
+
+function serviceNameForFamily(family, resourceType) {
+  const f = String(family || '').toLowerCase();
+  if (f === 'solana') return 'Saylor Solana Data';
+  if (f === 'evm' || f === 'chain') return 'Saylor EVM Chain Data';
+  if (f === 'defi') return 'Saylor DeFi Data';
+  if (f === 'guide' || String(resourceType).toLowerCase() === 'guide') return 'Saylor Agent Guides';
+  if (f === 'research' || f === 'medical' || f === 'legal') return 'Saylor Research APIs';
+  return SAYLOR_SERVICE_NAME;
+}
+
+function inputExample(url) {
+  const params = routeParameters(url);
+  const input = { type: 'http', method: 'GET', discoverable: true };
+  const pathParams = {};
+  const queryParams = {};
+  for (const p of params) {
+    if (p.in === 'path') pathParams[p.name] = exampleValue(p.name);
+    if (p.in === 'query') queryParams[p.name] = exampleValue(p.name);
+  }
+  if (Object.keys(pathParams).length) input.pathParams = pathParams;
+  if (Object.keys(queryParams).length) input.queryParams = queryParams;
+  return input;
+}
+
+function inputSchema(url) {
+  const params = routeParameters(url);
+  const props = {};
+  const required = [];
+  for (const p of params) {
+    props[p.name] = p.schema || { type: 'string' };
+    if (p.required) required.push(p.name);
+  }
+  return {
+    type: 'object',
+    additionalProperties: false,
+    properties: props,
+    ...(required.length ? { required } : {}),
+  };
+}
+
+function outputExample({ family, url, description, resourceType }) {
+  const text = `${family || ''} ${url || ''} ${description || ''}`.toLowerCase();
+  if (text.includes('balance')) {
+    return { address: '0x0000000000000000000000000000000000000000', chain: 'base', nativeBalance: '0', tokens: [], blockNumber: 12345678 };
+  }
+  if (text.includes('block')) {
+    return { chain: 'base', number: 12345678, hash: '0x1234', timestamp: '2026-10-12T00:00:00.000Z' };
+  }
+  if (text.includes('nonce')) return { address: '0x0000000000000000000000000000000000000000', nonce: 0, chain: 'base' };
+  if (text.includes('transfer')) return { address: '0x0000000000000000000000000000000000000000', chain: 'base', transfers: [] };
+  if (text.includes('price')) return { asset: 'USDC', priceUsd: 1, source: SAYLOR_SERVICE_NAME, timestamp: '2026-10-12T00:00:00.000Z' };
+  if (text.includes('security') || text.includes('risk')) return { riskLevel: 'low', flags: [], summary: 'No high-risk signals found in the sample response.' };
+  if (text.includes('wallet')) return { address: exampleValue('wallet'), holdings: [], activity: [], riskSignals: [] };
+  if (text.includes('trending') || text.includes('launch')) return { items: [], source: SAYLOR_SERVICE_NAME, timestamp: '2026-10-12T00:00:00.000Z' };
+  if (String(resourceType).toLowerCase() === 'guide') return { title: 'Agent-ready x402 guide', summary: description, readMins: 5, sections: [] };
+  return { success: true, data: {}, source: SAYLOR_SERVICE_NAME };
+}
+
+function bazaarExtensions({ url, description, family, resourceType }) {
+  const output = outputExample({ family, url, description, resourceType });
+  return {
+    bazaar: {
+      info: {
+        input: inputExample(url),
+        output: { type: 'json', example: output },
+      },
+      schema: {
+        $schema: 'https://json-schema.org/draft/2020-12/schema',
+        type: 'object',
+        required: ['input', 'output'],
+        properties: {
+          input: inputSchema(url),
+          output: { type: 'object', additionalProperties: true, examples: [output] },
+        },
+      },
+    },
+  };
+}
+
 function agentTags(tags, url, description) {
   const text = `${url} ${description} ${(tags || []).join(' ')}`.toLowerCase();
   const inferred = ['x402', 'pay-per-request', 'no-api-key', 'agent-readable'];
@@ -75,7 +169,14 @@ function agentTags(tags, url, description) {
 }
 
 function metadata({ url, description, capabilities = [], exampleUrl, family, extra = {} }) {
+  const resourceType = extra.resourceType || 'API';
+  const serviceName = extra.serviceName || serviceNameForFamily(family, resourceType);
+  const extensions = extra.extensions || bazaarExtensions({ url, description, family, resourceType });
   return {
+    serviceName,
+    mimeType: 'application/json',
+    iconUrl: SAYLOR_ICON_URL,
+    extensions,
     method: 'GET',
     inputMimeTypes: ['application/json', 'application/x-www-form-urlencoded'],
     outputMimeTypes: ['application/json'],
@@ -99,15 +200,22 @@ function metadata({ url, description, capabilities = [], exampleUrl, family, ext
 }
 
 function resource({ slug, url, description, accepts, tags, resourceType = 'API', outputSchema, metadata: meta }) {
+  const family = meta?.family;
+  const serviceName = meta?.serviceName || serviceNameForFamily(family, resourceType);
+  const extensions = meta?.extensions || bazaarExtensions({ url, description, family, resourceType });
   return {
     slug,
     resource: url,
     description,
     type: 'http',
+    serviceName,
+    mimeType: meta?.mimeType || 'application/json',
+    iconUrl: meta?.iconUrl || SAYLOR_ICON_URL,
     resourceType,
     x402Version: 2,
     accepts,
     outputSchema,
+    extensions,
     tags,
     sourceHost: HOST,
     lastUpdated: new Date().toISOString(),

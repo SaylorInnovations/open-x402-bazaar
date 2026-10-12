@@ -1,6 +1,7 @@
 import assert from 'assert';
 import { isPrivateIp, assertPublicHttpsUrl, extractResources } from '../src/validate.js';
 import { toFtsQuery } from '../src/db.js';
+import { fallbackSaylorOfficial } from '../src/saylor-fallback.js';
 
 async function main() {
   // --- SSRF guard: private/loopback/link-local ranges ---
@@ -56,6 +57,19 @@ async function main() {
   assert.strictEqual(toFtsQuery('solana price'), '"solana" "price"');
   assert.strictEqual(toFtsQuery('say "hi" -x'), '"say" """hi""" "-x"');
   assert.strictEqual(toFtsQuery('NEAR(a b)'), '"NEAR(a" "b)"');
+
+  // Saylor official listings should look like Coinbase Bazaar records to agents:
+  // named service, MIME type, icon, and explicit input/output examples.
+  const saylor = await fallbackSaylorOfficial({ family: 'evm', query: 'balance', limit: 1 });
+  assert.ok(saylor.resources.length >= 1, 'Saylor EVM balance listing must be discoverable');
+  const listing = saylor.resources[0];
+  assert.ok(listing.serviceName, 'listing must expose serviceName');
+  assert.strictEqual(listing.mimeType, 'application/json');
+  assert.ok(listing.iconUrl, 'listing must expose iconUrl');
+  assert.strictEqual(listing.extensions?.bazaar?.info?.input?.method, 'GET');
+  assert.strictEqual(listing.extensions?.bazaar?.info?.input?.discoverable, true);
+  assert.ok(listing.extensions?.bazaar?.info?.output?.example, 'listing must include output example');
+  assert.ok(listing.extensions?.bazaar?.schema?.properties?.input, 'listing must include Bazaar schema');
 
   console.log('ok — all smoke tests passed');
 }

@@ -80,19 +80,26 @@ async function attachAccepts(env, rows) {
     });
   }
 
-  return rows.map((r) => ({
-    id: r.id,
-    slug: r.slug || String(r.id),
-    resource: r.resource_url,
-    description: r.description,
-    type: 'http',
-    resourceType: r.resource_type || undefined,
-    x402Version: r.x402_version,
-    accepts: byResource[r.id] || [],
-    outputSchema: parseJson(r.output_schema, undefined),
-    tags: parseJson(r.tags, []),
-    sourceHost: r.listing_host,
-    lastUpdated: r.last_updated,
+  return rows.map((r) => {
+    const metadata = parseJson(r.metadata, undefined);
+    const outputSchema = parseJson(r.output_schema, undefined);
+    return {
+      id: r.id,
+      slug: r.slug || String(r.id),
+      resource: r.resource_url,
+      description: r.description,
+      type: 'http',
+      serviceName: metadata?.serviceName,
+      mimeType: metadata?.mimeType,
+      iconUrl: metadata?.iconUrl,
+      resourceType: r.resource_type || undefined,
+      x402Version: r.x402_version,
+      accepts: byResource[r.id] || [],
+      outputSchema,
+      extensions: metadata?.extensions,
+      tags: parseJson(r.tags, []),
+      sourceHost: r.listing_host,
+      lastUpdated: r.last_updated,
     // Extra fields beyond CDP's wire shape — additive, so existing clients that only
     // read the standard fields are unaffected. Trust/popularity signal for agents
     // choosing between many permissionless (unverified) listings.
@@ -104,7 +111,7 @@ async function attachAccepts(env, rows) {
     // Agent-first fields (capabilities/useWhen/doNotUseWhen/sideEffects/permissions/
     // license/repository/documentation/examples), only present when a provider
     // actually supplied them — never fabricated for mirrored resources.
-    metadata: parseJson(r.metadata, undefined),
+      metadata,
     // Liveness: null/undefined = never checked (not the same as "down"). Only
     // owner-submitted resources are probed — see scripts/check-liveness.mjs.
     liveness: {
@@ -116,10 +123,11 @@ async function attachAccepts(env, rows) {
     },
     // true only when the provider proved control via POST /submit — never inferred
     // from hostname or any other heuristic.
-    verified: r.listing_source === 'submitted',
+      verified: r.listing_source === 'submitted',
     // Paid placement, not a quality signal — see functions/feature.js.
-    featured: Boolean(r.featured_until && r.featured_until > new Date().toISOString()),
-  }));
+      featured: Boolean(r.featured_until && r.featured_until > new Date().toISOString()),
+    };
+  });
 }
 
 // Recomputes the catalog_stats cache row from a real (expensive) full scan. Only
