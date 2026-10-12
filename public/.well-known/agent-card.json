@@ -30,6 +30,16 @@
       "examples": ["search(\"solana token security\")", "search(query=\"\", network=\"eip155:8453\", maxUsdPrice=0.01)"]
     },
     {
+      "id": "list_saylor_official",
+      "name": "List Saylor Official Endpoints",
+      "description": "Quota-resistant listing of verified Saylor Innovations x402 endpoints direct from the live Saylor manifest and service index. Useful when an agent wants known-good paid APIs first.",
+      "endpoint": "https://bazaar.saylorinnovations.com/discovery/saylor",
+      "method": "GET",
+      "inputModes": ["application/json"],
+      "outputModes": ["application/json"],
+      "examples": ["GET /discovery/saylor?family=evm&query=balance&limit=3", "MCP tools/call list_saylor_official {\"family\":\"solana\",\"limit\":2}"]
+    },
+    {
       "id": "get_resource",
       "name": "Get Resource",
       "description": "Fetch the full machine-readable record for one resource by slug or id, including accepts[], output schema and quality signal.",

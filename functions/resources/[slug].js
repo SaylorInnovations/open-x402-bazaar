@@ -1,6 +1,7 @@
 import { getResourceBySlugOrId } from '../../src/db.js';
 import { pageShell, escapeHtml, priceParts, crumbs, resName, resSummary, typeLabel, uniqueNetworks, assetSymbols, networkLabel, fmtNum, fmtDate, SITE } from '../../src/layout.js';
 import { exampleFromSchema } from '../../src/schemaExample.js';
+import { fallbackSaylorResourceBySlug } from '../../src/saylor-fallback.js';
 
 const CORS = { 'access-control-allow-origin': '*' };
 
@@ -168,7 +169,18 @@ export async function onRequestGet({ params, env }) {
   const isJson = raw.endsWith('.json');
   const key = isJson ? raw.slice(0, -5) : raw;
 
-  const resource = await getResourceBySlugOrId(env, key);
+  let resource;
+  let partial = false;
+  try {
+    resource = await getResourceBySlugOrId(env, key);
+  } catch {
+    resource = await fallbackSaylorResourceBySlug(key);
+    partial = Boolean(resource);
+  }
+  if (!resource) {
+    resource = await fallbackSaylorResourceBySlug(key);
+    partial = Boolean(resource);
+  }
   if (!resource) {
     return new Response(isJson ? JSON.stringify({ error: 'not found' }) : '<h1>404 — resource not found</h1>', {
       status: 404,
@@ -178,7 +190,13 @@ export async function onRequestGet({ params, env }) {
 
   if (isJson) {
     const exampleResponse = resource.outputSchema ? exampleFromSchema(resource.outputSchema) : undefined;
-    return new Response(JSON.stringify({ x402Version: 2, ...resource, exampleResponse }, null, 2), {
+    return new Response(JSON.stringify({
+      x402Version: 2,
+      ...resource,
+      exampleResponse,
+      partialResults: partial || undefined,
+      source: partial ? 'saylor-live-manifest' : undefined,
+    }, null, 2), {
       headers: { ...CORS, 'content-type': 'application/json' },
     });
   }

@@ -242,6 +242,12 @@ async function fallbackSaylorOfficial({ limit, offset, sort, ...filters } = {}) 
   };
 }
 
+async function fallbackSaylorResourceBySlug(slug) {
+  const key = String(slug || '');
+  const resources = await fallbackSaylorResources();
+  return resources.find((r) => r.slug === key || String(r.resource).includes(key)) || null;
+}
+
 async function fallbackListResources({ limit, offset, sort } = {}) {
   const lim = Math.min(Math.max(Number(limit) || 20, 1), 100);
   const off = Math.max(Number(offset) || 0, 0);
@@ -265,4 +271,4 @@ function fallbackHeaders(extra = {}) {
   };
 }
 
-export { fallbackSearchResources, fallbackSaylorOfficial, fallbackListResources, fallbackHeaders };
+export { fallbackSearchResources, fallbackSaylorOfficial, fallbackSaylorResourceBySlug, fallbackListResources, fallbackHeaders };

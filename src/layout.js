@@ -276,7 +276,11 @@ ${canonical ? `<meta property="og:url" content="${escapeHtml(canonical)}">` : ''
 <meta name="twitter:image" content="${SITE}/assets/og.png">
 <link rel="icon" type="image/jpeg" href="/assets/saylor-logo.jpg">
 <link rel="alternate" type="text/plain" title="llms.txt" href="/llms.txt">
+<link rel="alternate" type="application/json" title="Agent Bazaar discovery manifest" href="/discovery.json">
+<link rel="alternate" type="application/json" title="Agent Bazaar quickstart" href="/agents.json">
+<link rel="alternate" type="application/json" title="Agent Bazaar A2A agent card" href="/.well-known/agent-card.json">
 <link rel="service-desc" type="application/json" href="/openapi.json">
+<link rel="sitemap" type="application/xml" href="/sitemap.xml">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Sora:wght@500;600;700&family=Manrope:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap">
