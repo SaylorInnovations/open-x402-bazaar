@@ -8,11 +8,12 @@
   "discovery": {
     "search": "https://bazaar.saylorinnovations.com/discovery/search",
     "list": "https://bazaar.saylorinnovations.com/discovery/resources",
+    "saylorOfficial": "https://bazaar.saylorinnovations.com/discovery/saylor",
     "byMerchant": "https://bazaar.saylorinnovations.com/discovery/merchant",
     "facets": "https://bazaar.saylorinnovations.com/discovery/facets",
     "stats": "https://bazaar.saylorinnovations.com/discovery/stats"
   },
-  "saylorOfficialListings": "https://bazaar.saylorinnovations.com/discovery/search?urlSubstring=https%3A%2F%2Fsaylorinnovations.com&limit=100",
+  "saylorOfficialListings": "https://bazaar.saylorinnovations.com/discovery/saylor?limit=100",
   "resourceRecord": "https://bazaar.saylorinnovations.com/resources/{slug}.json",
   "submit": {
     "url": "https://bazaar.saylorinnovations.com/submit",

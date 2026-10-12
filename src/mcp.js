@@ -5,6 +5,7 @@
 // tools do (Cloudflare Pages Functions are stateless per-request anyway).
 import { searchResources, listResources, merchantResources, getResourceBySlugOrId, getProvider, getStats } from './db.js';
 import { searchAgents, listAgents, getAgentBySlugOrId } from './agentRegistry.js';
+import { fallbackSaylorOfficial } from './saylor-fallback.js';
 
 const PROTOCOL_VERSION_FALLBACK = '2024-11-05';
 const SERVER_INFO = { name: 'agent-bazaar', version: '0.4.0' };
@@ -50,6 +51,24 @@ const TOOLS = [
         limit: { type: 'integer', default: 20, maximum: 100 },
         offset: { type: 'integer', default: 0 },
         sort: { type: 'string', enum: ['popular', 'recent'] },
+      },
+    },
+  },
+  {
+    name: 'list_saylor_official',
+    description: 'List verified Saylor Innovations x402 endpoints directly from the live Saylor manifest. Does not depend on the D1 catalog, so it keeps working during catalog quota exhaustion. Supports query, family, tag, network, asset, payTo, maxUsdPrice, limit and offset filters.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        query: { type: 'string' },
+        family: { type: 'string', description: 'Endpoint family such as evm, solana, research, package, market, kb, or guide.' },
+        tag: { type: 'string' },
+        network: { type: 'string' },
+        asset: { type: 'string' },
+        payTo: { type: 'string' },
+        maxUsdPrice: { type: 'number' },
+        limit: { type: 'integer', default: 20, maximum: 100 },
+        offset: { type: 'integer', default: 0 },
       },
     },
   },
@@ -101,6 +120,8 @@ async function callTool(env, name, args = {}) {
     }
     case 'list_resources':
       return textResult(await listResources(env, args));
+    case 'list_saylor_official':
+      return textResult(await fallbackSaylorOfficial(args));
     case 'get_stats':
       return textResult(await getStats(env, { full: true }));
     case 'discover_agents':

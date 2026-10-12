@@ -43,6 +43,12 @@ GET /discovery/resources?limit=&offset=&sort=
   Paginated listing of every indexed resource. sort=recent for newest-first;
   default ranks by 30-day call volume.
 
+GET /discovery/saylor?query=&family=&tag=&network=&asset=&payTo=&maxUsdPrice=&limit=&offset=
+  Verified Saylor Innovations x402 endpoints direct from the live Saylor manifest
+  and service index. This does not depend on the large D1 catalog query path, so
+  agents can still discover known-good paid endpoints during catalog quota limits.
+  Useful family filters include evm, solana, research, package, market, kb and guide.
+
 GET /discovery/merchant?payTo=<address>
   Every resource that settles to a given payment address.
 
@@ -63,7 +69,7 @@ GET /resources/{slug}.json
 
 GET /discovery.json
   Compact machine-readable map of the catalog: discovery endpoints, response
-  schemas, MCP entry point, agent-card location, Saylor official listing query,
+  schemas, MCP entry point, agent-card location, Saylor official listing endpoint,
   and the metadata fields agents should expect on enriched verified listings.
 
 Full OpenAPI description: /openapi.json

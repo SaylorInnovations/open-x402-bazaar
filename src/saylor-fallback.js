@@ -203,7 +203,7 @@ async function fallbackSaylorResources() {
   return out;
 }
 
-function matchesFilters(r, { query, network, asset, scheme, payTo, maxUsdPrice, urlSubstring } = {}) {
+function matchesFilters(r, { query, network, asset, scheme, payTo, maxUsdPrice, urlSubstring, family, resourceType, tag } = {}) {
   const accepts = r.accepts || [];
   if (query) {
     const terms = String(query).toLowerCase().split(/\s+/).filter(Boolean);
@@ -211,6 +211,9 @@ function matchesFilters(r, { query, network, asset, scheme, payTo, maxUsdPrice, 
     if (!terms.every((term) => haystack.includes(term))) return false;
   }
   if (urlSubstring && !r.resource.includes(urlSubstring)) return false;
+  if (family && r.metadata?.family !== family) return false;
+  if (resourceType && String(r.resourceType).toLowerCase() !== String(resourceType).toLowerCase()) return false;
+  if (tag && !(r.tags || []).includes(String(tag).toLowerCase())) return false;
   if (network && !accepts.some((a) => a.network === network)) return false;
   if (asset && !accepts.some((a) => a.asset === asset)) return false;
   if (scheme && !accepts.some((a) => a.scheme === scheme)) return false;
@@ -223,6 +226,20 @@ async function fallbackSearchResources(filters = {}) {
   const limit = Math.min(Math.max(Number(filters.limit) || 20, 1), 100);
   const resources = (await fallbackSaylorResources()).filter((r) => matchesFilters(r, filters)).slice(0, limit);
   return { resources, fallback: 'saylor-live-manifest' };
+}
+
+async function fallbackSaylorOfficial({ limit, offset, sort, ...filters } = {}) {
+  const lim = Math.min(Math.max(Number(limit) || 20, 1), 100);
+  const off = Math.max(Number(offset) || 0, 0);
+  const resources = (await fallbackSaylorResources()).filter((r) => matchesFilters(r, filters));
+  if (sort === 'recent') resources.reverse();
+  return {
+    resources: resources.slice(off, off + lim),
+    total: resources.length,
+    limit: lim,
+    offset: off,
+    fallback: 'saylor-live-manifest',
+  };
 }
 
 async function fallbackListResources({ limit, offset, sort } = {}) {
@@ -248,4 +265,4 @@ function fallbackHeaders(extra = {}) {
   };
 }
 
-export { fallbackSearchResources, fallbackListResources, fallbackHeaders };
+export { fallbackSearchResources, fallbackSaylorOfficial, fallbackListResources, fallbackHeaders };
