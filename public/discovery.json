@@ -1,0 +1,74 @@
+{
+  "name": "Agent Bazaar",
+  "provider": "Saylor Innovations",
+  "version": "0.6.0",
+  "description": "Machine-readable catalog of x402-payable APIs, data endpoints, guides, MCP tools, and agent services.",
+  "baseUrl": "https://bazaar.saylorinnovations.com",
+  "protocols": ["x402", "mcp", "a2a", "openapi"],
+  "auth": {
+    "readEndpoints": "none",
+    "listingSubmission": "none",
+    "paidResources": "x402 payment handled directly by each listed resource"
+  },
+  "agentUse": {
+    "flow": ["search", "inspect", "choose accepts[]", "call unpaid", "pay with x402", "retry with payment proof"],
+    "recommendedEntryPoint": "https://bazaar.saylorinnovations.com/discovery/search",
+    "inspectPattern": "https://bazaar.saylorinnovations.com/resources/{slug}.json",
+    "filterPlanning": "https://bazaar.saylorinnovations.com/discovery/facets"
+  },
+  "endpoints": [
+    {
+      "name": "searchResources",
+      "method": "GET",
+      "url": "https://bazaar.saylorinnovations.com/discovery/search",
+      "description": "Keyword and filter search across x402 resources. Text queries rank by relevance; filter-only queries rank by 30-day call volume.",
+      "parameters": ["query", "network", "asset", "scheme", "payTo", "urlSubstring", "maxUsdPrice", "limit"],
+      "response": "SearchResponse"
+    },
+    {
+      "name": "listResources",
+      "method": "GET",
+      "url": "https://bazaar.saylorinnovations.com/discovery/resources",
+      "description": "Paginated resource listing ranked by paid usage or recency.",
+      "parameters": ["limit", "offset", "sort"],
+      "response": "ResourcesPage"
+    },
+    {
+      "name": "merchantResources",
+      "method": "GET",
+      "url": "https://bazaar.saylorinnovations.com/discovery/merchant",
+      "description": "Find every listed resource that pays a specific wallet address.",
+      "parameters": ["payTo"],
+      "response": "SearchResponse"
+    },
+    {
+      "name": "getResourceRecord",
+      "method": "GET",
+      "url": "https://bazaar.saylorinnovations.com/resources/{slug}.json",
+      "description": "Full machine-readable resource record with accepts[], schema, quality, liveness, tags, and provider metadata.",
+      "parameters": ["slug"],
+      "response": "Resource"
+    },
+    {
+      "name": "mcp",
+      "method": "POST",
+      "url": "https://bazaar.saylorinnovations.com/mcp",
+      "description": "MCP Streamable HTTP server exposing search_resources, get_resource, get_pricing, discover_provider, list_resources, get_stats, discover_agents, and get_agent.",
+      "response": "MCP JSON-RPC 2.0"
+    }
+  ],
+  "schemas": {
+    "openapi": "https://bazaar.saylorinnovations.com/openapi.json",
+    "llms": "https://bazaar.saylorinnovations.com/llms.txt",
+    "llmsFull": "https://bazaar.saylorinnovations.com/llms-full.txt",
+    "agentCard": "https://bazaar.saylorinnovations.com/.well-known/agent-card.json",
+    "quickstart": "https://bazaar.saylorinnovations.com/agents.json"
+  },
+  "saylorOfficialListings": {
+    "providerHost": "saylorinnovations.com",
+    "searchUrl": "https://bazaar.saylorinnovations.com/discovery/search?urlSubstring=https%3A%2F%2Fsaylorinnovations.com&limit=100",
+    "merchantUrl": "https://bazaar.saylorinnovations.com/discovery/merchant?payTo=7LSjfrJf8fNsB8VA9u7N3WEn25smQLpob3SvyUvXacy7",
+    "minimumListedPriceUsd": 0.01,
+    "metadataFields": ["method", "inputMimeTypes", "outputMimeTypes", "paymentProtocol", "parameters", "exampleUrl", "capabilities", "useWhen", "sideEffects", "noAccountRequired", "noApiKeyRequired"]
+  }
+}

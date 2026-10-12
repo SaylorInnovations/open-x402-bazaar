@@ -1,4 +1,5 @@
 import { listResources } from '../../src/db.js';
+import { fallbackListResources } from '../../src/saylor-fallback.js';
 
 const CORS = { 'access-control-allow-origin': '*' };
 
@@ -12,10 +13,18 @@ export async function onRequestGet({ request, env }) {
       { headers: { ...CORS, 'content-type': 'application/json' } }
     );
   } catch {
-    const limit = Math.min(Math.max(Number(q.limit) || 20, 1), 100);
-    const offset = Math.max(Number(q.offset) || 0, 0);
+    const fallback = await fallbackListResources({ limit: q.limit, offset: q.offset, sort: q.sort });
     return new Response(
-      JSON.stringify({ x402Version: 2, resources: [], total: 0, limit, offset, partialResults: true, warning: 'catalog temporarily unavailable' }),
+      JSON.stringify({
+        x402Version: 2,
+        resources: fallback.resources,
+        total: fallback.total,
+        limit: fallback.limit,
+        offset: fallback.offset,
+        partialResults: true,
+        fallback: fallback.fallback,
+        warning: 'catalog database temporarily unavailable; returning live Saylor official listings only',
+      }),
       { status: 200, headers: { ...CORS, 'content-type': 'application/json', 'cache-control': 'no-store' } }
     );
   }

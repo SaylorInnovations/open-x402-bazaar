@@ -2,7 +2,7 @@
   "openapi": "3.1.0",
   "info": {
     "title": "Agent Bazaar",
-    "version": "0.5.0",
+    "version": "0.6.0",
     "description": "Open, permissionless marketplace and discovery layer for AI agents — APIs, MCP tools, datasets and x402-payable services. No account or API key required for any read endpoint. Wire-compatible with Coinbase's CDP x402 Bazaar API. Built by Saylor Innovations."
   },
   "servers": [{ "url": "https://bazaar.saylorinnovations.com" }],
@@ -131,6 +131,18 @@
           "200": {
             "description": "Aggregate stats",
             "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Stats" } } }
+          }
+        }
+      }
+    },
+    "/discovery.json": {
+      "get": {
+        "operationId": "getMachineDiscoveryManifest",
+        "summary": "Machine-readable map of Agent Bazaar discovery surfaces, schemas, MCP entry point, and Saylor official listings",
+        "responses": {
+          "200": {
+            "description": "Machine discovery manifest",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/DiscoveryManifest" } } }
           }
         }
       }
@@ -303,7 +315,7 @@
           "sourceHost": { "type": "string" },
           "lastUpdated": { "type": "string", "format": "date-time" },
           "quality": { "$ref": "#/components/schemas/Quality" },
-          "metadata": { "type": "object", "description": "Agent-first fields (capabilities, useWhen, doNotUseWhen, license, repository, …), only present when the provider supplied them." },
+          "metadata": { "$ref": "#/components/schemas/ResourceMetadata" },
           "liveness": {
             "type": "object",
             "description": "Only populated for owner-submitted resources — see scripts/check-liveness.mjs.",
@@ -322,6 +334,44 @@
           "resources": { "type": "array", "items": { "$ref": "#/components/schemas/Resource" } },
           "partialResults": { "type": "boolean" },
           "searchMethod": { "type": "string" }
+        }
+      },
+      "ResourceMetadata": {
+        "type": "object",
+        "description": "Agent-first fields. Saylor official listings include these consistently; mirrored third-party resources include only what their provider supplied.",
+        "properties": {
+          "method": { "type": "string", "description": "HTTP method, usually GET for listed Saylor endpoints." },
+          "inputMimeTypes": { "type": "array", "items": { "type": "string" } },
+          "outputMimeTypes": { "type": "array", "items": { "type": "string" } },
+          "paymentProtocol": { "type": "string", "enum": ["x402"] },
+          "noAccountRequired": { "type": "boolean" },
+          "noApiKeyRequired": { "type": "boolean" },
+          "auth": { "type": "string" },
+          "pricingPolicy": { "type": "object", "properties": { "unit": { "type": "string" }, "minimumUsd": { "type": "number" } } },
+          "parameters": { "type": "array", "items": { "type": "object" } },
+          "exampleUrl": { "type": "string", "format": "uri" },
+          "discoveryUrl": { "type": "string", "format": "uri" },
+          "capabilities": { "type": "array", "items": { "type": "string" } },
+          "useWhen": { "type": "string" },
+          "doNotUseWhen": { "type": "string" },
+          "sideEffects": { "type": "string" },
+          "license": { "type": "string" },
+          "repository": { "type": "string", "format": "uri" },
+          "family": { "type": "string" }
+        }
+      },
+      "DiscoveryManifest": {
+        "type": "object",
+        "properties": {
+          "name": { "type": "string" },
+          "provider": { "type": "string" },
+          "version": { "type": "string" },
+          "baseUrl": { "type": "string", "format": "uri" },
+          "protocols": { "type": "array", "items": { "type": "string" } },
+          "agentUse": { "type": "object" },
+          "endpoints": { "type": "array", "items": { "type": "object" } },
+          "schemas": { "type": "object" },
+          "saylorOfficialListings": { "type": "object" }
         }
       },
       "ResourcesPage": {

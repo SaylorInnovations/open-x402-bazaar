@@ -61,6 +61,11 @@ GET /resources/{slug}.json
   metadata (capabilities, useWhen, doNotUseWhen, license, repository) where the
   provider supplied it.
 
+GET /discovery.json
+  Compact machine-readable map of the catalog: discovery endpoints, response
+  schemas, MCP entry point, agent-card location, Saylor official listing query,
+  and the metadata fields agents should expect on enriched verified listings.
+
 Full OpenAPI description: /openapi.json
 
 ## A2A agent registry

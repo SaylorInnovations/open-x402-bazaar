@@ -1,4 +1,5 @@
 import { merchantResources } from '../../src/db.js';
+import { fallbackSearchResources } from '../../src/saylor-fallback.js';
 
 const CORS = { 'access-control-allow-origin': '*' };
 
@@ -17,7 +18,15 @@ export async function onRequestGet({ request, env }) {
       headers: { ...CORS, 'content-type': 'application/json' },
     });
   } catch {
-    return new Response(JSON.stringify({ x402Version: 2, payTo: q.payTo, resources: [], partialResults: true, warning: 'catalog temporarily unavailable' }), {
+    const fallback = await fallbackSearchResources({ payTo: q.payTo, limit: 100 });
+    return new Response(JSON.stringify({
+      x402Version: 2,
+      payTo: q.payTo,
+      resources: fallback.resources,
+      partialResults: true,
+      fallback: fallback.fallback,
+      warning: 'catalog database temporarily unavailable; returning live Saylor official listings only',
+    }), {
       status: 200,
       headers: { ...CORS, 'content-type': 'application/json', 'cache-control': 'no-store' },
     });
