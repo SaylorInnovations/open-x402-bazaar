@@ -23,7 +23,8 @@
     "seed:saylor-official": "node scripts/import-saylor-official.mjs --local",
     "seed:saylor-official:remote": "node scripts/import-saylor-official.mjs --remote --apply",
     "check:liveness": "node scripts/check-liveness.mjs --local",
-    "check:liveness:remote": "node scripts/check-liveness.mjs --remote --apply"
+    "check:liveness:remote": "node scripts/check-liveness.mjs --remote --apply",
+    "test:post-contract": "node --test test/post-contract.test.js"
   },
   "keywords": [
     "x402",

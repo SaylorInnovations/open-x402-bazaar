@@ -97,6 +97,7 @@ async function attachAccepts(env, rows) {
       accepts: byResource[r.id] || [],
       outputSchema,
       extensions: metadata?.extensions,
+      method: metadata?.method ?? metadata?.extensions?.bazaar?.info?.input?.method,
       tags: parseJson(r.tags, []),
       sourceHost: r.listing_host,
       lastUpdated: r.last_updated,
