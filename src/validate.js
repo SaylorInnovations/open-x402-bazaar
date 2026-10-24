@@ -149,18 +149,37 @@ function extractResources(manifest, sourceManifestUrl) {
     throw new Error('no paid resources found (expected an accepts[] with scheme/network/payTo on at least one entry)');
   }
 
-  return found.map((entry) => ({
-    resource: entry.url || entry.resource,
-    description: entry.description || entry.summary || '',
-    type: 'http',
-    x402Version: manifest.x402Version,
-    accepts: entry.accepts,
-    outputSchema: entry.outputSchema,
-    tags: entry.tags || [],
-    sourceManifestUrl,
-    sourceHost: host,
-    lastUpdated: new Date().toISOString(),
-  }));
+  return found.map((entry) => {
+    const original = entry.metadata && typeof entry.metadata === 'object' && !Array.isArray(entry.metadata) ? entry.metadata : {};
+    const extensions = entry.extensions ?? original.extensions;
+    const method = entry.method ?? original.method ?? extensions?.bazaar?.info?.input?.method;
+    // D1 already persists metadata as JSON. Keep the transport declaration and
+    // service identity there as well as on the import result for round trips.
+    const metadata = {
+      ...original,
+      ...(method !== undefined ? { method } : {}),
+      ...(extensions !== undefined ? { extensions } : {}),
+      ...Object.fromEntries(['serviceName', 'mimeType', 'iconUrl'].filter(key => entry[key] !== undefined).map(key => [key, entry[key]])),
+    };
+    return {
+      resource: entry.url || entry.resource,
+      description: entry.description || entry.summary || '',
+      type: 'http',
+      x402Version: manifest.x402Version,
+      accepts: entry.accepts,
+      outputSchema: entry.outputSchema,
+      tags: entry.tags || [],
+      sourceManifestUrl,
+      sourceHost: host,
+      lastUpdated: new Date().toISOString(),
+      method,
+      extensions,
+      serviceName: metadata.serviceName,
+      mimeType: metadata.mimeType,
+      iconUrl: metadata.iconUrl,
+      ...(Object.keys(metadata).length ? { metadata } : {}),
+    };
+  });
 }
 
 /**

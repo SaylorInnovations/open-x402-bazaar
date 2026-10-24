@@ -1,3 +1,4 @@
+import { requestContract, curlExample, jsExample, pyExample } from '../../src/requestContract.js';
 import { getResourceBySlugOrId } from '../../src/db.js';
 import { pageShell, escapeHtml, priceParts, crumbs, resName, resSummary, typeLabel, uniqueNetworks, assetSymbols, networkLabel, fmtNum, fmtDate, SITE } from '../../src/layout.js';
 import { exampleFromSchema } from '../../src/schemaExample.js';
@@ -5,31 +6,12 @@ import { fallbackSaylorResourceBySlug } from '../../src/saylor-fallback.js';
 
 const CORS = { 'access-control-allow-origin': '*' };
 
-function curlExample(r) {
-  return `curl "${r.resource}"\n# -> 402 Payment Required, accepts[] lists how to pay\n# retry with a PAYMENT-SIGNATURE (or PAYMENT header) once paid`;
-}
-
-function jsExample(r) {
-  return `const res = await fetch("${r.resource}");
-if (res.status === 402) {
-  const { accepts } = await res.json();
-  // pay one of accepts[] via an x402 client, then retry with the payment header
-}`;
-}
-
-function pyExample(r) {
-  return `import httpx
-res = httpx.get("${r.resource}")
-if res.status_code == 402:
-    accepts = res.json()["accepts"]
-    # pay one of accepts[] via an x402 client, then retry with the payment header`;
-}
-
 function codeBox(id, label, body) {
   return `<div class="codebox"><div class="codebox-head"><span>${escapeHtml(label)}</span><button class="copy" type="button" data-copy-target="${id}">Copy</button></div><pre id="${id}"><code>${escapeHtml(body)}</code></pre></div>`;
 }
 
 function renderHtml(r) {
+  const { method } = requestContract(r);
   const price = priceParts(r.accepts);
   const nets = uniqueNetworks(r.accepts);
   const syms = assetSymbols(r.accepts);
@@ -81,7 +63,7 @@ function renderHtml(r) {
       <ol class="list-check">
         <li><b>Discover.</b> Agents find this listing with <code>GET ${SITE}/discovery/search?query=…</code>, the MCP tool <code>search_resources</code>, or <code>/discovery/resources</code>.</li>
         <li><b>Inspect.</b> Fetch <a href="/resources/${slug}.json"><code>/resources/${slug}.json</code></a> for the price and payment options.</li>
-        <li><b>Pay.</b> Call <code>GET ${escapeHtml(r.resource)}</code>. The provider answers <code>402</code> with its payment requirements. An x402 client signs one of the options below and retries with <code>PAYMENT-SIGNATURE</code>.</li>
+        <li><b>Pay.</b> Call <code>${escapeHtml(method)} ${escapeHtml(r.resource)}</code> using the published input example below. The provider answers <code>402</code> with its payment requirements. An x402 client signs one of the options below and retries with <code>PAYMENT-SIGNATURE</code>.</li>
         <li><b>Execute.</b> The provider returns <code>200</code> with the data. Agent Bazaar is not in the request path and never sees your payment.</li>
       </ol>
       <h3>For humans</h3>
