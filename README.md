@@ -122,7 +122,7 @@ Listing is, and always will be, free — Agent Bazaar never takes a cut of any r
 
 ## Verified agent skills
 
-`resource_type: "Skill"` — downloadable, zip-bundled Claude-Code-style skills (a `SKILL.md` plus any supporting files/scripts), listed under Agent Bazaar's own host (`bazaar.saylorinnovations.com`) as a first-party, verified provider. Source lives in [`skills/`](skills/); `scripts/import-skills.mjs` zips and lists them, same DELETE-then-INSERT pattern as the other import scripts. A resource with an empty `accepts[]` is a deliberate signal — genuinely free, not a submission-validation gap, since this script writes directly to D1 rather than going through `POST /submit`'s manifest validation (which requires non-empty `accepts[]`). The catalog starts with one free starter skill (`agent-memory-bootstrap` — a portable, file-based persistent-memory pattern for any agent) and grows from there; paid skills work exactly like any other resource here, with real `accepts[]`.
+`resource_type: "Skill"` — downloadable, zip-bundled skills (a `SKILL.md` plus any supporting files/scripts), listed under Agent Bazaar's own host (`bazaar.saylorinnovations.com`) as a first-party, verified provider. Source lives in [`skills/`](skills/); `scripts/import-skills.mjs` builds the ZIPs and catalog SQL. The 23 free skills cover agent fundamentals, reliable workflows, Markdown vault continuity, evidence-based prospect research, and Kentucky Lottery results. Empty `accepts[]` deliberately means free; the importer writes directly to D1 rather than using `POST /submit`, whose manifest validation requires non-empty `accepts[]`. Paid skills can use normal x402 `accepts[]`.
 
 ## Architecture
 
